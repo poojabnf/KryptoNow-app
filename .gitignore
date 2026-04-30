@@ -61,3 +61,13 @@ update-*.js
 bom-strip-transformer.js
 *.tsssx
 *.txt
+
+clerk-nextjs/
+app.zip
+fix-*.js
+fix_*.py
+setup-*.js
+update-*.js
+bom-strip-transformer.js
+*.tsssx
+*.txt
