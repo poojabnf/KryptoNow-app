@@ -51,3 +51,13 @@ debug.log
 
 .env.local
 .env
+
+clerk-nextjs/
+app.zip
+fix-*.js
+fix_*.py
+setup-*.js
+update-*.js
+bom-strip-transformer.js
+*.tsssx
+*.txt
