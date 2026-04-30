@@ -1,0 +1,506 @@
+import { useEffect, useState, useCallback, useRef } from 'react'
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+  RefreshControl, ActivityIndicator, Modal, Animated,
+} from 'react-native'
+import { router } from 'expo-router'
+import { ethers } from 'ethers'
+import { useWalletStore } from '../store/walletStore'
+import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
+import { CHAINS, Chain, getExplorerApiBase , getProvider } from '../utils/chains'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type TokenRow = {
+  symbol: string; name: string
+  balance: string; price: number; change24h: number; valueUSD: number
+  isNative: boolean
+}
+
+const TX_META: Record<TxType, { icon: string; color: string; bg: string }> = {
+  send:          { icon: '↑', color: '#EF4444', bg: '#FEF2F2' },
+  receive:       { icon: '↓', color: '#10B981', bg: '#D1FAE5' },
+  token_send:    { icon: '↑', color: '#F59E0B', bg: '#FEF3C7' },
+  token_receive: { icon: '↓', color: '#06B6D4', bg: '#CFFAFE' },
+  contract:      { icon: '⚙', color: '#8B5CF6', bg: '#EDE9FE' },
+}
+
+function relTime(ts: number) {
+  const d = Math.floor(Date.now() / 1000) - ts
+  if (d < 60)    return `${d}s ago`
+  if (d < 3600)  return `${Math.floor(d / 60)}m ago`
+  if (d < 86400) return `${Math.floor(d / 3600)}h ago`
+  return `${Math.floor(d / 86400)}d ago`
+}
+
+function fmt(n: number) {
+  if (n === 0) return '$0.00'
+  return n >= 1000
+    ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `$${n.toFixed(2)}`
+}
+
+// ─── Chain Switcher Modal ─────────────────────────────────────────────────────
+function ChainModal({
+  visible, current, onSelect, onClose,
+}: {
+  visible: boolean; current: Chain
+  onSelect: (c: Chain) => void; onClose: () => void
+}) {
+  const slide = useRef(new Animated.Value(500)).current
+  useEffect(() => {
+    Animated.spring(slide, {
+      toValue: visible ? 0 : 500,
+      useNativeDriver: true, tension: 65, friction: 11,
+    }).start()
+  }, [visible])
+
+  return (
+    <Modal transparent animationType="none" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity style={m.overlay} activeOpacity={1} onPress={onClose} />
+      <Animated.View style={[m.sheet, { transform: [{ translateY: slide }] }]}>
+        <View style={m.handle} />
+        <Text style={m.title}>Switch Network</Text>
+        {CHAINS.map(chain => (
+          <TouchableOpacity
+            key={chain.id}
+            style={[m.row, chain.id === current.id && m.rowActive]}
+            onPress={() => { onSelect(chain); onClose() }}
+            activeOpacity={0.7}
+          >
+            <View style={[m.iconWrap, { backgroundColor: chain.bgColor }]}>
+              <Text style={[m.icon, { color: chain.color }]}>{chain.icon}</Text>
+            </View>
+            <View style={m.mid}>
+              <Text style={m.chainName}>{chain.name}</Text>
+              <Text style={m.chainSymbol}>Native: {chain.symbol}</Text>
+            </View>
+            {chain.id === current.id && (
+              <View style={[m.activeDot, { backgroundColor: chain.color }]} />
+            )}
+          </TouchableOpacity>
+        ))}
+        <View style={{ height: 32 }} />
+      </Animated.View>
+    </Modal>
+  )
+}
+
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
+const ACTIONS = [
+  { l: 'Send',    i: '↑', c: '#6366F1', route: '/send'    },
+  { l: 'Receive', i: '↓', c: '#8B5CF6', route: '/receive' },
+  { l: 'Swap',    i: '⇄', c: '#06B6D4', route: '/swap'    },
+  { l: 'Buy',     i: '+', c: '#10B981', route: '/buy'     },
+]
+
+export default function Dashboard() {
+  const addr           = useWalletStore(s => s.address)
+  const activeChain    = useWalletStore(s => s.activeChain)
+  const setActiveChain = useWalletStore(s => s.setActiveChain)
+  const setChainCache  = useWalletStore(s => s.setChainCache)
+  const getChainCache  = useWalletStore(s => s.getChainCache)
+
+  const short = addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : ''
+
+  const [tokens,     setTokens]     = useState<TokenRow[]>([])
+  const [totalUSD,   setTotalUSD]   = useState(0)
+  const [loading,    setLoading]    = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error,      setError]      = useState(false)
+  const [chainModal, setChainModal] = useState(false)
+
+  const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
+
+  // ─── Fetch balances for active chain ──────────────────────────────────────
+  const fetchBalances = useCallback(async (force = false) => {
+    if (!addr) return
+
+    // Use cache if fresh
+    const cached = getChainCache(activeChain.id)
+    if (cached && !force) {
+      const nativeRow: TokenRow = {
+        symbol:   activeChain.symbol,
+        name:     activeChain.nativeName,
+        balance:  cached.nativeBalance,
+        price:    cached.nativeUSD / (parseFloat(cached.nativeBalance) || 1),
+        change24h: 0,
+        valueUSD: cached.nativeUSD,
+        isNative: true,
+      }
+      setTokens([nativeRow, ...cached.tokens.map(t => ({ ...t, isNative: false }))])
+      setTotalUSD(cached.nativeUSD + cached.tokens.reduce((s, t) => s + t.valueUSD, 0))
+      setLoading(false)
+      return
+    }
+
+    setError(false)
+    try {
+      // 1. Native balance
+      const provider   = getProvider(activeChain)
+      const weiBalance = await provider.getBalance(addr)
+      const nativeBal  = parseFloat(ethers.formatEther(weiBalance))
+
+      // 2. Native token price from CoinGecko
+      const cgId: Record<number, string> = {
+        1: 'ethereum', 137: 'matic-network',
+        42161: 'ethereum', 10: 'ethereum', 56: 'binancecoin',
+      }
+      const priceRes = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${cgId[activeChain.id] ?? 'ethereum'}&vs_currencies=usd&include_24hr_change=true`
+      )
+      const priceData = await priceRes.json()
+      const cgKey     = cgId[activeChain.id] ?? 'ethereum'
+      const nativePrice  = priceData[cgKey]?.usd ?? 0
+      const nativeChange = priceData[cgKey]?.usd_24h_change ?? 0
+      const nativeUSD    = nativeBal * nativePrice
+
+      // 3. ERC-20 tokens (Etherscan-compatible API)
+      const apiBase = getExplorerApiBase(activeChain.id)
+      const SCAN_KEY = 'YourScanApiKey' // replace per chain
+      let tokenRows: TokenRow[] = []
+
+      try {
+        const tokRes  = await fetch(
+          `${apiBase}?module=account&action=tokentx&address=${addr}&page=1&offset=20&sort=desc&apikey=${SCAN_KEY}`
+        )
+        const tokData = await tokRes.json()
+        const seen    = new Set<string>()
+        const unique  = (tokData.result ?? []).filter((r: any) => {
+          const k = r.contractAddress.toLowerCase()
+          if (seen.has(k)) return false
+          seen.add(k)
+          return true
+        })
+
+        // Fetch prices for unique tokens
+        const ids = unique.map((r: any) => r.tokenSymbol?.toLowerCase()).filter(Boolean).slice(0, 10)
+        let tokenPrices: Record<string, any> = {}
+        if (ids.length > 0) {
+          try {
+            const tpRes = await fetch(
+              `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`
+            )
+            tokenPrices = await tpRes.json()
+          } catch {}
+        }
+
+        tokenRows = await Promise.all(
+          unique.slice(0, 8).map(async (r: any) => {
+            const dec = parseInt(r.tokenDecimal ?? '18')
+            const balRes = await fetch(
+              `${apiBase}?module=account&action=tokenbalance&contractaddress=${r.contractAddress}&address=${addr}&tag=latest&apikey=${SCAN_KEY}`
+            ).catch(() => null)
+            const balData  = balRes ? await balRes.json() : { result: '0' }
+            const bal      = parseFloat(balData.result ?? '0') / Math.pow(10, dec)
+            const symLower = r.tokenSymbol?.toLowerCase()
+            const price    = tokenPrices[symLower]?.usd ?? 0
+            const change   = tokenPrices[symLower]?.usd_24h_change ?? 0
+            return {
+              symbol:   r.tokenSymbol ?? '???',
+              name:     r.tokenName  ?? 'Unknown',
+              balance:  bal.toFixed(4),
+              price, change24h: change,
+              valueUSD: bal * price,
+              isNative: false,
+            }
+          })
+        )
+        tokenRows = tokenRows.filter(t => parseFloat(t.balance) > 0)
+      } catch {}
+
+      // 4. Build final rows
+      const nativeRow: TokenRow = {
+        symbol:   activeChain.symbol,
+        name:     activeChain.nativeName,
+        balance:  nativeBal.toFixed(6),
+        price:    nativePrice,
+        change24h: nativeChange,
+        valueUSD: nativeUSD,
+        isNative: true,
+      }
+      const allRows  = [nativeRow, ...tokenRows]
+      const total    = allRows.reduce((s, t) => s + t.valueUSD, 0)
+
+      setTokens(allRows)
+      setTotalUSD(total)
+
+      // Cache the result
+      setChainCache(activeChain.id, {
+        nativeBalance: nativeBal.toFixed(6),
+        nativeUSD,
+        tokens: tokenRows,
+        lastFetch: Date.now(),
+      })
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [addr, activeChain])
+
+  // Refetch when chain changes
+  useEffect(() => {
+    setLoading(true)
+    setTokens([])
+    setTotalUSD(0)
+    fetchBalances(false)
+    refreshTxns()
+  }, [activeChain.id])
+
+  const onRefresh = () => {
+    setRefreshing(true)
+    fetchBalances(true)
+    refreshTxns()
+  }
+
+  const handleChainSelect = (chain: Chain) => {
+    setActiveChain(chain)
+    // fetchBalances triggers via useEffect on activeChain.id change
+  }
+
+  return (
+    <View style={s.c}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={activeChain.color} />}
+      >
+        {/* Top bar */}
+        <View style={s.top}>
+          {/* Chain switcher button */}
+          <TouchableOpacity
+            style={[s.net, { borderColor: activeChain.color + '40' }]}
+            onPress={() => setChainModal(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[s.nd, { backgroundColor: '#10B981' }]} />
+            <Text style={[s.nt, { color: activeChain.color }]}>{activeChain.name}</Text>
+            <Text style={[s.chevron, { color: activeChain.color }]}>▾</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.cog} onPress={() => router.push('/settings' as any)}>
+            <Text style={{ fontSize: 16, color: '#64748B' }}>⚙</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Balance card */}
+        <View style={[s.card, { backgroundColor: activeChain.color }]}>
+          <View style={s.av}><Text style={s.avt}>V</Text></View>
+          <Text style={s.addr}>{short}</Text>
+          <Text style={s.bl}>Total Balance</Text>
+          {loading
+            ? <ActivityIndicator color="#fff" size="small" style={{ marginVertical: 14 }} />
+            : <Text style={s.bal}>{fmt(totalUSD)}</Text>
+          }
+          {!loading && tokens[0] && (
+            <Text style={s.nativeSub}>
+              {parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}
+              <Text style={[s.chg, { color: tokens[0].change24h >= 0 ? '#86EFAC' : '#FCA5A5' }]}>
+                {'  '}{tokens[0].change24h >= 0 ? '▲' : '▼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
+              </Text>
+            </Text>
+          )}
+          <View style={[s.chainBadge, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+            <Text style={s.chainBadgeT}>{activeChain.name} · AES-256-GCM</Text>
+          </View>
+        </View>
+
+        {/* Error banner */}
+        {error && (
+          <TouchableOpacity style={s.err} onPress={onRefresh}>
+            <Text style={s.errT}>⚠ Unable to fetch live data. Tap to retry.</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Action buttons */}
+        <View style={s.acts}>
+          {ACTIONS.map(a => (
+            <TouchableOpacity
+              key={a.l}
+              style={s.act}
+              onPress={() => router.push(a.route as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[s.ai, { borderColor: a.c + '40' }]}>
+                <Text style={[s.ait, { color: a.c }]}>{a.i}</Text>
+              </View>
+              <Text style={s.al}>{a.l}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Assets */}
+        <View style={s.sec}>
+          <Text style={s.st}>Assets on {activeChain.name}</Text>
+          {loading ? (
+            <View style={s.loadBox}>
+              <ActivityIndicator color={activeChain.color} />
+              <Text style={s.loadT}>Fetching {activeChain.name} balances…</Text>
+            </View>
+          ) : (
+            <>
+              {tokens.map((t, i) => (
+                <View key={t.symbol + i} style={s.row}>
+                  <View style={[s.icon, { backgroundColor: t.isNative ? activeChain.bgColor : '#F0FDF4' }]}>
+                    <Text style={[s.iconT, { color: t.isNative ? activeChain.color : '#059669' }]}>
+                      {t.isNative ? activeChain.icon : t.symbol.slice(0, 3)}
+                    </Text>
+                  </View>
+                  <View style={s.rowMid}>
+                    <Text style={s.rn}>{t.name}</Text>
+                    <Text style={s.rs}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
+                  </View>
+                  <View style={s.rowRight}>
+                    <Text style={s.rv}>{fmt(t.valueUSD)}</Text>
+                    <Text style={[s.rc, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
+                      {t.change24h >= 0 ? '+' : ''}{t.change24h.toFixed(2)}%
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {tokens.length === 0 && (
+                <View style={s.empty}>
+                  <Text style={{ fontSize: 36, marginBottom: 10 }}>🪙</Text>
+                  <Text style={s.et}>No assets on {activeChain.name}</Text>
+                  <Text style={s.es}>Bridge or receive {activeChain.symbol} to get started</Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
+        {/* Recent Activity */}
+        <View style={s.sec}>
+          <View style={s.secHdr}>
+            <Text style={s.st}>Recent Activity</Text>
+            <TouchableOpacity onPress={() => router.push('/history' as any)}>
+              <Text style={[s.viewAll, { color: activeChain.color }]}>View all →</Text>
+            </TouchableOpacity>
+          </View>
+          {txLoading ? (
+            <View style={s.loadBox}>
+              <ActivityIndicator color={activeChain.color} />
+            </View>
+          ) : recentTxns.length === 0 ? (
+            <View style={s.txEmpty}>
+              <Text style={s.txEmptyT}>No transactions yet</Text>
+            </View>
+          ) : (
+            <>
+              {recentTxns.slice(0, 5).map((tx, i) => {
+                const meta   = TX_META[tx.type]
+                const isSend = tx.type === 'send' || tx.type === 'token_send'
+                return (
+                  <TouchableOpacity
+                    key={tx.hash + i}
+                    style={s.txRow}
+                    onPress={() => router.push('/history' as any)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[s.txIcon, { backgroundColor: meta.bg }]}>
+                      <Text style={[s.txIconT, { color: meta.color }]}>{meta.icon}</Text>
+                    </View>
+                    <View style={s.txMid}>
+                      <Text style={s.txLabel}>
+                        {isSend ? `To: ${tx.to.slice(0,6)}…${tx.to.slice(-4)}` : `From: ${tx.from.slice(0,6)}…${tx.from.slice(-4)}`}
+                      </Text>
+                      <Text style={s.txTime}>{relTime(tx.timestamp)}</Text>
+                    </View>
+                    <Text style={[s.txAmt, { color: meta.color }]}>
+                      {isSend ? '−' : '+'}{tx.value} {tx.symbol}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+              <TouchableOpacity style={s.viewAllBtn} onPress={() => router.push('/history' as any)}>
+                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History →</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      <ChainModal
+        visible={chainModal}
+        current={activeChain}
+        onSelect={handleChainSelect}
+        onClose={() => setChainModal(false)}
+      />
+    </View>
+  )
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  c:           { flex:1, backgroundColor:'#F8FAFF' },
+  top:         { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:20, paddingTop:60, paddingBottom:12 },
+  net:         { flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#fff', paddingVertical:7, paddingHorizontal:13, borderRadius:20, borderWidth:1 },
+  nd:          { width:7, height:7, borderRadius:4 },
+  nt:          { fontSize:13, fontWeight:'600' },
+  chevron:     { fontSize:11 },
+  cog:         { width:38, height:38, borderRadius:12, backgroundColor:'#fff', borderWidth:1, borderColor:'#E2E8F0', alignItems:'center', justifyContent:'center' },
+  card:        { marginHorizontal:16, marginBottom:16, borderRadius:24, padding:24, alignItems:'center', shadowOffset:{width:0,height:8}, shadowOpacity:0.35, shadowRadius:20, elevation:10 },
+  av:          { width:52, height:52, borderRadius:26, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', marginBottom:10 },
+  avt:         { color:'#fff', fontSize:22, fontWeight:'700' },
+  addr:        { color:'rgba(255,255,255,0.7)', fontSize:13, marginBottom:14 },
+  bl:          { color:'rgba(255,255,255,0.65)', fontSize:13, marginBottom:5 },
+  bal:         { color:'#fff', fontSize:40, fontWeight:'700', letterSpacing:-1 },
+  nativeSub:   { color:'rgba(255,255,255,0.7)', fontSize:13, marginTop:4, marginBottom:10 },
+  chg:         { fontSize:12, fontWeight:'600' },
+  chainBadge:  { marginTop:10, paddingVertical:5, paddingHorizontal:14, borderRadius:20 },
+  chainBadgeT: { color:'#fff', fontSize:11, fontWeight:'500' },
+  err:         { marginHorizontal:16, marginBottom:12, backgroundColor:'#FEF2F2', borderRadius:14, borderWidth:1, borderColor:'#FECACA', padding:13 },
+  errT:        { color:'#DC2626', fontSize:13, textAlign:'center' },
+  acts:        { flexDirection:'row', justifyContent:'space-around', paddingHorizontal:16, marginBottom:28 },
+  act:         { alignItems:'center', gap:8 },
+  ai:          { width:54, height:54, borderRadius:27, backgroundColor:'#fff', alignItems:'center', justifyContent:'center', borderWidth:1.5, shadowColor:'#64748B', shadowOffset:{width:0,height:2}, shadowOpacity:0.08, shadowRadius:8, elevation:2 },
+  ait:         { fontSize:22, fontWeight:'600' },
+  al:          { color:'#64748B', fontSize:12, fontWeight:'500' },
+  sec:         { paddingHorizontal:16, marginBottom:24 },
+  secHdr:      { flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:12 },
+  st:          { color:'#1E1B4B', fontSize:17, fontWeight:'700', marginBottom:12 },
+  viewAll:     { fontSize:13, fontWeight:'600' },
+  loadBox:     { backgroundColor:'#fff', borderRadius:16, padding:24, alignItems:'center', gap:10 },
+  loadT:       { color:'#94A3B8', fontSize:13 },
+  row:         { flexDirection:'row', alignItems:'center', backgroundColor:'#fff', borderRadius:16, padding:14, marginBottom:10, borderWidth:1, borderColor:'#F1F5F9' },
+  icon:        { width:42, height:42, borderRadius:21, alignItems:'center', justifyContent:'center', marginRight:12 },
+  iconT:       { fontSize:16, fontWeight:'700' },
+  rowMid:      { flex:1 },
+  rn:          { color:'#1E1B4B', fontSize:14, fontWeight:'600' },
+  rs:          { color:'#94A3B8', fontSize:12, marginTop:2 },
+  rowRight:    { alignItems:'flex-end' },
+  rv:          { color:'#1E1B4B', fontSize:14, fontWeight:'600' },
+  rc:          { fontSize:12, fontWeight:'500', marginTop:2 },
+  empty:       { backgroundColor:'#fff', borderRadius:20, padding:28, alignItems:'center', borderWidth:1, borderColor:'#E2E8F0' },
+  et:          { color:'#1E1B4B', fontSize:16, fontWeight:'600', marginBottom:5 },
+  es:          { color:'#94A3B8', fontSize:13, textAlign:'center' },
+  txEmpty:     { backgroundColor:'#fff', borderRadius:14, padding:20, alignItems:'center', borderWidth:1, borderColor:'#F1F5F9' },
+  txEmptyT:    { color:'#CBD5E1', fontSize:13 },
+  txRow:       { flexDirection:'row', alignItems:'center', backgroundColor:'#fff', borderRadius:14, padding:13, marginBottom:8, borderWidth:1, borderColor:'#F1F5F9' },
+  txIcon:      { width:38, height:38, borderRadius:19, alignItems:'center', justifyContent:'center', marginRight:12 },
+  txIconT:     { fontSize:16, fontWeight:'700' },
+  txMid:       { flex:1 },
+  txLabel:     { color:'#1E1B4B', fontSize:13, fontWeight:'500', marginBottom:2 },
+  txTime:      { color:'#CBD5E1', fontSize:11 },
+  txAmt:       { fontSize:13, fontWeight:'600' },
+  viewAllBtn:  { backgroundColor:'#F8FAFF', borderRadius:12, borderWidth:1.5, borderColor:'#E0E7FF', paddingVertical:12, alignItems:'center', marginTop:4 },
+  viewAllBtnT: { fontSize:14, fontWeight:'600' },
+})
+
+const m = StyleSheet.create({
+  overlay:     { ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(15,23,42,0.5)' },
+  sheet:       { position:'absolute', bottom:0, left:0, right:0, backgroundColor:'#fff', borderTopLeftRadius:28, borderTopRightRadius:28, paddingTop:12, paddingHorizontal:16 },
+  handle:      { width:36, height:4, borderRadius:2, backgroundColor:'#E2E8F0', alignSelf:'center', marginBottom:16 },
+  title:       { color:'#1E1B4B', fontSize:17, fontWeight:'700', marginBottom:16, paddingLeft:4 },
+  row:         { flexDirection:'row', alignItems:'center', padding:14, borderRadius:16, marginBottom:8, backgroundColor:'#F8FAFF' },
+  rowActive:   { backgroundColor:'#EEF2FF' },
+  iconWrap:    { width:44, height:44, borderRadius:22, alignItems:'center', justifyContent:'center', marginRight:14 },
+  icon:        { fontSize:20 },
+  mid:         { flex:1 },
+  chainName:   { color:'#1E1B4B', fontSize:15, fontWeight:'600' },
+  chainSymbol: { color:'#94A3B8', fontSize:12, marginTop:2 },
+  activeDot:   { width:10, height:10, borderRadius:5 },
+})
+

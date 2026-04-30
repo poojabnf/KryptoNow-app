@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "KryptoNow",
+    "slug": "kryptonow",
+    "scheme": "kryptonow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kryptonow.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kryptonow.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "htmlTemplate": "./web/index.html"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5c22ca6d-6705-4f70-bd37-c37207cc140a"
+      },
+      "website": "https://kryptonow.xyz"
+    },
+    "owner": "poojaya2k19",
+    "plugins": [
+      "expo-web-browser",
+      "expo-router",
+      "expo-secure-store"
+    ]
+  }
+}

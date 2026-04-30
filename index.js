@@ -1,0 +1,13 @@
+﻿import { install } from 'react-native-quick-crypto';
+install();
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import { registerRootComponent } from 'expo';
+import { ExpoRoot } from 'expo-router';
+
+export function App() {
+  const ctx = require.context('./app');
+  return <ExpoRoot context={ctx} />;
+}
+
+registerRootComponent(App);

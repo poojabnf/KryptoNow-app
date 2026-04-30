@@ -1,0 +1,68 @@
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
+import { useWalletStore } from '../store/walletStore'
+
+export default function Dashboard() {
+  const addr = useWalletStore(s=>s.address)
+  const short = addr ? addr.slice(0,6)+'...'+addr.slice(-4) : ''
+  return (
+    <View style={s.c}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={s.top}>
+          <View style={s.net}><View style={s.nd}/><Text style={s.nt}>Ethereum</Text></View>
+          <TouchableOpacity style={s.cog}><Text style={{fontSize:16,color:'#64748B'}}></Text></TouchableOpacity>
+        </View>
+        <View style={s.card}>
+          <View style={s.av}><Text style={s.avt}>V</Text></View>
+          <Text style={s.addr}>{short}</Text>
+          <Text style={s.bl}>Total Balance</Text>
+          <Text style={s.bal}>.00</Text>
+          <Text style={s.bs}>Add funds to get started</Text>
+        </View>
+        <View style={s.acts}>
+          {[{l:'Send',i:'',c:'#6366F1'},{l:'Receive',i:'',c:'#8B5CF6'},{l:'Swap',i:'',c:'#06B6D4'},{l:'Buy',i:'+',c:'#10B981'}].map(a=>(
+            <TouchableOpacity key={a.l} style={s.act}>
+              <View style={[s.ai,{borderColor:a.c+'30'}]}><Text style={[s.ait,{color:a.c}]}>{a.i}</Text></View>
+              <Text style={s.al}>{a.l}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={s.sec}>
+          <Text style={s.st}>Assets</Text>
+          <View style={s.empty}>
+            <Text style={{fontSize:36,marginBottom:10}}></Text>
+            <Text style={s.et}>No assets yet</Text>
+            <Text style={s.es}>Buy or receive crypto to get started</Text>
+            <TouchableOpacity style={s.buy}><Text style={s.buyt}>Buy Crypto</Text></TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  )
+}
+const s = StyleSheet.create({
+  c:{flex:1,backgroundColor:'#F8FAFF'},
+  top:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingHorizontal:20,paddingTop:60,paddingBottom:12},
+  net:{flexDirection:'row',alignItems:'center',gap:6,backgroundColor:'#fff',paddingVertical:7,paddingHorizontal:13,borderRadius:20,borderWidth:1,borderColor:'#E0E7FF'},
+  nd:{width:7,height:7,borderRadius:4,backgroundColor:'#10B981'},
+  nt:{color:'#4338CA',fontSize:13,fontWeight:'500'},
+  cog:{width:38,height:38,borderRadius:12,backgroundColor:'#fff',borderWidth:1,borderColor:'#E2E8F0',alignItems:'center',justifyContent:'center'},
+  card:{marginHorizontal:16,marginBottom:16,backgroundColor:'#6366F1',borderRadius:24,padding:24,alignItems:'center',shadowColor:'#6366F1',shadowOffset:{width:0,height:8},shadowOpacity:0.35,shadowRadius:20,elevation:10},
+  av:{width:52,height:52,borderRadius:26,backgroundColor:'rgba(255,255,255,0.25)',alignItems:'center',justifyContent:'center',marginBottom:10},
+  avt:{color:'#fff',fontSize:22,fontWeight:'700'},
+  addr:{color:'rgba(255,255,255,0.7)',fontSize:13,marginBottom:18},
+  bl:{color:'rgba(255,255,255,0.65)',fontSize:13,marginBottom:5},
+  bal:{color:'#fff',fontSize:44,fontWeight:'700',letterSpacing:-1},
+  bs:{color:'rgba(255,255,255,0.45)',fontSize:12,marginTop:4},
+  acts:{flexDirection:'row',justifyContent:'space-around',paddingHorizontal:16,marginBottom:28},
+  act:{alignItems:'center',gap:8},
+  ai:{width:54,height:54,borderRadius:27,backgroundColor:'#fff',alignItems:'center',justifyContent:'center',borderWidth:1.5,shadowColor:'#64748B',shadowOffset:{width:0,height:2},shadowOpacity:0.08,shadowRadius:8,elevation:2},
+  ait:{fontSize:20,fontWeight:'600'},
+  al:{color:'#64748B',fontSize:12,fontWeight:'500'},
+  sec:{paddingHorizontal:16,marginBottom:24},
+  st:{color:'#1E1B4B',fontSize:17,fontWeight:'700',marginBottom:12},
+  empty:{backgroundColor:'#fff',borderRadius:20,padding:28,alignItems:'center',borderWidth:1,borderColor:'#E2E8F0'},
+  et:{color:'#1E1B4B',fontSize:16,fontWeight:'600',marginBottom:5},
+  es:{color:'#94A3B8',fontSize:13,textAlign:'center',marginBottom:16},
+  buy:{backgroundColor:'#EEF2FF',paddingVertical:11,paddingHorizontal:24,borderRadius:12},
+  buyt:{color:'#6366F1',fontSize:14,fontWeight:'600'},
+})
