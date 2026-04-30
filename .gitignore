@@ -52,7 +52,6 @@ debug.log
 .env.local
 .env
 
-clerk-nextjs/
 app.zip
 fix-*.js
 fix_*.py
@@ -71,3 +70,5 @@ update-*.js
 bom-strip-transformer.js
 *.tsssx
 *.txt
+
+clerk-nextjs/node_modules
