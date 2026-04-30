@@ -1,4 +1,1 @@
-{
-  "buildCommand": "npx expo export -p web",
-  "outputDirectory": "dist"
-}
+{"buildCommand":"npx expo export -p web","outputDirectory":"dist","installCommand":"npm install --legacy-peer-deps"}
