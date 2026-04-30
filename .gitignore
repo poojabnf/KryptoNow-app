@@ -72,3 +72,7 @@ bom-strip-transformer.js
 *.txt
 
 clerk-nextjs/node_modules
+
+.env.local
+.env
+*.env
