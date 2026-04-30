@@ -1,4 +1,7 @@
 {
   "buildCommand": "npx expo export -p web",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "engines": {
+    "node": "20.x"
+  }
 }
