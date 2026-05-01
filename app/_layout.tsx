@@ -7,17 +7,30 @@ import { AuthProvider } from '../context/AuthContext';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
-const tokenCache = {
-  async getToken(key: string) {
-    try { return await SecureStore.getItemAsync(key); } catch { return null; }
-  },
-  async setToken(key: string, value: string) {
-    try { await SecureStore.setItemAsync(key, value); } catch {}
-  },
-  async deleteToken(key: string) {
-    try { await SecureStore.deleteItemAsync(key); } catch {}
-  },
-};
+import { Platform } from 'react-native';
+const tokenCache = Platform.OS === 'web'
+  ? {
+      async getToken(key: string) {
+        try { return localStorage.getItem(key); } catch { return null; }
+      },
+      async setToken(key: string, value: string) {
+        try { localStorage.setItem(key, value); } catch {}
+      },
+      async deleteToken(key: string) {
+        try { localStorage.removeItem(key); } catch {}
+      },
+    }
+  : {
+      async getToken(key: string) {
+        try { return await SecureStore.getItemAsync(key); } catch { return null; }
+      },
+      async setToken(key: string, value: string) {
+        try { await SecureStore.setItemAsync(key, value); } catch {}
+      },
+      async deleteToken(key: string) {
+        try { await SecureStore.deleteItemAsync(key); } catch {}
+      },
+    };
 
 function RootLayoutNav() {
   const { isLoaded } = useAuth();
