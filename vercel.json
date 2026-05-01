@@ -1,12 +1,6 @@
-{
-    "buildCommand":  "npx expo export -p web",
-    "outputDirectory":  "dist",
-    "installCommand":  "npm install --legacy-peer-deps",
-    "rewrites":  [
-                     {
-                         "source":  "/:path*",
-                         "destination":  "/"
-                     }
-                 ],
-    "_buildTime":  "2026-05-02 01:22:34"
+﻿{
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --legacy-peer-deps",
+  "rewrites": [{"source":"/:path*","destination":"/"}]
 }
