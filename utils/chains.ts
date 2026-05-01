@@ -1,4 +1,6 @@
-import { ethers } from 'ethers'
+﻿import { ethers } from 'ethers'
+
+const ALCHEMY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 't7T7fcsMA4rqQYH70YRV3'
 
 export type Chain = {
   id:          number
@@ -13,12 +15,12 @@ export type Chain = {
 }
 
 export const CHAINS: Chain[] = [
-  { id: 1,     name: 'Ethereum',  symbol: 'ETH',  nativeName: 'Ether',          icon: 'Ξ',  color: '#627EEA', rpc: 'https://rpc.ankr.com/eth',            explorer: 'https://etherscan.io',             coingeckoId: 'ethereum'     },
-  { id: 137,   name: 'Polygon',   symbol: 'MATIC', nativeName: 'Matic',          icon: '⬡',  color: '#8247E5', rpc: 'https://rpc.ankr.com/polygon',              explorer: 'https://polygonscan.com',          coingeckoId: 'matic-network'},
-  { id: 56,    name: 'BNB Chain', symbol: 'BNB',  nativeName: 'BNB',            icon: '◈',  color: '#F0B90B', rpc: 'https://rpc.ankr.com/bsc',      explorer: 'https://bscscan.com',              coingeckoId: 'binancecoin'  },
-  { id: 42161, name: 'Arbitrum',  symbol: 'ETH',  nativeName: 'Ether',          icon: '🔵', color: '#2D374B', rpc: 'https://rpc.ankr.com/arbitrum',          explorer: 'https://arbiscan.io',              coingeckoId: 'ethereum'     },
-  { id: 10,    name: 'Optimism',  symbol: 'ETH',  nativeName: 'Ether',          icon: '🔴', color: '#FF0420', rpc: 'https://rpc.ankr.com/optimism',           explorer: 'https://optimistic.etherscan.io',  coingeckoId: 'ethereum'     },
-  { id: 8453,  name: 'Base',      symbol: 'ETH',  nativeName: 'Ether',          icon: '🔷', color: '#0052FF', rpc: 'https://rpc.ankr.com/base',              explorer: 'https://basescan.org',             coingeckoId: 'ethereum'     },
+  { id: 1,     name: 'Ethereum',  symbol: 'ETH',   nativeName: 'Ether', icon: 'E',  color: '#627EEA', rpc: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY}`,     explorer: 'https://etherscan.io',            coingeckoId: 'ethereum'      },
+  { id: 137,   name: 'Polygon',   symbol: 'MATIC', nativeName: 'Matic', icon: 'P',  color: '#8247E5', rpc: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY}`, explorer: 'https://polygonscan.com',         coingeckoId: 'matic-network' },
+  { id: 56,    name: 'BNB Chain', symbol: 'BNB',   nativeName: 'BNB',   icon: 'B',  color: '#F0B90B', rpc: 'https://bsc-dataseed1.binance.org/',                   explorer: 'https://bscscan.com',             coingeckoId: 'binancecoin'   },
+  { id: 42161, name: 'Arbitrum',  symbol: 'ETH',   nativeName: 'Ether', icon: 'A',  color: '#2D374B', rpc: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY}`,     explorer: 'https://arbiscan.io',             coingeckoId: 'ethereum'      },
+  { id: 10,    name: 'Optimism',  symbol: 'ETH',   nativeName: 'Ether', icon: 'O',  color: '#FF0420', rpc: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY}`,     explorer: 'https://optimistic.etherscan.io', coingeckoId: 'ethereum'      },
+  { id: 8453,  name: 'Base',      symbol: 'ETH',   nativeName: 'Ether', icon: 'Ba', color: '#0052FF', rpc: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY}`,    explorer: 'https://basescan.org',            coingeckoId: 'ethereum'      },
 ]
 
 export function getProvider(chain: Chain): ethers.JsonRpcProvider {
@@ -27,4 +29,8 @@ export function getProvider(chain: Chain): ethers.JsonRpcProvider {
 
 export function getChainById(id: number): Chain {
   return CHAINS.find(c => c.id === id) ?? CHAINS[0]
+}
+
+export function getTxUrl(chain: Chain, hash: string): string {
+  return `${chain.explorer}/tx/${hash}`
 }
