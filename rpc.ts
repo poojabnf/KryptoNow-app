@@ -15,3 +15,5 @@ export const CHAIN_CONFIG = [
   { id: 'optimism', name: 'Optimism', symbol: 'ETH',  rpc: RPC.optimism, decimals: 18 },
   { id: 'bnb',      name: 'BNB Chain',symbol: 'BNB',  rpc: RPC.bnb,      decimals: 18 },
 ];
+
+// updated: 2026-05-01 16:03:01
