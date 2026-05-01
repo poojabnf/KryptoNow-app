@@ -21,6 +21,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, ms = 5000): P
 }
 
 async function fetchNativeBalance(rpc: string, address: string): Promise<string> {
+  console.log("[Balance] Fetching from RPC:", rpc.substring(0, 50));
   const res = await fetchWithTimeout(rpc, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -31,6 +32,7 @@ async function fetchNativeBalance(rpc: string, address: string): Promise<string>
     }),
   });
   const data = await res.json();
+  console.log("[Balance] RPC response:", JSON.stringify(data).substring(0, 100));
   if (!data.result) return '0.000000';
   const wei = parseInt(data.result, 16);
   return (wei / 1e18).toFixed(6);
