@@ -1,4 +1,4 @@
-export const ALCHEMY_KEY = 'Gw7PHs6VFH8gDXU4joBdN';
+export const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 'Gw7PHs6VFH8gDXU4joBdN';
 
 export const RPC = {
   ethereum: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
