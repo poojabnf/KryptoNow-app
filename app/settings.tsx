@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Switch, Alert, Platform,
@@ -176,23 +176,23 @@ export default function Settings() {
     },
   ]
 
-  // Render icon as colored text symbol — no emoji, no encoding issues
+  // Render icon as colored text symbol â€” no emoji, no encoding issues
   function renderIcon(icon: string, color: string, danger?: string) {
     const MAP: Record<string, string> = {
-      clipboard: '⊞',
-      key:       '⚿',
-      seed:      '⬡',
-      network:   '◉',
-      eye:       '◎',
-      lock:      '⊘',
-      bell:      '◈',
-      flask:     '⬢',
-      history:   '◷',
-      contacts:  '⊕',
-      info:      'ℹ',
-      shield:    '⊛',
-      chain:     '⊗',
-      trash:     '⊠',
+      clipboard: 'âŠž',
+      key:       'âš¿',
+      seed:      'â¬¡',
+      network:   'â—‰',
+      eye:       'â—Ž',
+      lock:      'âŠ˜',
+      bell:      'â—ˆ',
+      flask:     'â¬¢',
+      history:   'â—·',
+      contacts:  'âŠ•',
+      info:      'â„¹',
+      shield:    'âŠ›',
+      chain:     'âŠ—',
+      trash:     'âŠ ',
     }
     return (
       <View style={[
@@ -200,7 +200,7 @@ export default function Settings() {
         { backgroundColor: danger ? '#FEF2F2' : color + '18' }
       ]}>
         <Text style={[styles.iconT, { color: danger ?? color }]}>
-          {MAP[icon] ?? '•'}
+          {MAP[icon] ?? 'â€¢'}
         </Text>
       </View>
     )
@@ -307,7 +307,7 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   c:            { flex: 1, backgroundColor: '#F8FAFF' },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
   back:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
   backT:        { fontSize: 18, color: '#6366F1', fontWeight: '700' },
   title:        { color: '#1E1B4B', fontSize: 18, fontWeight: '700' },
@@ -331,4 +331,5 @@ const styles = StyleSheet.create({
   chevron:      { color: '#CBD5E1', fontSize: 18, fontWeight: '700' },
   infoVal:      { color: '#94A3B8', fontSize: 13 },
 })
+
 

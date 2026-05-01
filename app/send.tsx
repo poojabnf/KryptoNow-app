@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Linking,
@@ -14,7 +14,7 @@ const ERC20_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
 ]
 
-// ERC-20 tokens per chain — extend as needed
+// ERC-20 tokens per chain â€” extend as needed
 const CHAIN_TOKENS: Record<number, { symbol: string; name: string; decimals: number; contract: string; color: string }[]> = {
   1: [ // Ethereum
     { symbol:'USDC', name:'USD Coin',  decimals:6,  contract:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', color:'#2775CA' },
@@ -160,15 +160,15 @@ export default function Send() {
     }
   }
 
-  //  Success 
+  // Â”Â€Â”Â€ Success Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
   if (step === 'success') return (
     <View style={s.c}>
       <View style={s.successWrap}>
-        <View style={s.tick}><Text style={{ fontSize:40 }}>✓</Text></View>
+        <View style={s.tick}><Text style={{ fontSize:40 }}>âœ“</Text></View>
         <Text style={s.successTitle}>Sent!</Text>
         <Text style={s.successSub}>
           {amount} {selectedToken.symbol} on {activeChain.name}{'\n'}
-          to {toAddress.slice(0,8)}…{toAddress.slice(-6)}
+          to {toAddress.slice(0,8)}â€¦{toAddress.slice(-6)}
         </Text>
         <View style={s.hashBox}>
           <Text style={s.hashLabel}>Transaction Hash</Text>
@@ -177,7 +177,7 @@ export default function Send() {
         <TouchableOpacity style={s.explorerBtn}
           onPress={() => Linking.openURL(getTxUrl(activeChain.id, txHash))}>
           <Text style={[s.explorerBtnT, { color: activeChain.color }]}>
-            View on {activeChain.name === 'Ethereum' ? 'Etherscan' : activeChain.name + 'scan'} ↗
+            View on {activeChain.name === 'Ethereum' ? 'Etherscan' : activeChain.name + 'scan'} â†—
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.doneBtn, { backgroundColor: activeChain.color }]}
@@ -188,11 +188,11 @@ export default function Send() {
     </View>
   )
 
-  //  Confirm 
+  // Â”Â€Â”Â€ Confirm Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
   if (step === 'confirm') return (
     <View style={s.c}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => setStep('form')}><Text style={s.backT}>←</Text></TouchableOpacity>
+        <TouchableOpacity style={s.back} onPress={() => setStep('form')}><Text style={s.backT}>â†</Text></TouchableOpacity>
         <Text style={s.hdrTitle}>Confirm Send</Text>
         <View style={{ width:38 }} />
       </View>
@@ -204,12 +204,12 @@ export default function Send() {
         <View style={s.detailCard}>
           {[
             { l:'Network',     v: activeChain.name },
-            { l:'From',        v: addr ? addr.slice(0,8)+'…'+addr.slice(-6) : '—' },
-            { l:'To',          v: toAddress.slice(0,8)+'…'+toAddress.slice(-6) },
+            { l:'From',        v: addr ? addr.slice(0,8)+'â€¦'+addr.slice(-6) : 'â€”' },
+            { l:'To',          v: toAddress.slice(0,8)+'â€¦'+toAddress.slice(-6) },
             { l:'Token',       v: `${selectedToken.name} (${selectedToken.symbol})` },
             { l:'Gas limit',   v: `${gasLimit.toLocaleString()} units` },
-            { l:'Gas price',   v: gasPrice ? `${gasPrice} Gwei` : '…' },
-            { l:'Est. fee',    v: gasCostUSD ? `~$${gasCostUSD} (${gasCostETH} ${activeChain.symbol})` : '…' },
+            { l:'Gas price',   v: gasPrice ? `${gasPrice} Gwei` : 'â€¦' },
+            { l:'Est. fee',    v: gasCostUSD ? `~$${gasCostUSD} (${gasCostETH} ${activeChain.symbol})` : 'â€¦' },
           ].map(row => (
             <View key={row.l} style={s.detailRow}>
               <Text style={s.detailL}>{row.l}</Text>
@@ -217,27 +217,27 @@ export default function Send() {
             </View>
           ))}
         </View>
-        <View style={s.bioHint}><Text style={s.bioHintT}>🔐  Face ID / fingerprint required to sign.</Text></View>
-        <View style={s.warnBox}><Text style={s.warnT}>⚠  Transactions are irreversible. Verify the address.</Text></View>
+        <View style={s.bioHint}><Text style={s.bioHintT}>ðŸ”  Face ID / fingerprint required to sign.</Text></View>
+        <View style={s.warnBox}><Text style={s.warnT}>âš   Transactions are irreversible. Verify the address.</Text></View>
       </ScrollView>
       <View style={s.bot}>
         <TouchableOpacity style={[s.sendBtn, { backgroundColor: activeChain.color }, sending && { opacity:0.7 }]}
           onPress={handleSend} disabled={sending}>
           {sending
             ? <ActivityIndicator color="#fff" />
-            : <Text style={s.sendBtnT}>Confirm & Sign →</Text>
+            : <Text style={s.sendBtnT}>Confirm & Sign â†’</Text>
           }
         </TouchableOpacity>
       </View>
     </View>
   )
 
-  //  Form 
+  // Â”Â€Â”Â€ Form Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
   return (
     <KeyboardAvoidingView style={s.c} behavior={Platform.OS==='ios'?'padding':undefined}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}><Text style={s.backT}>←</Text></TouchableOpacity>
-        <Text style={s.hdrTitle}>Send · {activeChain.name}</Text>
+        <TouchableOpacity style={s.back} onPress={() => router.back()}><Text style={s.backT}>â†</Text></TouchableOpacity>
+        <Text style={s.hdrTitle}>Send Â· {activeChain.name}</Text>
         <View style={{ width:38 }} />
       </View>
       <ScrollView style={s.scroll} keyboardShouldPersistTaps="handled">
@@ -251,7 +251,7 @@ export default function Send() {
             <Text style={s.tokenSymbol}>{selectedToken.symbol}</Text>
             <Text style={s.tokenName}>{selectedToken.name}</Text>
           </View>
-          <Text style={s.chevron}>{showPicker ? '▲' : '▼'}</Text>
+          <Text style={s.chevron}>{showPicker ? 'â–²' : 'â–¼'}</Text>
         </TouchableOpacity>
         {showPicker && (
           <View style={s.picker}>
@@ -265,7 +265,7 @@ export default function Send() {
                   <Text style={s.tokenSymbol}>{t.symbol}</Text>
                   <Text style={s.tokenName}>{t.name}</Text>
                 </View>
-                {t.symbol===selectedToken.symbol && <Text style={{ color: activeChain.color }}>✓</Text>}
+                {t.symbol===selectedToken.symbol && <Text style={{ color: activeChain.color }}>âœ“</Text>}
               </TouchableOpacity>
             ))}
           </View>
@@ -275,7 +275,7 @@ export default function Send() {
         <View style={[s.inputWrap, addrValid&&toAddress.length>0&&s.inputValid, !addrValid&&toAddress.length>10&&s.inputError]}>
           <TextInput style={s.input} value={toAddress} onChangeText={setToAddress}
             placeholder="0x..." placeholderTextColor="#CBD5E1" autoCapitalize="none" autoCorrect={false} />
-          {toAddress.length>0 && <Text style={{ fontSize:16, paddingRight:14 }}>{addrValid?'✅':'❌'}</Text>}
+          {toAddress.length>0 && <Text style={{ fontSize:16, paddingRight:14 }}>{addrValid?'âœ…':'âŒ'}</Text>}
         </View>
         {!addrValid && toAddress.length>10 && <Text style={s.fieldError}>Invalid address</Text>}
 
@@ -288,10 +288,10 @@ export default function Send() {
 
         <View style={s.gasCard}>
           <View style={{ flex:1 }}>
-            <Text style={s.gasTitle}>⛽ Estimated Gas Fee</Text>
+            <Text style={s.gasTitle}>â›½ Estimated Gas Fee</Text>
             {gasLoading
               ? <ActivityIndicator size="small" color={activeChain.color} style={{ alignSelf:'flex-start', marginTop:4 }} />
-              : <Text style={s.gasVal}>{gasCostETH||'—'} {activeChain.symbol}{gasCostUSD ? `  (~$${gasCostUSD})` : ''}</Text>
+              : <Text style={s.gasVal}>{gasCostETH||'â€”'} {activeChain.symbol}{gasCostUSD ? `  (~$${gasCostUSD})` : ''}</Text>
             }
           </View>
           <TouchableOpacity onPress={() => { fetchGas(); estimateGas() }}>
@@ -305,7 +305,7 @@ export default function Send() {
         <TouchableOpacity
           style={[s.sendBtn, { backgroundColor: activeChain.color }, !canProceed && s.sendBtnDisabled]}
           disabled={!canProceed} onPress={() => setStep('confirm')}>
-          <Text style={s.sendBtnT}>Review Transaction →</Text>
+          <Text style={s.sendBtnT}>Review Transaction â†’</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -366,5 +366,6 @@ const s = StyleSheet.create({
   doneBtn:        { paddingVertical:16, paddingHorizontal:48, borderRadius:16 },
   doneBtnT:       { color:'#fff', fontSize:16, fontWeight:'600' },
 })
+
 
 

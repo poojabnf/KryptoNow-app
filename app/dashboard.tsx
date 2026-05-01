@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+﻿import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Modal, Animated,
@@ -9,6 +9,7 @@ import { useWalletStore } from '../store/walletStore'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
 import { CHAINS, Chain, getProvider } from '../utils/chains'
 import { fetchChainTokenBalances } from '../utils/tokens'
+import { IS_WEB, HEADER_TOP, webContainer, webInner, WEB_MAX_WIDTH } from '../utils/webLayout'
 
 type TokenRow = {
   symbol: string; name: string
@@ -17,11 +18,11 @@ type TokenRow = {
 }
 
 const TX_META: Record<TxType, { icon: string; color: string; bg: string }> = {
-  send:          { icon: '↑', color: '#EF4444', bg: '#FEF2F2' },
-  receive:       { icon: '↓', color: '#10B981', bg: '#D1FAE5' },
-  token_send:          { icon: '↑', color: '#F59E0B', bg: '#FEF3C7' },
-  token_receive:       { icon: '↓', color: '#06B6D4', bg: '#CFFAFE' },
-  contract:      { icon: '⚙', color: '#8B5CF6', bg: '#EDE9FE' },
+  send:          { icon: 'â†‘', color: '#EF4444', bg: '#FEF2F2' },
+  receive:       { icon: 'â†“', color: '#10B981', bg: '#D1FAE5' },
+  token_send:          { icon: 'â†‘', color: '#F59E0B', bg: '#FEF3C7' },
+  token_receive:       { icon: 'â†“', color: '#06B6D4', bg: '#CFFAFE' },
+  contract:      { icon: 'âš™', color: '#8B5CF6', bg: '#EDE9FE' },
 }
 
 const NATIVE_CG: Record<number, string> = {
@@ -98,9 +99,9 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    i: '↑', c: '#6366F1', route: '/send'    },
-  { l: 'Receive', i: '↓', c: '#8B5CF6', route: '/receive' },
-  { l: 'Swap',    i: '⇄', c: '#06B6D4', route: '/swap'    },
+  { l: 'Send',    i: 'â†‘', c: '#6366F1', route: '/send'    },
+  { l: 'Receive', i: 'â†“', c: '#8B5CF6', route: '/receive' },
+  { l: 'Swap',    i: 'â‡„', c: '#06B6D4', route: '/swap'    },
   { l: 'Buy',     i: '+', c: '#10B981', route: '/buy'     },
 ]
 
@@ -143,12 +144,12 @@ export default function Dashboard() {
 
     setError(false)
     try {
-      //  1. Native balance (7s timeout — prevents infinite spinner)
+      //  1. Native balance (7s timeout â€” prevents infinite spinner)
       const provider = getProvider(activeChain)
       const weiBalance = await Promise.race([
         provider.getBalance(addr),
         new Promise<never>((_, r) =>
-          setTimeout(() => r(new Error('RPC timeout — check connection')), 7000)
+          setTimeout(() => r(new Error('RPC timeout â€” check connection')), 7000)
         ),
       ])
       const nativeBal  = parseFloat(ethers.formatEther(weiBalance))
@@ -239,7 +240,8 @@ export default function Dashboard() {
   const onRefresh = () => { setRefreshing(true); fetchBalances(true); refreshTxns() }
 
   return (
-    <View style={s.c}>
+    <View style={webContainer}>
+      <View style={[webInner, { backgroundColor: '#F8FAFF' }]}>
       <View style={s.top}>
         <TouchableOpacity style={s.net} onPress={() => setChainModal(true)} activeOpacity={0.7}>
           <View style={[s.nd, { backgroundColor: activeChain.color }]} />
@@ -248,10 +250,10 @@ export default function Dashboard() {
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={s.cog} onPress={() => setFundSheet(true)}>
-            <Text style={{ fontSize: 18 }}>👛</Text>
+            <Text style={{ fontSize: 18 }}>ðŸ‘›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.cog} onPress={() => router.push('/settings' as any)}>
-            <Text style={{ fontSize: 18, color: '#64748B' }}>⚙️</Text>
+            <Text style={{ fontSize: 18, color: '#64748B' }}>âš™ï¸</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -276,12 +278,12 @@ export default function Dashboard() {
                 {parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}
               </Text>
               <Text style={[s.chg, { color: tokens[0].change24h >= 0 ? '#86EFAC' : '#FCA5A5' }]}>
-                {tokens[0].change24h >= 0 ? '▲' : '▼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
+                {tokens[0].change24h >= 0 ? 'â–²' : 'â–¼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
               </Text>
             </View>
           )}
           <View style={[s.chainBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-            <Text style={s.chainBadgeT}>{activeChain.name}  · Encrypted</Text>
+            <Text style={s.chainBadgeT}>{activeChain.name}  Â· Encrypted</Text>
           </View>
         </View>
 
@@ -328,7 +330,7 @@ export default function Dashboard() {
                   <View style={s.rowRight}>
                     <Text style={s.rv}>{fmt(t.valueUSD)}</Text>
                     <Text style={[s.rc, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
-                      {t.change24h === 0 ? '—' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
+                      {t.change24h === 0 ? 'â€”' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
                     </Text>
                   </View>
                 </View>
@@ -349,14 +351,14 @@ export default function Dashboard() {
           <View style={s.secHdr}>
             <Text style={s.st}>Recent Activity</Text>
             <TouchableOpacity onPress={() => router.push('/history' as any)}>
-              <Text style={[s.viewAll, { color: activeChain.color }]}>View all →</Text>
+              <Text style={[s.viewAll, { color: activeChain.color }]}>View all â†’</Text>
             </TouchableOpacity>
           </View>
           {txLoading ? (
             <ActivityIndicator color={activeChain.color} />
           ) : recentTxns.length === 0 ? (
             <View style={[s.txEmpty,{alignItems:'center',paddingVertical:24}]}>
-              <Text style={{fontSize:28,marginBottom:6}}>📭</Text><Text style={s.txEmptyT}>No transactions yet</Text><Text style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Send or receive to see activity</Text>
+              <Text style={{fontSize:28,marginBottom:6}}>ðŸ“­</Text><Text style={s.txEmptyT}>No transactions yet</Text><Text style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Send or receive to see activity</Text>
             </View>
           ) : (
             <>
@@ -386,7 +388,7 @@ export default function Dashboard() {
                 )
               })}
               <TouchableOpacity style={s.viewAllBtn} onPress={() => router.push('/history' as any)}>
-                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History →</Text>
+                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History â†’</Text>
               </TouchableOpacity>
             </>
           )}
@@ -409,7 +411,7 @@ export default function Dashboard() {
                 {loading ? '...' : fmt(totalUSD)}
               </Text>
               <Text style={m.balCardSub}>
-                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '—'}
+                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : 'â€”'}
               </Text>
             </View>
             <View style={m.balCardRight}>
@@ -427,13 +429,13 @@ export default function Dashboard() {
             onPress={() => { setFundSheet(false); router.push('/buy' as any) }}
           >
             <View style={[m.fundIconWrap, { backgroundColor: '#EEF2FF' }]}>
-              <Text style={{ fontSize: 28 }}>💳</Text>
+              <Text style={{ fontSize: 28 }}>ðŸ’³</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={m.fundCardTitle}>Buy Crypto</Text>
               <Text style={m.fundCardDesc}>Purchase with card via MoonPay, Transak, Ramp & more</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -442,13 +444,13 @@ export default function Dashboard() {
             onPress={() => { setFundSheet(false); router.push('/earn' as any) }}
           >
             <View style={[m.fundIconWrap, { backgroundColor: '#ECFDF5' }]}>
-              <Text style={{ fontSize: 28 }}>📈</Text>
+              <Text style={{ fontSize: 28 }}>ðŸ“ˆ</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={m.fundCardTitle}>Earn Yield</Text>
-              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi — up to 5.9% APY</Text>
+              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi â€” up to 5.9% APY</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -457,17 +459,18 @@ export default function Dashboard() {
             onPress={() => { setFundSheet(false); router.push('/receive' as any) }}
           >
             <View style={[m.fundIconWrap, { backgroundColor: '#FFF7ED' }]}>
-              <Text style={{ fontSize: 28 }}>📥</Text>
+              <Text style={{ fontSize: 28 }}>ðŸ“¥</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={m.fundCardTitle}>Receive Crypto</Text>
               <Text style={m.fundCardDesc}>Deposit from another wallet or exchange</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
+      </View>
       <ChainModal
         visible={chainModal} current={activeChain}
         onSelect={setActiveChain} onClose={() => setChainModal(false)}
@@ -478,7 +481,7 @@ export default function Dashboard() {
 
 const s = StyleSheet.create({
   c:           { flex:1, backgroundColor:'#F8FAFF' },
-  top:         { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:20, paddingTop:60, paddingBottom:12 },
+  top:         { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:20, paddingTop: IS_WEB ? 20 : 60, paddingBottom:12 },
   net:         { flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#fff', paddingVertical:7, paddingHorizontal:13, borderRadius:20, borderWidth:1, borderColor:'#E2E8F0' },
   nd:          { width:7, height:7, borderRadius:4 },
   nt:          { fontSize:13, fontWeight:'600', color:'#1E1B4B' },
@@ -561,6 +564,8 @@ const m = StyleSheet.create({
   fundCardTitle: { color:'#1E1B4B', fontSize:15, fontWeight:'700', marginBottom:3 },
   fundCardDesc:  { color:'#64748B', fontSize:12, lineHeight:17 },
 })
+
+
 
 
 

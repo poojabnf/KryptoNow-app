@@ -1,1 +1,34 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" /><title>KryptoNow</title><style>html,body,#root{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#0D2E2E}</style></head><body><div id="root"></div><div id="clerk-captcha"></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>KryptoNow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { 
+      width: 100%; height: 100%; margin: 0; padding: 0;
+      background: #E8ECF4;
+      display: flex; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    #root {
+      width: 100%; 
+      max-width: 480px;
+      height: 100%;
+      background: #F8FAFF;
+      box-shadow: 0 0 60px rgba(0,0,0,0.15);
+      overflow: hidden;
+      position: relative;
+    }
+    @media (max-width: 480px) {
+      body { background: #F8FAFF; }
+      #root { max-width: 100%; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="clerk-captcha"></div>
+</body>
+</html>

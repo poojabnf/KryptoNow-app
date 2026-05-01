@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Image, Share, Alert, Platform } from 'react-native'
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
@@ -16,7 +16,7 @@ export default function Receive() {
   const [selectedNet, setSelectedNet]     = useState(NETWORKS[0])
   const [copied, setCopied]               = useState(false)
 
-  // QR code via free API — works great for static addresses
+  // QR code via free API â€” works great for static addresses
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodeURIComponent(addr ?? '')}`
 
   async function copyAddress() {
@@ -45,7 +45,7 @@ export default function Receive() {
       {/* Header */}
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>←</Text>
+          <Text style={s.backT}>â†</Text>
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Receive</Text>
         <View style={{ width: 38 }} />
@@ -98,7 +98,7 @@ export default function Receive() {
           </View>
 
           <Text style={s.addrLabel}>Your {selectedNet.symbol} Address</Text>
-          <Text style={s.addr} selectable>{addr ?? '—'}</Text>
+          <Text style={s.addr} selectable>{addr ?? 'â€”'}</Text>
 
           <TouchableOpacity
             style={[s.copyBtn, copied && s.copyBtnDone]}
@@ -106,14 +106,14 @@ export default function Receive() {
             activeOpacity={0.8}
           >
             <Text style={[s.copyBtnT, copied && { color: '#10B981' }]}>
-              {copied ? '✓  Copied!' : '⎘  Copy Address'}
+              {copied ? 'âœ“  Copied!' : 'âŽ˜  Copy Address'}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* Share button */}
         <TouchableOpacity style={s.shareBtn} onPress={shareAddress}>
-          <Text style={s.shareBtnT}>↗  Share Address</Text>
+          <Text style={s.shareBtnT}>â†—  Share Address</Text>
         </TouchableOpacity>
 
         {/* Safety note */}
@@ -124,7 +124,7 @@ export default function Receive() {
             'Share only with trusted senders',
           ].map(tip => (
             <View key={tip} style={s.tip}>
-              <Text style={s.tipDot}>•</Text>
+              <Text style={s.tipDot}>â€¢</Text>
               <Text style={s.tipT}>{tip}</Text>
             </View>
           ))}
@@ -165,5 +165,6 @@ const s = StyleSheet.create({
   tipDot:        { color:'#D97706', fontSize:14, marginTop:1 },
   tipT:          { flex:1, color:'#92400E', fontSize:12, lineHeight:18 },
 })
+
 
 
