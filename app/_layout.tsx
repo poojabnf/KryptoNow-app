@@ -34,6 +34,7 @@ const tokenCache = Platform.OS === 'web'
 
 function RootLayoutNav() {
   const { isLoaded } = useAuth();
+  console.log("[KryptoNow] isLoaded:", isLoaded, "key:", process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0,20));
   if (!isLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2E2E' }}>
