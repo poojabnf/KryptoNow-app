@@ -6,14 +6,14 @@ import {
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
 
-// Â”Â€Â”Â€Â”Â€ Data Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const TOKENS = [
-  { symbol: 'ETH',  name: 'Ethereum',  icon: 'Îž' },
-  { symbol: 'BNB',  name: 'BNB',       icon: 'â—†' },
-  { symbol: 'MATIC',name: 'Polygon',   icon: 'â¬¡' },
+  { symbol: 'ETH',  name: 'Ethereum',  icon: 'Ξ' },
+  { symbol: 'BNB',  name: 'BNB',       icon: '─' },
+  { symbol: 'MATIC',name: 'Polygon',   icon: '⬡' },
   { symbol: 'USDC', name: 'USD Coin',  icon: 'ðŸ’²' },
-  { symbol: 'USDT', name: 'Tether',    icon: 'â‚®'  },
-  { symbol: 'BTC',  name: 'Bitcoin',   icon: 'â‚¿'  },
+  { symbol: 'USDT', name: 'Tether',    icon: '₮'  },
+  { symbol: 'BTC',  name: 'Bitcoin',   icon: '₿'  },
 ]
 
 const AMOUNTS = ['50', '100', '250', '500']
@@ -29,21 +29,21 @@ const PROVIDERS = [
     fees: '~3.5%',
     minAmount: 20,
     methods: ['Visa', 'Mastercard', 'Apple Pay'],
-    rating: '4.8Â˜Â…',
+    rating: '4.8★',
     buildUrl: (addr: string, token: string, amount: string) =>
       `https://buy.moonpay.com/?walletAddress=${addr}&currencyCode=${token.toLowerCase()}&baseCurrencyAmount=${amount}&baseCurrencyCode=usd`,
   },
   {
     id: 'transak',
     name: 'Transak',
-    icon: 'âš¡',
+    icon: '⚡',
     color: '#0066FF',
     bg: '#EFF6FF',
     description: '169+ countries supported',
-    fees: '~1Â€Â“3%',
+    fees: '~1–3%',
     minAmount: 10,
     methods: ['Card', 'Bank Transfer', 'Google Pay'],
-    rating: '4.6Â˜Â…',
+    rating: '4.6★',
     buildUrl: (addr: string, token: string, amount: string) =>
       `https://global.transak.com/?walletAddress=${addr}&cryptoCurrencyCode=${token}&fiatAmount=${amount}&fiatCurrency=USD`,
   },
@@ -54,10 +54,10 @@ const PROVIDERS = [
     color: '#00C1B4',
     bg: '#ECFDF5',
     description: 'Best rates, low fees',
-    fees: '~0.9Â€Â“2.9%',
+    fees: '~0.9–2.9%',
     minAmount: 5,
     methods: ['Open Banking', 'Card', 'PayPal'],
-    rating: '4.7Â˜Â…',
+    rating: '4.7★',
     buildUrl: (addr: string, token: string, amount: string) =>
       `https://app.ramp.network/?userAddress=${addr}&swapAsset=${token}&fiatValue=${amount}&fiatCurrency=USD`,
   },
@@ -68,16 +68,16 @@ const PROVIDERS = [
     color: '#2563EB',
     bg: '#EFF6FF',
     description: 'Instant approval, no rejection',
-    fees: '~3.5Â€Â“5%',
+    fees: '~3.5–5%',
     minAmount: 50,
     methods: ['Visa', 'Mastercard'],
-    rating: '4.4Â˜Â…',
+    rating: '4.4★',
     buildUrl: (addr: string, token: string, amount: string) =>
       `https://simplex.com/account/sell?crypto_currency=${token}&fiat_currency=USD&fiat_amount=${amount}&wallet_address=${addr}`,
   },
 ]
 
-// Â”Â€Â”Â€Â”Â€ Screen Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function BuyScreen() {
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
@@ -105,7 +105,7 @@ export default function BuyScreen() {
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.back} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={s.backT}>â†</Text>
+          <Text style={s.backT}>←</Text>
         </TouchableOpacity>
         <Text style={s.title}>Buy Crypto</Text>
         <View style={{ width: 38 }} />
@@ -144,7 +144,7 @@ export default function BuyScreen() {
               <Text style={s.tokenName}>{token.name}</Text>
               <Text style={s.tokenSymbol}>{token.symbol}</Text>
             </View>
-            <Text style={{ color: '#94A3B8', fontSize: 16 }}>{showTokens ? 'â–²' : 'â–¼'}</Text>
+            <Text style={{ color: '#94A3B8', fontSize: 16 }}>{showTokens ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {showTokens && (
             <View style={s.tokenDropdown}>
@@ -160,7 +160,7 @@ export default function BuyScreen() {
                     {t.name}
                   </Text>
                   <Text style={s.tokenItemSym}>{t.symbol}</Text>
-                  {selToken === t.symbol && <Text style={{ color: activeChain.color }}>âœ“</Text>}
+                  {selToken === t.symbol && <Text style={{ color: activeChain.color }}>✓</Text>}
                 </TouchableOpacity>
               ))}
             </View>
@@ -212,7 +212,7 @@ export default function BuyScreen() {
               {selProvider === p.id && (
                 <View style={[s.selectedBanner, { backgroundColor: p.color + '15', borderColor: p.color + '33' }]}>
                   <Text style={[s.selectedBannerT, { color: p.color }]}>
-                    âœ“ Selected Â· Buying ${amount} of {selToken} via {p.name}
+                    ✓ Selected · Buying ${amount} of {selToken} via {p.name}
                   </Text>
                 </View>
               )}
@@ -229,7 +229,7 @@ export default function BuyScreen() {
         >
           <Text style={s.buyBtnT}>
             {selProvider
-              ? `Buy $${amount} of ${selToken} â†’`
+              ? `Buy $${amount} of ${selToken} →`
               : 'Select a provider to continue'}
           </Text>
         </TouchableOpacity>
@@ -238,7 +238,7 @@ export default function BuyScreen() {
   )
 }
 
-// Â”Â€Â”Â€Â”Â€ Styles Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€Â”Â€
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   safe:         { flex: 1, backgroundColor: '#F8FAFF' },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },

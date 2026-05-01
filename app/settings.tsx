@@ -176,12 +176,12 @@ export default function Settings() {
     },
   ]
 
-  // Render icon as colored text symbol â€” no emoji, no encoding issues
+  // Render icon as colored text symbol — no emoji, no encoding issues
   function renderIcon(icon: string, color: string, danger?: string) {
     const MAP: Record<string, string> = {
       clipboard: 'âŠž',
       key:       'âš¿',
-      seed:      'â¬¡',
+      seed:      '⬡',
       network:   'â—‰',
       eye:       'â—Ž',
       lock:      'âŠ˜',
@@ -200,7 +200,7 @@ export default function Settings() {
         { backgroundColor: danger ? '#FEF2F2' : color + '18' }
       ]}>
         <Text style={[styles.iconT, { color: danger ?? color }]}>
-          {MAP[icon] ?? 'â€¢'}
+          {MAP[icon] ?? '•'}
         </Text>
       </View>
     )

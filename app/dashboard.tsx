@@ -18,11 +18,11 @@ type TokenRow = {
 }
 
 const TX_META: Record<TxType, { icon: string; color: string; bg: string }> = {
-  send:          { icon: 'â†‘', color: '#EF4444', bg: '#FEF2F2' },
-  receive:       { icon: 'â†“', color: '#10B981', bg: '#D1FAE5' },
-  token_send:          { icon: 'â†‘', color: '#F59E0B', bg: '#FEF3C7' },
-  token_receive:       { icon: 'â†“', color: '#06B6D4', bg: '#CFFAFE' },
-  contract:      { icon: 'âš™', color: '#8B5CF6', bg: '#EDE9FE' },
+  send:          { icon: '↑', color: '#EF4444', bg: '#FEF2F2' },
+  receive:       { icon: '↓', color: '#10B981', bg: '#D1FAE5' },
+  token_send:          { icon: '↑', color: '#F59E0B', bg: '#FEF3C7' },
+  token_receive:       { icon: '↓', color: '#06B6D4', bg: '#CFFAFE' },
+  contract:      { icon: '⚙', color: '#8B5CF6', bg: '#EDE9FE' },
 }
 
 const NATIVE_CG: Record<number, string> = {
@@ -99,9 +99,9 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    i: 'â†‘', c: '#6366F1', route: '/send'    },
-  { l: 'Receive', i: 'â†“', c: '#8B5CF6', route: '/receive' },
-  { l: 'Swap',    i: 'â‡„', c: '#06B6D4', route: '/swap'    },
+  { l: 'Send',    i: '↑', c: '#6366F1', route: '/send'    },
+  { l: 'Receive', i: '↓', c: '#8B5CF6', route: '/receive' },
+  { l: 'Swap',    i: '⇄', c: '#06B6D4', route: '/swap'    },
   { l: 'Buy',     i: '+', c: '#10B981', route: '/buy'     },
 ]
 
@@ -144,12 +144,12 @@ export default function Dashboard() {
 
     setError(false)
     try {
-      //  1. Native balance (7s timeout â€” prevents infinite spinner)
+      //  1. Native balance (7s timeout — prevents infinite spinner)
       const provider = getProvider(activeChain)
       const weiBalance = await Promise.race([
         provider.getBalance(addr),
         new Promise<never>((_, r) =>
-          setTimeout(() => r(new Error('RPC timeout â€” check connection')), 7000)
+          setTimeout(() => r(new Error('RPC timeout — check connection')), 7000)
         ),
       ])
       const nativeBal  = parseFloat(ethers.formatEther(weiBalance))
@@ -253,7 +253,7 @@ export default function Dashboard() {
             <Text style={{ fontSize: 18 }}>ðŸ‘›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.cog} onPress={() => router.push('/settings' as any)}>
-            <Text style={{ fontSize: 18, color: '#64748B' }}>âš™ï¸</Text>
+            <Text style={{ fontSize: 18, color: '#64748B' }}>⚙ï¸</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -278,12 +278,12 @@ export default function Dashboard() {
                 {parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}
               </Text>
               <Text style={[s.chg, { color: tokens[0].change24h >= 0 ? '#86EFAC' : '#FCA5A5' }]}>
-                {tokens[0].change24h >= 0 ? 'â–²' : 'â–¼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
+                {tokens[0].change24h >= 0 ? '▲' : '▼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
               </Text>
             </View>
           )}
           <View style={[s.chainBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-            <Text style={s.chainBadgeT}>{activeChain.name}  Â· Encrypted</Text>
+            <Text style={s.chainBadgeT}>{activeChain.name}  · Encrypted</Text>
           </View>
         </View>
 
@@ -330,7 +330,7 @@ export default function Dashboard() {
                   <View style={s.rowRight}>
                     <Text style={s.rv}>{fmt(t.valueUSD)}</Text>
                     <Text style={[s.rc, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
-                      {t.change24h === 0 ? 'â€”' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
+                      {t.change24h === 0 ? '—' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
                     </Text>
                   </View>
                 </View>
@@ -351,7 +351,7 @@ export default function Dashboard() {
           <View style={s.secHdr}>
             <Text style={s.st}>Recent Activity</Text>
             <TouchableOpacity onPress={() => router.push('/history' as any)}>
-              <Text style={[s.viewAll, { color: activeChain.color }]}>View all â†’</Text>
+              <Text style={[s.viewAll, { color: activeChain.color }]}>View all →</Text>
             </TouchableOpacity>
           </View>
           {txLoading ? (
@@ -388,7 +388,7 @@ export default function Dashboard() {
                 )
               })}
               <TouchableOpacity style={s.viewAllBtn} onPress={() => router.push('/history' as any)}>
-                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History â†’</Text>
+                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History →</Text>
               </TouchableOpacity>
             </>
           )}
@@ -411,7 +411,7 @@ export default function Dashboard() {
                 {loading ? '...' : fmt(totalUSD)}
               </Text>
               <Text style={m.balCardSub}>
-                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : 'â€”'}
+                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '—'}
               </Text>
             </View>
             <View style={m.balCardRight}>
@@ -435,7 +435,7 @@ export default function Dashboard() {
               <Text style={m.fundCardTitle}>Buy Crypto</Text>
               <Text style={m.fundCardDesc}>Purchase with card via MoonPay, Transak, Ramp & more</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -448,9 +448,9 @@ export default function Dashboard() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={m.fundCardTitle}>Earn Yield</Text>
-              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi â€” up to 5.9% APY</Text>
+              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi — up to 5.9% APY</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -465,7 +465,7 @@ export default function Dashboard() {
               <Text style={m.fundCardTitle}>Receive Crypto</Text>
               <Text style={m.fundCardDesc}>Deposit from another wallet or exchange</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>â€º</Text>
+            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
           </TouchableOpacity>
         </View>
       </Modal>
