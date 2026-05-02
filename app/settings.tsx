@@ -91,26 +91,26 @@ export default function Settings() {
     {
       title: "WALLET",
       items: [
-        { icon: "#", iconBg: "#EEF2FF", label: "Wallet Address",    sublabel: short,                              type: "action", onPress: copyAddress },
-        { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key", sublabel: "Tap to reveal (keep secret)",     type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
-        { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase", sublabel: "Verify your recovery words",      type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
-        { icon: "N", iconBg: "#F0F9FF", label: "Active Network",     sublabel: activeChain.name,                  type: "info" },
+        { icon: "#", iconBg: "#EEF2FF", label: "Wallet Address",     sublabel: short,                          type: "action", onPress: copyAddress },
+        { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
+        { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
+        { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
       ],
     },
     {
       title: "SECURITY",
       items: [
-        { icon: "H", iconBg: "#F8FAFF", label: "Hide Balance",    sublabel: "Mask amounts on dashboard",        type: "toggle", value: hideBalance,   onToggle: setHideBalance },
-        { icon: "L", iconBg: "#F8FAFF", label: "Biometric Lock",  sublabel: "Require Face ID / fingerprint",   type: "toggle", value: biometrics,    onToggle: setBiometrics },
+        { icon: "H", iconBg: "#F8FAFF", label: "Hide Balance",   sublabel: "Mask amounts on dashboard",      type: "toggle", value: hideBalance,   onToggle: setHideBalance },
+        { icon: "L", iconBg: "#F8FAFF", label: "Biometric Lock", sublabel: "Require Face ID / fingerprint",  type: "toggle", value: biometrics,    onToggle: setBiometrics },
       ],
     },
     {
       title: "APP",
       items: [
-        { icon: "B", iconBg: "#FFF7ED", label: "Push Notifications",  sublabel: "Transaction alerts",        type: "toggle", value: notifications, onToggle: setNotifications },
-        { icon: "T", iconBg: "#F8FAFF", label: "Testnet Mode",         sublabel: "Show test networks",        type: "toggle", value: testnet,        onToggle: setTestnet },
-        { icon: "H", iconBg: "#EEF2FF", label: "Transaction History",  sublabel: "View all past activity",    type: "nav",    onPress: () => router.push("/history" as any) },
-        { icon: "C", iconBg: "#ECFDF5", label: "Address Book",         sublabel: "Saved contacts",            type: "nav",    onPress: () => router.push("/addressbook" as any) },
+        { icon: "B", iconBg: "#FFF7ED", label: "Push Notifications", sublabel: "Transaction alerts",      type: "toggle", value: notifications, onToggle: setNotifications },
+        { icon: "T", iconBg: "#F8FAFF", label: "Testnet Mode",        sublabel: "Show test networks",      type: "toggle", value: testnet,        onToggle: setTestnet },
+        { icon: "H", iconBg: "#EEF2FF", label: "Transaction History", sublabel: "View all past activity",  type: "nav",    onPress: () => router.push("/history" as any) },
+        { icon: "C", iconBg: "#ECFDF5", label: "Address Book",        sublabel: "Saved contacts",          type: "nav",    onPress: () => router.push("/addressbook" as any) },
       ],
     },
     {
@@ -119,12 +119,6 @@ export default function Settings() {
         { icon: "V", iconBg: "#F8FAFF", label: "Version",    sublabel: "1.0.0",                   type: "info" },
         { icon: "E", iconBg: "#F8FAFF", label: "Encryption", sublabel: "AES-256-GCM",             type: "info" },
         { icon: "N", iconBg: "#F8FAFF", label: "Networks",   sublabel: `${CHAINS.length} chains`, type: "info" },
-      ],
-    },
-    {
-      title: "ACCOUNT",
-      items: [
-        { icon: "O", iconBg: "#FFF7ED", label: "Log Out", sublabel: "Sign out  wallet stays on device", type: "action", color: "#F59E0B", onPress: confirmLogout },
       ],
     },
     {
@@ -145,8 +139,12 @@ export default function Settings() {
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
-
+      <ScrollView
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
+        indicatorStyle="black"
+        contentContainerStyle={{ paddingBottom: 48 }}
+      >
         {/* Profile Card */}
         <View style={[st.profileCard, { backgroundColor: activeChain.color }]}>
           <View style={st.avatar}>
@@ -172,7 +170,7 @@ export default function Settings() {
                   onPress={item.type !== "toggle" && item.type !== "info" ? item.onPress : undefined}
                   activeOpacity={item.type === "info" || item.type === "toggle" ? 1 : 0.7}
                 >
-                  <View style={[st.iconWrap, { backgroundColor: item.color === "#EF4444" ? "#FEF2F2" : item.color === "#F59E0B" ? "#FFF7ED" : item.iconBg }]}>
+                  <View style={[st.iconWrap, { backgroundColor: item.color === "#EF4444" ? "#FEF2F2" : item.iconBg }]}>
                     <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
                   </View>
                   <View style={st.rowMid}>
@@ -192,7 +190,7 @@ export default function Settings() {
                   {item.type === "nav"    && <Text style={st.chevron}>{">"}</Text>}
                   {item.type === "info"   && <Text style={st.infoVal}>{item.sublabel}</Text>}
                   {item.type === "action" && item.color && (
-                    <Text style={[st.actionArrow, { color: item.color }]}>{">"}</Text>
+                    <Text style={[st.chevron, { color: item.color }]}>{">"}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -200,7 +198,7 @@ export default function Settings() {
           </View>
         ))}
 
-        {/* Logout button - prominent at bottom */}
+        {/* Single logout button at bottom */}
         <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
           <TouchableOpacity style={st.logoutBtn} onPress={confirmLogout} activeOpacity={0.85}>
             <Text style={st.logoutIcon}>O</Text>
@@ -237,7 +235,6 @@ const st = StyleSheet.create({
   rowLabel:     { color: "#1E1B4B", fontSize: 15, fontWeight: "600" },
   rowSub:       { color: "#94A3B8", fontSize: 12, marginTop: 2 },
   chevron:      { color: "#CBD5E1", fontSize: 18, fontWeight: "700" },
-  actionArrow:  { fontSize: 18, fontWeight: "700" },
   infoVal:      { color: "#94A3B8", fontSize: 13, fontWeight: "500" },
   logoutBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#FFF1F2", borderRadius: 16, paddingVertical: 16, borderWidth: 1.5, borderColor: "#FECDD3" },
   logoutIcon:   { color: "#F43F5E", fontSize: 16, fontWeight: "800" },
