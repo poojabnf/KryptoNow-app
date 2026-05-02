@@ -56,14 +56,14 @@ function fmt(n: number) {
 
 // --- Sidebar Nav Items ---
 const NAV_ITEMS = [
-  { label: "Dashboard",     icon: "H",  route: "/dashboard",     active: true  },
-  { label: "Send",          icon: "^",  route: "/send",          active: false },
-  { label: "Receive",       icon: "v",  route: "/receive",       active: false },
-  { label: "Swap",          icon: "<>", route: "/swap",          active: false },
-  { label: "Buy",           icon: "$",  route: "/buy",           active: false },
-  { label: "History",       icon: "=",  route: "/history",       active: false },
-  { label: "Notifications", icon: "B",  route: "/notifications", active: false },
-  { label: "Settings",      icon: "S",  route: "/settings",      active: false },
+  { label: "Dashboard",     icon: "grid-outline",          route: "/dashboard",     active: true  },
+  { label: "Send",          icon: "send-outline",          route: "/send",          active: false },
+  { label: "Receive",       icon: "download-outline",      route: "/receive",       active: false },
+  { label: "Swap",          icon: "swap-horizontal-outline", route: "/swap",          active: false },
+  { label: "Buy",           icon: "card-outline",          route: "/buy",           active: false },
+  { label: "History",       icon: "time-outline",          route: "/history",       active: false },
+  { label: "Notifications", icon: "notifications-outline", route: "/notifications", active: false },
+  { label: "Settings",      icon: "settings-outline",      route: "/settings",      active: false },
 ]
 
 // --- Sidebar (web only) ---
@@ -115,7 +115,7 @@ function Sidebar({
               activeOpacity={0.7}
             >
               <View style={[sb.navIcon, item.active && { backgroundColor: activeChain.color }]}>
-                <Text style={[sb.navIconT, item.active && { color: "#fff" }]}>{item.icon}</Text>
+                <Ionicons name={item.icon as any} size={18} color={item.active ? "#fff" : "#64748B"} />
               </View>
               <Text style={[sb.navLabel, item.active && { color: activeChain.color, fontWeight: "700" }]}>
                 {item.label}
