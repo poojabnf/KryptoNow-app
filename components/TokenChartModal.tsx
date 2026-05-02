@@ -1,4 +1,4 @@
-﻿import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet,
   Animated, ActivityIndicator, Dimensions,
@@ -204,4 +204,4 @@ const st = StyleSheet.create({
   statLabel:       { fontSize: 11, color: '#94A3B8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
   statValue:       { fontSize: 13, fontWeight: '700', color: '#1E1B4B' },
   statDivider:     { width: 1, marginHorizontal: 8 },
-})
+})
