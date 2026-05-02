@@ -5,6 +5,7 @@ import {
   ActivityIndicator, Linking,
 } from "react-native"
 import { router } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
@@ -141,9 +142,9 @@ async function fetchGasData(
   }
 
   const tiers: GasTier[] = [
-    buildTier("slow",     "Slow",     0.9,  1,  "~5 min",  "#64748B", "#F8FAFF", "S"),
-    buildTier("standard", "Standard", 1.0,  2,  "~1 min",  "#6366F1", "#EEF2FF", "M"),
-    buildTier("fast",     "Fast",     1.25, 5,  "~15 sec", "#10B981", "#D1FAE5", "F"),
+    buildTier("slow",     "Slow",     0.9,  1,  "~5 min",  "#64748B", "#F8FAFF", "hourglass-outline"),
+    buildTier("standard", "Standard", 1.0,  2,  "~1 min",  "#6366F1", "#EEF2FF", "flash-outline"),
+    buildTier("fast",     "Fast",     1.25, 5,  "~15 sec", "#10B981", "#D1FAE5", "rocket-outline"),
   ]
 
   return { baseFeeGwei, tiers, isEIP1559, gasLimit, lastUpdated: Date.now() }
@@ -301,7 +302,7 @@ export default function Send() {
     <View style={s.c}>
       <View style={s.successWrap}>
         <View style={s.tick}>
-          <Text style={{ fontSize:32, fontWeight:"700", color:"#10B981" }}>OK</Text>
+          <Ionicons name="checkmark" size={36} color="#10B981" />
         </View>
         <Text style={s.successTitle}>Sent!</Text>
         <Text style={s.successSub}>
@@ -315,7 +316,7 @@ export default function Send() {
         <TouchableOpacity style={s.explorerBtn}
           onPress={() => Linking.openURL(getTxUrl(activeChain, txHash))}>
           <Text style={[s.explorerBtnT, { color: activeChain.color }]}>
-            View on Explorer [->]
+            View on Explorer  
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.doneBtn, { backgroundColor: activeChain.color }]}
@@ -331,7 +332,7 @@ export default function Send() {
     <View style={s.c}>
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => setStep("form")}>
-          <Text style={s.backT}>{"<"}</Text>
+          <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Confirm Send</Text>
         <View style={{ width:38 }} />
@@ -373,7 +374,10 @@ export default function Send() {
         </View>
 
         <View style={s.bioHint}>
-          <Text style={s.bioHintT}>[!] Review carefully. Transactions cannot be reversed.</Text>
+          <View style={{ flexDirection:"row", alignItems:"center", gap:8 }}>
+            <Ionicons name="warning-outline" size={16} color="#C2410C" />
+            <Text style={[s.bioHintT, { flex:1 }]}>Review carefully. Transactions cannot be reversed.</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -396,7 +400,7 @@ export default function Send() {
     <KeyboardAvoidingView style={s.c} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>{"<"}</Text>
+          <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Send</Text>
         <View style={{ width:38 }} />
@@ -411,7 +415,10 @@ export default function Send() {
             style={s.searchTokenBtn}
             onPress={() => setShowTokenSearch(true)}
           >
-            <Text style={s.searchTokenBtnT}>[S] Search Tokens</Text>
+            <View style={{ flexDirection:"row", alignItems:"center", gap:4 }}>
+              <Ionicons name="search-outline" size={13} color="#6366F1" />
+              <Text style={s.searchTokenBtnT}>Search Tokens</Text>
+            </View>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={s.tokenBtn} onPress={() => setShowPicker(!showPicker)}>
@@ -421,7 +428,7 @@ export default function Send() {
             </Text>
           </View>
           <Text style={s.tokenBtnT}>{selectedToken.name} ({selectedToken.symbol})</Text>
-          <Text style={s.tokenChev}>{showPicker ? "[^]" : "[v]"}</Text>
+          <Ionicons name={showPicker ? "chevron-up" : "chevron-down"} size={16} color="#94A3B8" />
         </TouchableOpacity>
 
         {showPicker && (
@@ -439,7 +446,7 @@ export default function Send() {
                   <Text style={s.pickerSym}>{t.symbol}</Text>
                   <Text style={s.pickerName}>{t.name}</Text>
                 </View>
-                {selectedToken.symbol === t.symbol && <Text style={s.pickerCheck}>[*]</Text>}
+                {selectedToken.symbol === t.symbol && <Ionicons name="checkmark-circle" size={18} color="#6366F1" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -457,7 +464,7 @@ export default function Send() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {addrValid && <Text style={s.validMark}>[OK]</Text>}
+          {addrValid && <Ionicons name="checkmark-circle" size={18} color="#10B981" />}
         </View>
         {toAddress.length > 0 && !addrValid && (
           <Text style={s.errorMsg}>Invalid Ethereum address</Text>
@@ -487,7 +494,10 @@ export default function Send() {
           </View>
         ) : gasError ? (
           <View style={s.gasErrorBox}>
-            <Text style={s.gasErrorT}>[!] Could not fetch gas  using defaults</Text>
+            <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
+              <Ionicons name="warning-outline" size={14} color="#F59E0B" />
+              <Text style={s.gasErrorT}>Could not fetch gas  using defaults</Text>
+            </View>
             <TouchableOpacity onPress={() => refreshGas()}>
               <Text style={s.gasRetryT}>Retry</Text>
             </TouchableOpacity>
@@ -522,7 +532,7 @@ export default function Send() {
               >
                 {/* Left: icon + label */}
                 <View style={[s.gasTierIcon, { backgroundColor: tier.color + "20" }]}>
-                  <Text style={[s.gasTierIconT, { color: tier.color }]}>{tier.icon}</Text>
+                  <Ionicons name={tier.icon as any} size={18} color={tier.color} />
                 </View>
                 <View style={s.gasTierMid}>
                   <Text style={[s.gasTierLabel, selectedSpeed === tier.speed && { color: tier.color }]}>
@@ -544,7 +554,7 @@ export default function Send() {
                 {/* Selected checkmark */}
                 {selectedSpeed === tier.speed && (
                   <View style={[s.gasTierCheck, { backgroundColor: tier.color }]}>
-                    <Text style={s.gasTierCheckT}>[*]</Text>
+                    <Ionicons name="checkmark" size={13} color="#fff" />
                   </View>
                 )}
               </TouchableOpacity>
