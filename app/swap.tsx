@@ -60,7 +60,7 @@ function TokenPicker({
             style={pk.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Search symbol or nameâ€¦"
+            placeholder="Search symbol or name..."
             placeholderTextColor="#CBD5E1"
             autoCapitalize="none"
             autoCorrect={false}
@@ -143,7 +143,7 @@ function SlippageModal({
         </View>
         {sel > 2 && (
           <View style={sl.warn}>
-            <Text style={sl.warnT}>âš  High slippage — you may receive much less than expected.</Text>
+            <Text style={sl.warnT}>(!) High slippage - you may receive much less than expected.</Text>
           </View>
         )}
         <TouchableOpacity
@@ -316,7 +316,7 @@ export default function Swap() {
           gasPrice: BigInt(txData.gasPrice),
         })
       } else {
-        // Demo mode — simulate success
+        // Demo mode - simulate success
         await new Promise(r => setTimeout(r, 2000))
         setTxHash('0x' + Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''))
         setStep('success')
@@ -345,7 +345,7 @@ export default function Swap() {
     <View style={s.c}>
       <View style={s.successWrap}>
         <View style={s.successGlow} />
-        <View style={s.tick}><Text style={{ fontSize: 44 }}>✓</Text></View>
+        <View style={s.tick}><Text style={{ fontSize: 44 }}>OK</Text></View>
         <Text style={s.successTitle}>Swap Complete!</Text>
         <View style={s.swapSummary}>
           <View style={[s.summaryToken, { backgroundColor: fromColor + '15' }]}>
@@ -424,11 +424,11 @@ export default function Swap() {
           <View style={s.detailCard}>
             {[
               { l: 'Network',       v: activeChain.name },
-              { l: 'Rate',          v: quote ? `1 ${fromToken.symbol} â‰ˆ ${(parseFloat(quote.toAmountHuman) / parseFloat(fromAmount)).toFixed(4)} ${toToken.symbol}` : '—' },
-              { l: 'Price impact',  v: quote ? `${quote.priceImpact.toFixed(2)}%` : '—', color: priceImpactColor },
+              { l: 'Rate',          v: quote ? `1 ${fromToken.symbol} â‰ˆ ${(parseFloat(quote.toAmountHuman) / parseFloat(fromAmount)).toFixed(4)} ${toToken.symbol}` : '-' },
+              { l: 'Price impact',  v: quote ? `${quote.priceImpact.toFixed(2)}%` : '-', color: priceImpactColor },
               { l: 'Slippage',      v: `${slippage}%` },
-              { l: 'Min received',  v: quote ? `${(parseFloat(quote.toAmountHuman) * (1 - slippage / 100)).toFixed(4)} ${toToken.symbol}` : '—' },
-              { l: 'Est. gas',      v: quote ? `~${quote.gas.toLocaleString()} units` : '—' },
+              { l: 'Min received',  v: quote ? `${(parseFloat(quote.toAmountHuman) * (1 - slippage / 100)).toFixed(4)} ${toToken.symbol}` : '-' },
+              { l: 'Est. gas',      v: quote ? `~${quote.gas.toLocaleString()} units` : '-' },
               { l: 'Router',        v: '1inch v6' },
             ].map(row => (
               <View key={row.l} style={s.detailRow}>
@@ -449,7 +449,7 @@ export default function Swap() {
           )}
 
           <View style={s.bioHint}>
-            <Text style={s.bioHintT}>ðŸ”  Face ID / fingerprint required to sign{needsApproval ? ' (twice — approval + swap)' : ''}.</Text>
+            <Text style={s.bioHintT}>ðŸ”  Face ID / fingerprint required to sign{needsApproval ? ' (twice - approval + swap)' : ''}.</Text>
           </View>
         </ScrollView>
         <View style={s.bot}>
@@ -457,7 +457,7 @@ export default function Swap() {
             <View style={[s.swapBtn, s.swapBtnBusy]}>
               <ActivityIndicator color="#fff" />
               <Text style={s.swapBtnT}>
-                {step === 'approving' ? 'Approving tokenâ€¦' : 'Executing swapâ€¦'}
+                {step === 'approving' ? 'Approving token...' : 'Executing swap...'}
               </Text>
             </View>
           ) : (
@@ -494,7 +494,7 @@ export default function Swap() {
         <View style={s.tokenCard}>
           <View style={s.tokenCardTop}>
             <Text style={s.cardLabel}>You pay</Text>
-            <Text style={s.balanceHint}>Balance: —</Text>
+            <Text style={s.balanceHint}>Balance: -</Text>
           </View>
           <View style={s.tokenCardRow}>
             <TouchableOpacity
@@ -524,7 +524,7 @@ export default function Swap() {
         <View style={s.flipWrap}>
           <View style={s.flipLine} />
           <TouchableOpacity style={s.flipBtn} onPress={flipTokens} activeOpacity={0.7}>
-            <Text style={s.flipBtnT}>â‡…</Text>
+            <Text style={s.flipBtnT}>â‡...</Text>
           </TouchableOpacity>
           <View style={s.flipLine} />
         </View>
@@ -547,7 +547,7 @@ export default function Swap() {
               <Text style={s.tokenSelectorArrow}>â–¾</Text>
             </TouchableOpacity>
             <Text style={[s.receiveAmt, { color: quote ? '#1E1B4B' : '#CBD5E1' }]}>
-              {quote ? quote.toAmountHuman : quoting ? 'â€¦' : '0.00'}
+              {quote ? quote.toAmountHuman : quoting ? '...' : '0.00'}
             </Text>
           </View>
           <Text style={s.tokenName}>{toToken.name}</Text>
@@ -584,7 +584,7 @@ export default function Swap() {
         {/* Quote error */}
         {quoteError ? (
           <View style={s.errCard}>
-            <Text style={s.errCardT}>âš  {quoteError}</Text>
+            <Text style={s.errCardT}>(!) {quoteError}</Text>
           </View>
         ) : null}
 
@@ -601,7 +601,7 @@ export default function Swap() {
         {checkingAllowance && (
           <View style={s.allowanceRow}>
             <ActivityIndicator size="small" color="#6366F1" />
-            <Text style={s.allowanceT}>Checking token approvalâ€¦</Text>
+            <Text style={s.allowanceT}>Checking token approval...</Text>
           </View>
         )}
         {!checkingAllowance && needsApproval && quote && (
@@ -626,7 +626,7 @@ export default function Swap() {
           onPress={() => setStep('confirm')}
         >
           {quoting
-            ? <><ActivityIndicator color="#fff" /><Text style={[s.swapBtnT, { marginLeft: 10 }]}>Getting quoteâ€¦</Text></>
+            ? <><ActivityIndicator color="#fff" /><Text style={[s.swapBtnT, { marginLeft: 10 }]}>Getting quote...</Text></>
             : <Text style={s.swapBtnT}>
                 {!fromAmount ? 'Enter an amount' : !quote ? 'No route found' : `Swap ${fromToken.symbol} → ${toToken.symbol}`}
               </Text>

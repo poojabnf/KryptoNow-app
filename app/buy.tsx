@@ -6,10 +6,10 @@ import {
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// --- Data ---------------------------------------------------------------------
 const TOKENS = [
   { symbol: 'ETH',  name: 'Ethereum',  icon: 'Ξ' },
-  { symbol: 'BNB',  name: 'BNB',       icon: '─' },
+  { symbol: 'BNB',  name: 'BNB',       icon: '-' },
   { symbol: 'MATIC',name: 'Polygon',   icon: '⬡' },
   { symbol: 'USDC', name: 'USD Coin',  icon: 'ðŸ’²' },
   { symbol: 'USDT', name: 'Tether',    icon: '₮'  },
@@ -77,7 +77,7 @@ const PROVIDERS = [
   },
 ]
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// --- Screen -------------------------------------------------------------------
 export default function BuyScreen() {
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
@@ -160,7 +160,7 @@ export default function BuyScreen() {
                     {t.name}
                   </Text>
                   <Text style={s.tokenItemSym}>{t.symbol}</Text>
-                  {selToken === t.symbol && <Text style={{ color: activeChain.color }}>✓</Text>}
+                  {selToken === t.symbol && <Text style={{ color: activeChain.color }}>OK</Text>}
                 </TouchableOpacity>
               ))}
             </View>
@@ -212,7 +212,7 @@ export default function BuyScreen() {
               {selProvider === p.id && (
                 <View style={[s.selectedBanner, { backgroundColor: p.color + '15', borderColor: p.color + '33' }]}>
                   <Text style={[s.selectedBannerT, { color: p.color }]}>
-                    ✓ Selected · Buying ${amount} of {selToken} via {p.name}
+                    OK Selected · Buying ${amount} of {selToken} via {p.name}
                   </Text>
                 </View>
               )}
@@ -238,7 +238,7 @@ export default function BuyScreen() {
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// --- Styles -------------------------------------------------------------------
 const s = StyleSheet.create({
   safe:         { flex: 1, backgroundColor: '#F8FAFF' },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },

@@ -14,7 +14,7 @@ import {
   loadNotifHistory, markAllRead, NotifPrefs, NotifRecord, DEFAULT_PREFS,
 } from '../utils/notifications'
 
-// ─── Toggle row ───────────────────────────────────────────────────────────────
+// --- Toggle row ---------------------------------------------------------------
 function ToggleRow({
   icon, title, subtitle, value, onToggle, disabled = false,
 }: {
@@ -41,7 +41,7 @@ function ToggleRow({
   )
 }
 
-// ─── Notification history item ────────────────────────────────────────────────
+// --- Notification history item ------------------------------------------------
 function NotifItem({ notif }: { notif: NotifRecord }) {
   const icons: Record<NotifRecord['type'], string> = {
     tx_in:         '💸',
@@ -81,7 +81,7 @@ function NotifItem({ notif }: { notif: NotifRecord }) {
   )
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// --- Main Screen --------------------------------------------------------------
 export default function NotificationsScreen() {
   const [tab,         setTab]         = useState<'settings' | 'history'>('settings')
   const [prefs,       setPrefs]       = useState<NotifPrefs>(DEFAULT_PREFS)
@@ -165,7 +165,7 @@ export default function NotificationsScreen() {
                   <View style={s.tokenDot} />
                   <Text style={s.tokenActiveT}>Push notifications active</Text>
                 </View>
-                <Text style={s.tokenSub} numberOfLines={1}>{pushToken.slice(0, 32)}…</Text>
+                <Text style={s.tokenSub} numberOfLines={1}>{pushToken.slice(0, 32)}...</Text>
               </>
             ) : (
               <>
@@ -270,7 +270,7 @@ export default function NotificationsScreen() {
           <View style={s.infoBox}>
             <Text style={s.infoTitle}>How notifications work</Text>
             <Text style={s.infoBody}>
-              Kryptonow polls your wallet address every 2 minutes for new transactions. Notifications are delivered via Expo Push Service (FCM on Android, APNs on iOS). Your private key is never transmitted — only your public wallet address is used for monitoring.
+              Kryptonow polls your wallet address every 2 minutes for new transactions. Notifications are delivered via Expo Push Service (FCM on Android, APNs on iOS). Your private key is never transmitted - only your public wallet address is used for monitoring.
             </Text>
           </View>
 

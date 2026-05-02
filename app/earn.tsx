@@ -265,8 +265,8 @@ export default function EarnScreen() {
         {/* Disclaimer */}
         <View style={s.disclaimer}>
           <Text style={s.disclaimerT}>
-            ⚠ï¸  DeFi yields are variable and carry smart contract risk. Kryptonow does not
-            custody your assets — all protocols are non-custodial. APYs shown are estimates.
+            (!)ï¸  DeFi yields are variable and carry smart contract risk. Kryptonow does not
+            custody your assets - all protocols are non-custodial. APYs shown are estimates.
           </Text>
         </View>
       </ScrollView>

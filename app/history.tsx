@@ -22,7 +22,7 @@ function relativeTime(ts: number): string {
 }
 
 function shortAddr(addr: string) {
-  return addr ? addr.slice(0, 6) + '…' + addr.slice(-4) : '—'
+  return addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : '-'
 }
 
 const TYPE_META: Record<TxType, { label: string; icon: string; color: string; bgColor: string }> = {
@@ -255,11 +255,11 @@ export default function History() {
       {loading ? (
         <View style={s.center}>
           <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={s.loadT}>Fetching transactions…</Text>
+          <Text style={s.loadT}>Fetching transactions...</Text>
         </View>
       ) : error ? (
         <View style={s.center}>
-          <Text style={{ fontSize: 40, marginBottom: 12 }}>⚠ï¸</Text>
+          <Text style={{ fontSize: 40, marginBottom: 12 }}>(!)ï¸</Text>
           <Text style={s.errTitle}>Couldn't load transactions</Text>
           <Text style={s.errSub}>Check your connection or API key</Text>
           <TouchableOpacity style={s.retryBtn} onPress={refresh}>
@@ -300,10 +300,10 @@ export default function History() {
             loadingMore ? (
               <View style={s.loadMoreWrap}>
                 <ActivityIndicator color="#6366F1" />
-                <Text style={s.loadMoreT}>Loading more…</Text>
+                <Text style={s.loadMoreT}>Loading more...</Text>
               </View>
             ) : !hasMore && filtered.length > 0 ? (
-              <Text style={s.endT}>— All transactions loaded —</Text>
+              <Text style={s.endT}>- All transactions loaded -</Text>
             ) : null
           }
         />

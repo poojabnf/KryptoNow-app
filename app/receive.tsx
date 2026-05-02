@@ -16,7 +16,7 @@ export default function Receive() {
   const [selectedNet, setSelectedNet]     = useState(NETWORKS[0])
   const [copied, setCopied]               = useState(false)
 
-  // QR code via free API — works great for static addresses
+  // QR code via free API - works great for static addresses
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodeURIComponent(addr ?? '')}`
 
   async function copyAddress() {
@@ -98,7 +98,7 @@ export default function Receive() {
           </View>
 
           <Text style={s.addrLabel}>Your {selectedNet.symbol} Address</Text>
-          <Text style={s.addr} selectable>{addr ?? '—'}</Text>
+          <Text style={s.addr} selectable>{addr ?? '-'}</Text>
 
           <TouchableOpacity
             style={[s.copyBtn, copied && s.copyBtnDone]}
@@ -106,7 +106,7 @@ export default function Receive() {
             activeOpacity={0.8}
           >
             <Text style={[s.copyBtnT, copied && { color: '#10B981' }]}>
-              {copied ? '✓  Copied!' : '📋  Copy Address'}
+              {copied ? 'OK  Copied!' : '📋  Copy Address'}
             </Text>
           </TouchableOpacity>
         </View>

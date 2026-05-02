@@ -1,7 +1,7 @@
 /**
  * app/addressbook.tsx
- * Address Book — save labelled contacts, ENS resolution, recent addresses
- * No new packages needed — ethers.js handles ENS
+ * Address Book - save labelled contacts, ENS resolution, recent addresses
+ * No new packages needed - ethers.js handles ENS
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -18,7 +18,7 @@ const ENS_PROVIDER = 'https://eth.llamarpc.com'
 const STORAGE_KEY  = 'Kryptonow_address_book'
 const RECENT_KEY   = 'Kryptonow_recent_addresses'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 export type Contact = {
   id:        string
   name:      string
@@ -47,17 +47,17 @@ function isValidAddress(addr: string): boolean {
   try { ethers.getAddress(addr); return true } catch { return false }
 }
 
-// ─── ENS Resolution ───────────────────────────────────────────────────────────
+// --- ENS Resolution -----------------------------------------------------------
 async function resolveENS(input: string): Promise<{ address: string; ens?: string } | null> {
   try {
     const provider = new ethers.JsonRpcProvider(ENS_PROVIDER)
     if (input.endsWith('.eth') || input.includes('.')) {
-      // Input is ENS name — resolve to address
+      // Input is ENS name - resolve to address
       const address = await provider.resolveName(input)
       if (!address) return null
       return { address, ens: input }
     } else if (isValidAddress(input)) {
-      // Input is address — try reverse lookup for ENS
+      // Input is address - try reverse lookup for ENS
       const ens = await provider.lookupAddress(input)
       return { address: input, ens: ens ?? undefined }
     }
@@ -67,7 +67,7 @@ async function resolveENS(input: string): Promise<{ address: string; ens?: strin
   }
 }
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
+// --- Storage helpers ----------------------------------------------------------
 async function loadContacts(): Promise<Contact[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY)
@@ -102,7 +102,7 @@ export async function recordRecentAddress(address: string, ens?: string): Promis
   } catch {}
 }
 
-// ─── Add/Edit Contact Modal ───────────────────────────────────────────────────
+// --- Add/Edit Contact Modal ---------------------------------------------------
 function ContactModal({
   visible, existing, onSave, onClose,
 }: {
@@ -219,13 +219,13 @@ function ContactModal({
               value={address}
               onChangeText={v => { setAddress(v); setAddrError(''); setResolvedENS(undefined) }}
               onBlur={handleAddressBlur}
-              placeholder="0x… or name.eth"
+              placeholder="0x... or name.eth"
               placeholderTextColor="#CBD5E1"
               autoCapitalize="none"
               autoCorrect={false}
             />
             {resolving && <ActivityIndicator size="small" color="#6366F1" style={{ paddingRight: 12 }} />}
-            {resolvedENS && !resolving && <Text style={{ paddingRight: 12, fontSize: 16 }}>✅</Text>}
+            {resolvedENS && !resolving && <Text style={{ paddingRight: 12, fontSize: 16 }}>OK</Text>}
           </View>
 
           {resolvedENS && (
@@ -255,7 +255,7 @@ function ContactModal({
   )
 }
 
-// ─── Contact Row ──────────────────────────────────────────────────────────────
+// --- Contact Row --------------------------------------------------------------
 function ContactRow({
   contact, onPress, onLongPress,
 }: {
@@ -276,7 +276,7 @@ function ContactRow({
       <View style={r.mid}>
         <Text style={r.name}>{contact.name}</Text>
         <Text style={r.addr} numberOfLines={1}>
-          {contact.ens ?? contact.address.slice(0, 8) + '…' + contact.address.slice(-6)}
+          {contact.ens ?? contact.address.slice(0, 8) + '...' + contact.address.slice(-6)}
         </Text>
         {contact.note ? <Text style={r.note} numberOfLines={1}>{contact.note}</Text> : null}
       </View>
@@ -287,7 +287,7 @@ function ContactRow({
   )
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// --- Main Screen --------------------------------------------------------------
 export default function AddressBook() {
   const [contacts,  setContacts]  = useState<Contact[]>([])
   const [recents,   setRecents]   = useState<RecentAddress[]>([])
@@ -367,7 +367,7 @@ export default function AddressBook() {
           style={s.searchInput}
           value={search}
           onChangeText={setSearch}
-          placeholder="Search name, address, or ENS…"
+          placeholder="Search name, address, or ENS..."
           placeholderTextColor="#CBD5E1"
           autoCapitalize="none"
           autoCorrect={false}
@@ -464,7 +464,7 @@ export default function AddressBook() {
                 </View>
                 <View style={r2.mid}>
                   <Text style={r2.addr}>
-                    {item.ens ?? item.address.slice(0, 8) + '…' + item.address.slice(-6)}
+                    {item.ens ?? item.address.slice(0, 8) + '...' + item.address.slice(-6)}
                   </Text>
                   <Text style={r2.meta}>
                     {item.txCount} tx · Last {new Date(item.lastUsed).toLocaleDateString()}

@@ -1,7 +1,7 @@
 /**
  * app/nfts.tsx
- * NFT Gallery — fetches NFTs via Alchemy NFT API across all chains
- * Install: already using ethers — no new packages needed
+ * NFT Gallery - fetches NFTs via Alchemy NFT API across all chains
+ * Install: already using ethers - no new packages needed
  * Alchemy NFT API is free tier: 300M compute units/month
  */
 
@@ -17,7 +17,7 @@ import { useWalletStore } from '../store/walletStore'
 const { width: SCREEN_W } = Dimensions.get('window')
 const CARD_W = (SCREEN_W - 48) / 2   // 2-column grid with 16px padding + 16px gap
 
-const ALCHEMY_KEY = 'HJfOuVkHmg_PM66WyXNjT'  // ← replace — free at alchemy.com
+const ALCHEMY_KEY = 'HJfOuVkHmg_PM66WyXNjT'  // ← replace - free at alchemy.com
 
 const ALCHEMY_BASE: Record<number, string> = {
   1:     `https://eth-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_KEY}`,
@@ -44,7 +44,7 @@ export type NFT = {
   attributes?:     { trait_type: string; value: string }[]
 }
 
-// ─── Fetch NFTs from Alchemy ──────────────────────────────────────────────────
+// --- Fetch NFTs from Alchemy --------------------------------------------------
 async function fetchNFTs(address: string, chainId: number): Promise<NFT[]> {
   const base = ALCHEMY_BASE[chainId]
   if (!base) return []
@@ -57,7 +57,7 @@ async function fetchNFTs(address: string, chainId: number): Promise<NFT[]> {
     const nfts = (data.ownedNfts ?? []) as any[]
 
     return nfts.map(n => {
-      // Resolve image URL — handle ipfs:// and arweave://
+      // Resolve image URL - handle ipfs:// and arweave://
       let image = n.image?.cachedUrl
         ?? n.image?.originalUrl
         ?? n.image?.thumbnailUrl
@@ -88,7 +88,7 @@ async function fetchNFTs(address: string, chainId: number): Promise<NFT[]> {
   }
 }
 
-// ─── NFT Detail Modal ─────────────────────────────────────────────────────────
+// --- NFT Detail Modal ---------------------------------------------------------
 function NFTDetail({
   nft, visible, onClose, onSend,
 }: {
@@ -159,7 +159,7 @@ function NFTDetail({
               <View style={d.detailCard}>
                 {[
                   ['Token ID',    `#${nft.tokenId}`],
-                  ['Contract',    nft.contractAddress.slice(0,10) + '…' + nft.contractAddress.slice(-6)],
+                  ['Contract',    nft.contractAddress.slice(0,10) + '...' + nft.contractAddress.slice(-6)],
                   ['Token Type',  nft.tokenType],
                   ['Chain',       CHAIN_NAMES[nft.chainId]],
                 ].map(([l, v]) => (
@@ -191,7 +191,7 @@ function NFTDetail({
   )
 }
 
-// ─── NFT Card ─────────────────────────────────────────────────────────────────
+// --- NFT Card -----------------------------------------------------------------
 function NFTCard({ nft, onPress }: { nft: NFT; onPress: () => void }) {
   const [imgError, setImgError] = useState(false)
   const chainColor: Record<number, string> = {
@@ -225,7 +225,7 @@ function NFTCard({ nft, onPress }: { nft: NFT; onPress: () => void }) {
   )
 }
 
-// ─── Send NFT Modal ───────────────────────────────────────────────────────────
+// --- Send NFT Modal -----------------------------------------------------------
 function SendNFTModal({
   nft, visible, onClose,
 }: {
@@ -265,7 +265,7 @@ function SendNFTModal({
         tx = await contract.safeTransferFrom(addr, toAddress, BigInt(nft.tokenId), 1n, '0x')
       }
       await tx.wait(1)
-      Alert.alert('NFT Sent!', `${nft.name} sent to ${toAddress.slice(0, 8)}…`)
+      Alert.alert('NFT Sent!', `${nft.name} sent to ${toAddress.slice(0, 8)}...`)
       onClose()
     } catch (e: any) {
       Alert.alert('Send failed', e.reason ?? e.message)
@@ -287,15 +287,15 @@ function SendNFTModal({
           <View style={sn.inputWrap}>
             <Text style={sn.inputHex}>0x</Text>
             <Text style={sn.inputVal} numberOfLines={1}>
-              {toAddress.slice(2) || <Text style={{ color: '#CBD5E1' }}>wallet address…</Text>}
+              {toAddress.slice(2) || <Text style={{ color: '#CBD5E1' }}>wallet address...</Text>}
             </Text>
           </View>
-          {/* In real app: use TextInput — simplified for illustration */}
+          {/* In real app: use TextInput - simplified for illustration */}
           <TouchableOpacity style={sn.addressInput} onPress={() => Alert.alert('Enter address', 'Add a TextInput here for production')}>
             <Text style={sn.addressInputT}>Tap to enter address</Text>
           </TouchableOpacity>
           <View style={sn.warnBox}>
-            <Text style={sn.warnT}>⚠  NFT transfers are irreversible. Double-check the address.</Text>
+            <Text style={sn.warnT}>(!)  NFT transfers are irreversible. Double-check the address.</Text>
           </View>
           <TouchableOpacity
             style={[sn.sendBtn, sending && { opacity: 0.7 }]}
@@ -310,7 +310,7 @@ function SendNFTModal({
   )
 }
 
-// ─── Main Gallery Screen ──────────────────────────────────────────────────────
+// --- Main Gallery Screen ------------------------------------------------------
 export default function NFTGallery() {
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
@@ -390,7 +390,7 @@ export default function NFTGallery() {
       ) : loading ? (
         <View style={s.center}>
           <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={s.centerSub}>Loading your NFTs…</Text>
+          <Text style={s.centerSub}>Loading your NFTs...</Text>
         </View>
       ) : filtered.length === 0 ? (
         <View style={s.center}>

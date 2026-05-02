@@ -176,22 +176,22 @@ export default function Settings() {
     },
   ]
 
-  // Render icon as colored text symbol — no emoji, no encoding issues
+  // Render icon as colored text symbol - no emoji, no encoding issues
   function renderIcon(icon: string, color: string, danger?: string) {
     const MAP: Record<string, string> = {
       clipboard: 'âŠž',
       key:       'âš¿',
       seed:      '⬡',
-      network:   'â—‰',
-      eye:       'â—Ž',
+      network:   'â-‰',
+      eye:       'â-Ž',
       lock:      'âŠ˜',
-      bell:      'â—ˆ',
+      bell:      'â-ˆ',
       flask:     'â¬¢',
-      history:   'â—·',
+      history:   'â-·',
       contacts:  'âŠ•',
       info:      'â„¹',
       shield:    'âŠ›',
-      chain:     'âŠ—',
+      chain:     'âŠ-',
       trash:     'âŠ ',
     }
     return (

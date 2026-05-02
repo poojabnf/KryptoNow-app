@@ -6,7 +6,7 @@ import {
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// --- Data ---------------------------------------------------------------------
 const PLANS = [
   {
     id: 'monthly',
@@ -43,7 +43,7 @@ const FEATURES: { icon: string; title: string; description: string; access: Feat
   { icon: '🔒', title: 'AES-256-GCM Encryption',  description: 'Military-grade key storage on device',           access: 'both' },
 ]
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// --- Screen -------------------------------------------------------------------
 export default function PremiumScreen() {
   const activeChain  = useWalletStore(s => s.activeChain)
   const [selPlan, setSelPlan]   = useState('yearly')
@@ -52,7 +52,7 @@ export default function PremiumScreen() {
 
   async function handlePurchase() {
     setLoading(true)
-    // Simulate IAP — replace with expo-iap / react-native-purchases
+    // Simulate IAP - replace with expo-iap / react-native-purchases
     await new Promise(r => setTimeout(r, 1800))
     setLoading(false)
     setIsPremium(true)
@@ -65,7 +65,7 @@ export default function PremiumScreen() {
 
   const plan = PLANS.find(p => p.id === selPlan)!
 
-  // ── Already premium ───────────────────────────────────────────────────────
+  // -- Already premium -------------------------------------------------------
   if (isPremium) {
     return (
       <SafeAreaView style={[s.safe, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -126,7 +126,7 @@ export default function PremiumScreen() {
               )}
               {selPlan === p.id && (
                 <View style={[s.checkCircle, { backgroundColor: p.color }]}>
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>OK</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -162,7 +162,7 @@ export default function PremiumScreen() {
                     s.accessT,
                     { color: f.access === 'premium' ? '#7C3AED' : '#16A34A' },
                   ]}>
-                    {f.access === 'premium' ? '⭐' : '✓'}
+                    {f.access === 'premium' ? '⭐' : 'OK'}
                   </Text>
                 </View>
               </View>
@@ -175,7 +175,7 @@ export default function PremiumScreen() {
             </View>
             <View style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: '#16A34A' }]} />
-              <Text style={s.legendT}>✓ Free for everyone</Text>
+              <Text style={s.legendT}>OK Free for everyone</Text>
             </View>
           </View>
         </View>
@@ -191,7 +191,7 @@ export default function PremiumScreen() {
             <View key={t.name} style={s.testimonial}>
               <Text style={s.testimonialStars}>{'★'.repeat(t.stars)}</Text>
               <Text style={s.testimonialText}>"{t.text}"</Text>
-              <Text style={s.testimonialName}>— {t.name}</Text>
+              <Text style={s.testimonialName}>- {t.name}</Text>
             </View>
           ))}
         </View>
@@ -217,7 +217,7 @@ export default function PremiumScreen() {
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// --- Styles -------------------------------------------------------------------
 const s = StyleSheet.create({
   safe:          { flex: 1, backgroundColor: '#F8FAFF' },
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },

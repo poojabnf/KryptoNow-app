@@ -144,12 +144,12 @@ export default function Dashboard() {
 
     setError(false)
     try {
-      //  1. Native balance (7s timeout — prevents infinite spinner)
+      //  1. Native balance (7s timeout - prevents infinite spinner)
       const provider = getProvider(activeChain)
       const weiBalance = await Promise.race([
         provider.getBalance(addr),
         new Promise<never>((_, r) =>
-          setTimeout(() => r(new Error('RPC timeout — check connection')), 7000)
+          setTimeout(() => r(new Error('RPC timeout - check connection')), 7000)
         ),
       ])
       const nativeBal  = parseFloat(ethers.formatEther(weiBalance))
@@ -330,7 +330,7 @@ export default function Dashboard() {
                   <View style={s.rowRight}>
                     <Text style={s.rv}>{fmt(t.valueUSD)}</Text>
                     <Text style={[s.rc, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
-                      {t.change24h === 0 ? '—' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
+                      {t.change24h === 0 ? '-' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
                     </Text>
                   </View>
                 </View>
@@ -411,7 +411,7 @@ export default function Dashboard() {
                 {loading ? '...' : fmt(totalUSD)}
               </Text>
               <Text style={m.balCardSub}>
-                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '—'}
+                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '-'}
               </Text>
             </View>
             <View style={m.balCardRight}>
@@ -448,7 +448,7 @@ export default function Dashboard() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={m.fundCardTitle}>Earn Yield</Text>
-              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi — up to 5.9% APY</Text>
+              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi - up to 5.9% APY</Text>
             </View>
             <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
           </TouchableOpacity>

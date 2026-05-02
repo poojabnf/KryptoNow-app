@@ -14,7 +14,7 @@ const ERC20_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
 ]
 
-// ERC-20 tokens per chain — extend as needed
+// ERC-20 tokens per chain - extend as needed
 const CHAIN_TOKENS: Record<number, { symbol: string; name: string; decimals: number; contract: string; color: string }[]> = {
   1: [ // Ethereum
     { symbol:'USDC', name:'USD Coin',  decimals:6,  contract:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', color:'#2775CA' },
@@ -160,15 +160,15 @@ export default function Send() {
     }
   }
 
-  // ── Success ──────────────────────────────────────────────────────────────────
+  // -- Success ------------------------------------------------------------------
   if (step === 'success') return (
     <View style={s.c}>
       <View style={s.successWrap}>
-        <View style={s.tick}><Text style={{ fontSize:40 }}>✓</Text></View>
+        <View style={s.tick}><Text style={{ fontSize:40 }}>OK</Text></View>
         <Text style={s.successTitle}>Sent!</Text>
         <Text style={s.successSub}>
           {amount} {selectedToken.symbol} on {activeChain.name}{'\n'}
-          to {toAddress.slice(0,8)}â€¦{toAddress.slice(-6)}
+          to {toAddress.slice(0,8)}...{toAddress.slice(-6)}
         </Text>
         <View style={s.hashBox}>
           <Text style={s.hashLabel}>Transaction Hash</Text>
@@ -188,7 +188,7 @@ export default function Send() {
     </View>
   )
 
-  // ── Confirm ──────────────────────────────────────────────────────────────────
+  // -- Confirm ------------------------------------------------------------------
   if (step === 'confirm') return (
     <View style={s.c}>
       <View style={s.hdr}>
@@ -204,12 +204,12 @@ export default function Send() {
         <View style={s.detailCard}>
           {[
             { l:'Network',     v: activeChain.name },
-            { l:'From',        v: addr ? addr.slice(0,8)+'â€¦'+addr.slice(-6) : '—' },
-            { l:'To',          v: toAddress.slice(0,8)+'â€¦'+toAddress.slice(-6) },
+            { l:'From',        v: addr ? addr.slice(0,8)+'...'+addr.slice(-6) : '-' },
+            { l:'To',          v: toAddress.slice(0,8)+'...'+toAddress.slice(-6) },
             { l:'Token',       v: `${selectedToken.name} (${selectedToken.symbol})` },
             { l:'Gas limit',   v: `${gasLimit.toLocaleString()} units` },
-            { l:'Gas price',   v: gasPrice ? `${gasPrice} Gwei` : 'â€¦' },
-            { l:'Est. fee',    v: gasCostUSD ? `~$${gasCostUSD} (${gasCostETH} ${activeChain.symbol})` : 'â€¦' },
+            { l:'Gas price',   v: gasPrice ? `${gasPrice} Gwei` : '...' },
+            { l:'Est. fee',    v: gasCostUSD ? `~$${gasCostUSD} (${gasCostETH} ${activeChain.symbol})` : '...' },
           ].map(row => (
             <View key={row.l} style={s.detailRow}>
               <Text style={s.detailL}>{row.l}</Text>
@@ -218,7 +218,7 @@ export default function Send() {
           ))}
         </View>
         <View style={s.bioHint}><Text style={s.bioHintT}>ðŸ”  Face ID / fingerprint required to sign.</Text></View>
-        <View style={s.warnBox}><Text style={s.warnT}>âš   Transactions are irreversible. Verify the address.</Text></View>
+        <View style={s.warnBox}><Text style={s.warnT}>(!)  Transactions are irreversible. Verify the address.</Text></View>
       </ScrollView>
       <View style={s.bot}>
         <TouchableOpacity style={[s.sendBtn, { backgroundColor: activeChain.color }, sending && { opacity:0.7 }]}
@@ -232,7 +232,7 @@ export default function Send() {
     </View>
   )
 
-  // ── Form ─────────────────────────────────────────────────────────────────────
+  // -- Form ---------------------------------------------------------------------
   return (
     <KeyboardAvoidingView style={s.c} behavior={Platform.OS==='ios'?'padding':undefined}>
       <View style={s.hdr}>
@@ -265,7 +265,7 @@ export default function Send() {
                   <Text style={s.tokenSymbol}>{t.symbol}</Text>
                   <Text style={s.tokenName}>{t.name}</Text>
                 </View>
-                {t.symbol===selectedToken.symbol && <Text style={{ color: activeChain.color }}>✓</Text>}
+                {t.symbol===selectedToken.symbol && <Text style={{ color: activeChain.color }}>OK</Text>}
               </TouchableOpacity>
             ))}
           </View>
@@ -275,7 +275,7 @@ export default function Send() {
         <View style={[s.inputWrap, addrValid&&toAddress.length>0&&s.inputValid, !addrValid&&toAddress.length>10&&s.inputError]}>
           <TextInput style={s.input} value={toAddress} onChangeText={setToAddress}
             placeholder="0x..." placeholderTextColor="#CBD5E1" autoCapitalize="none" autoCorrect={false} />
-          {toAddress.length>0 && <Text style={{ fontSize:16, paddingRight:14 }}>{addrValid?'âœ…':'âŒ'}</Text>}
+          {toAddress.length>0 && <Text style={{ fontSize:16, paddingRight:14 }}>{addrValid?'âœ...':'âŒ'}</Text>}
         </View>
         {!addrValid && toAddress.length>10 && <Text style={s.fieldError}>Invalid address</Text>}
 
@@ -291,7 +291,7 @@ export default function Send() {
             <Text style={s.gasTitle}>â›½ Estimated Gas Fee</Text>
             {gasLoading
               ? <ActivityIndicator size="small" color={activeChain.color} style={{ alignSelf:'flex-start', marginTop:4 }} />
-              : <Text style={s.gasVal}>{gasCostETH||'—'} {activeChain.symbol}{gasCostUSD ? `  (~$${gasCostUSD})` : ''}</Text>
+              : <Text style={s.gasVal}>{gasCostETH||'-'} {activeChain.symbol}{gasCostUSD ? `  (~$${gasCostUSD})` : ''}</Text>
             }
           </View>
           <TouchableOpacity onPress={() => { fetchGas(); estimateGas() }}>

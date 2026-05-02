@@ -7,7 +7,7 @@ import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
 
-// ─── Category definitions ─────────────────────────────────────────────────────
+// --- Category definitions -----------------------------------------------------
 export type Category =
   | 'swap'
   | 'defi_deposit'
@@ -40,7 +40,7 @@ const CATEGORY_META: Record<Category, CategoryMeta> = {
   unknown:       { label: 'Unknown',      icon: '?',  color: '#CBD5E1', bgColor: '#F8FAFF' },
 }
 
-// ─── Known contract signatures (first 4 bytes of input data) ─────────────────
+// --- Known contract signatures (first 4 bytes of input data) -----------------
 const KNOWN_SIGS: Record<string, Category> = {
   // Uniswap v2/v3
   '0x38ed1739': 'swap', '0x8803dbee': 'swap', '0x7ff36ab5': 'swap',
@@ -60,7 +60,7 @@ const KNOWN_SIGS: Record<string, Category> = {
   '0x96809f90': 'nft_buy',  '0xb3a34c4c': 'nft_sell',
 }
 
-// ─── Categorise a single transaction ─────────────────────────────────────────
+// --- Categorise a single transaction -----------------------------------------
 export function categorise(tx: Tx): Category {
   // Native ETH sends/receives with no contract call
   if (tx.type === 'receive' && !tx.isERC20) return 'receive'
@@ -68,7 +68,7 @@ export function categorise(tx: Tx): Category {
   if (tx.type === 'token_receive') return 'receive'
   if (tx.type === 'token_send')    return 'send'
 
-  // Contract interactions — try to identify by signature
+  // Contract interactions - try to identify by signature
   if (tx.type === 'contract') {
     // We don't have raw input data in our Tx type right now, but
     // we can pattern-match on token symbols and known DEX tokens
@@ -78,7 +78,7 @@ export function categorise(tx: Tx): Category {
   return 'unknown'
 }
 
-// ─── Summary stats ────────────────────────────────────────────────────────────
+// --- Summary stats ------------------------------------------------------------
 type CategorySummary = {
   category:  Category
   count:     number
@@ -111,7 +111,7 @@ function relTime(ts: number) {
   return `${Math.floor(d / 86400)}d ago`
 }
 
-// ─── Category pill ────────────────────────────────────────────────────────────
+// --- Category pill ------------------------------------------------------------
 function CategoryPill({ cat }: { cat: Category }) {
   const meta = CATEGORY_META[cat]
   return (
@@ -122,7 +122,7 @@ function CategoryPill({ cat }: { cat: Category }) {
   )
 }
 
-// ─── Transaction row ──────────────────────────────────────────────────────────
+// --- Transaction row ----------------------------------------------------------
 function TxRow({ tx }: { tx: Tx }) {
   const cat  = categorise(tx)
   const meta = CATEGORY_META[cat]
@@ -152,7 +152,7 @@ function TxRow({ tx }: { tx: Tx }) {
   )
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// --- Main Screen --------------------------------------------------------------
 export default function Analytics() {
   const addr = useWalletStore(s => s.address)
   const { txns, loading, error, refresh } = useTransactions(addr)

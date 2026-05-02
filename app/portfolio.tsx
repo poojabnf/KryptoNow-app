@@ -1,6 +1,6 @@
 /**
  * app/portfolio.tsx
- * Portfolio chart — 7d/30d/1y balance history with P&L
+ * Portfolio chart - 7d/30d/1y balance history with P&L
  * Uses react-native-svg for the chart (already a common Expo dep)
  * Install: npx expo install react-native-svg
  */
@@ -23,7 +23,7 @@ const PAD_RIGHT = 0
 const PAD_TOP   = 20
 const PAD_BOT   = 32
 
-// ─── SVG Line Chart ───────────────────────────────────────────────────────────
+// --- SVG Line Chart -----------------------------------------------------------
 function LineChart({
   data, color, isPositive,
 }: {
@@ -79,7 +79,7 @@ function LineChart({
     value: maxVal - pct * range,
   }))
 
-  // X-axis labels — show ~5 evenly spaced
+  // X-axis labels - show ~5 evenly spaced
   const xLabelIndices = [0, 0.25, 0.5, 0.75, 1].map(p =>
     Math.round(p * (data.length - 1))
   )
@@ -158,7 +158,7 @@ function LineChart({
   )
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
+// --- Stat card ----------------------------------------------------------------
 function StatCard({ label, value, sub, color }: {
   label: string; value: string; sub?: string; color?: string
 }) {
@@ -171,7 +171,7 @@ function StatCard({ label, value, sub, color }: {
   )
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// --- Main Screen --------------------------------------------------------------
 export default function Portfolio() {
   const addr  = useWalletStore(s => s.address)
   const { data, stats, loading, error, range, setRange, refresh } = usePortfolioHistory(addr)
@@ -208,7 +208,7 @@ export default function Portfolio() {
             <View style={{ paddingVertical: 32, alignItems: 'center' }}>
               <ActivityIndicator color="#6366F1" />
               <Text style={{ color: '#94A3B8', marginTop: 10, fontSize: 13 }}>
-                Loading portfolio history…
+                Loading portfolio history...
               </Text>
             </View>
           ) : stats ? (
@@ -256,7 +256,7 @@ export default function Portfolio() {
           ) : (
             <View style={{ height: CHART_H, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#CBD5E1', fontSize: 13 }}>
-                {error ? `⚠ ${error}` : 'Not enough data for chart'}
+                {error ? `(!) ${error}` : 'Not enough data for chart'}
               </Text>
             </View>
           )}

@@ -21,8 +21,8 @@ export default function Import() {
   const wordStatus = (): { text: string; color: string } => {
     if (phrase.trim() === '') return { text: '0 words', color: '#CBD5E1' }
     if (!hasWords)            return { text: `${words} words`, color: '#F59E0B' }
-    if (!isValid)             return { text: `${words} words — invalid checksum`, color: '#EF4444' }
-    return { text: `${words} words — valid ✓`, color: '#10B981' }
+    if (!isValid)             return { text: `${words} words - invalid checksum`, color: '#EF4444' }
+    return { text: `${words} words - valid OK`, color: '#10B981' }
   }
 
   async function doImport() {
@@ -107,7 +107,7 @@ export default function Import() {
         <View style={s.secCard}>
           <Text style={s.secTitle}>🔐 Where is my key stored?</Text>
           <Text style={s.secDesc}>
-            Your private key is derived from this phrase and stored exclusively in your device's Secure Enclave — iOS Keychain or Android Keystore. It never touches our servers.
+            Your private key is derived from this phrase and stored exclusively in your device's Secure Enclave - iOS Keychain or Android Keystore. It never touches our servers.
           </Text>
         </View>
       </View>
