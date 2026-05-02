@@ -127,6 +127,7 @@ export default function Dashboard() {
   const [chainModal, setChainModal] = useState(false)
   const [fundSheet,  setFundSheet]  = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [chartToken, setChartToken] = useState<{ symbol: string; name: string } | null>(null)
 
   const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
 
@@ -331,7 +332,8 @@ export default function Dashboard() {
             </View>
           ) : (
             tokens.map((t, i) => (
-              <View key={i} style={s.assetRow}>
+              <TouchableOpacity key={i} activeOpacity={0.75} onPress={() => setChartToken({ symbol: t.symbol, name: t.name })}>
+              <View style={s.assetRow}>
                 <View style={[s.assetIcon, { backgroundColor: (t.color ?? activeChain.color) + '18' }]}>
                   <Text style={[s.assetIconText, { color: t.color ?? activeChain.color }]}>
                     {t.isNative ? activeChain.icon : (t.icon ?? t.symbol.slice(0, 2))}
@@ -348,6 +350,7 @@ export default function Dashboard() {
                   </Text>
                 </View>
               </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -531,3 +534,4 @@ const m = StyleSheet.create({
   fundCardDesc:  { color: '#64748B', fontSize: 12, lineHeight: 18 },
   fundCardChevron: { fontSize: 22, color: '#CBD5E1', fontWeight: '300' },
 })
+
