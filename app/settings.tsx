@@ -31,6 +31,7 @@ export default function Settings() {
     }
   }
 
+  // Logout: signs out of Clerk but keeps wallet data on device
   const confirmLogout = () => {
     Alert.alert(
       "Log Out",
@@ -42,10 +43,27 @@ export default function Settings() {
           style: "destructive",
           onPress: async () => {
             try {
+              // Clear Clerk session tokens only  keep wallet data
+              if (Platform.OS === "web") {
+                // Remove only Clerk session keys, not wallet keys
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith("__clerk") || key.startsWith("clerk")) {
+                    localStorage.removeItem(key)
+                  }
+                })
+              }
               await signOut()
-              router.replace("/")
+              router.replace("/(auth)/sign-in")
             } catch (e: any) {
-              Alert.alert("Error", e?.message ?? "Could not log out.")
+              // Force redirect even if signOut fails
+              if (Platform.OS === "web") {
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith("__clerk") || key.startsWith("clerk")) {
+                    localStorage.removeItem(key)
+                  }
+                })
+              }
+              router.replace("/(auth)/sign-in")
             }
           },
         },
@@ -53,6 +71,7 @@ export default function Settings() {
     )
   }
 
+  // Wipe: clears everything including wallet data
   const confirmWipe = () => {
     Alert.alert(
       "Wipe Wallet",
@@ -69,9 +88,10 @@ export default function Settings() {
                 localStorage.clear()
               }
               await signOut()
-              router.replace("/")
+              router.replace("/(auth)/sign-in")
             } catch {
-              router.replace("/")
+              if (Platform.OS === "web") localStorage.clear()
+              router.replace("/(auth)/sign-in")
             }
           },
         },
@@ -198,7 +218,7 @@ export default function Settings() {
           </View>
         ))}
 
-        {/* Single logout button at bottom */}
+        {/* Logout button at bottom */}
         <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
           <TouchableOpacity style={st.logoutBtn} onPress={confirmLogout} activeOpacity={0.85}>
             <Text style={st.logoutIcon}>O</Text>
