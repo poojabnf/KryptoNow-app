@@ -512,14 +512,16 @@ export default function Dashboard() {
                     </View>
                   )}
                 </TouchableOpacity>
-              </View>
-            </View>
-            {mainContent}
-          </View>
                 <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/settings" as any)}>
                   <Ionicons name="settings-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
                 <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/support" as any)}>
+                  <Ionicons name="help-circle-outline" size={20} color={activeChain.color} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {mainContent}
+          </View>
                   <Ionicons name="help-circle-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
         </View>
