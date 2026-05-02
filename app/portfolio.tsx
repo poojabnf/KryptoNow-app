@@ -1,7 +1,7 @@
-﻿@'
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native'
 import { usePortfolio } from '../hooks/usePortfolio'
 import DonutChart from '../components/DonutChart'
+import { useWallet } from '../context/AuthContext'
 
 function useWalletTokens() {
   const { tokens } = useWallet()
@@ -14,13 +14,13 @@ export default function PortfolioScreen() {
 
   const fmtUSD = (n: number) =>
     n >= 1000
-      ? `$${(n / 1000).toFixed(2)}k`
-      : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? '$' + (n / 1000).toFixed(2) + 'k'
+      : '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   if (loading) return (
     <View style={st.center}>
-      <ActivityIndicator size="large" color="#7F77DD" />
-      <Text style={st.loadText}>Building portfolio…</Text>
+      <ActivityIndicator size='large' color='#7F77DD' />
+      <Text style={st.loadText}>Building portfolio...</Text>
     </View>
   )
 
@@ -35,14 +35,12 @@ export default function PortfolioScreen() {
   return (
     <ScrollView style={st.scroll} contentContainerStyle={st.content} showsVerticalScrollIndicator={false}>
 
-      {/* Total value */}
       <View style={st.totalCard}>
         <Text style={st.totalLabel}>Total portfolio value</Text>
         <Text style={st.totalValue}>{fmtUSD(totalUSD)}</Text>
-        <Text style={st.chainCount}>{byChain.length} chain{byChain.length !== 1 ? 's' : ''} · {tokens.length} assets</Text>
+        <Text style={st.chainCount}>{byChain.length} chain{byChain.length !== 1 ? 's' : ''}  {tokens.length} assets</Text>
       </View>
 
-      {/* Donut + chain breakdown side by side */}
       <View style={st.section}>
         <Text style={st.sectionTitle}>By chain</Text>
         <View style={st.row}>
@@ -53,7 +51,7 @@ export default function PortfolioScreen() {
                 <View style={[st.dot, { backgroundColor: c.color }]} />
                 <Text style={st.chainName}>{c.chain}</Text>
                 <View style={st.barWrap}>
-                  <View style={[st.bar, { width: `${c.pct}%`, backgroundColor: c.color + 'CC' }]} />
+                  <View style={[st.bar, { width: c.pct + '%', backgroundColor: c.color + 'CC' }]} />
                 </View>
                 <Text style={st.chainPct}>{c.pct.toFixed(1)}%</Text>
                 <Text style={st.chainVal}>{fmtUSD(c.valueUSD)}</Text>
@@ -63,7 +61,6 @@ export default function PortfolioScreen() {
         </View>
       </View>
 
-      {/* Token allocation list */}
       <View style={st.section}>
         <Text style={st.sectionTitle}>Token allocation</Text>
         {tokens.map((t, i) => (
@@ -73,9 +70,9 @@ export default function PortfolioScreen() {
             </View>
             <View style={st.tokenMid}>
               <Text style={st.tokenName}>{t.symbol}</Text>
-              <Text style={st.tokenSub}>{t.name} · {t.chain}</Text>
+              <Text style={st.tokenSub}>{t.name}  {t.chain}</Text>
               <View style={st.allocBarWrap}>
-                <View style={[st.allocBar, { width: `${t.pct}%`, backgroundColor: t.chainColor }]} />
+                <View style={[st.allocBar, { width: t.pct + '%', backgroundColor: t.chainColor }]} />
               </View>
             </View>
             <View style={st.tokenRight}>
@@ -123,4 +120,3 @@ const st = StyleSheet.create({
   tokenValue:   { fontSize: 14, fontWeight: '700', color: '#1E1B4B' },
   tokenPct:     { fontSize: 12, color: '#94A3B8' },
 })
-'@ | Set-Content app\portfolio.tsx -Encoding UTF8

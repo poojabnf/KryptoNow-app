@@ -1,4 +1,3 @@
-﻿@'
 import { useState, useEffect, useRef } from 'react'
 import { COINGECKO_IDS } from '../constants/coinGeckoIdMap'
 
@@ -44,7 +43,6 @@ export function usePortfolio(rawTokens: { symbol: string; name: string; chain: s
 
     const unique = [...new Set(rawTokens.map(t => t.symbol.toUpperCase()))]
     const ids = unique.map(s => COINGECKO_IDS[s] ?? s.toLowerCase())
-
     const now = Date.now()
     const stale = ids.filter(id => {
       const c = cache.current[id]
@@ -52,8 +50,8 @@ export function usePortfolio(rawTokens: { symbol: string; name: string; chain: s
     })
 
     const fetchPrices = stale.length > 0
-      ? fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${stale.join(',')}&vs_currencies=usd`)
-          .then(r => { if (!r.ok) throw new Error(`CoinGecko ${r.status}`); return r.json() })
+      ? fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + stale.join(',') + '&vs_currencies=usd')
+          .then(r => { if (!r.ok) throw new Error('CoinGecko ' + r.status); return r.json() })
           .then((json: Record<string, { usd: number }>) => {
             Object.entries(json).forEach(([id, v]) => {
               cache.current[id] = { price: v.usd, fetchedAt: Date.now() }
@@ -92,8 +90,7 @@ export function usePortfolio(rawTokens: { symbol: string; name: string; chain: s
       .finally(() => { if (!cancelled) setLoading(false) })
 
     return () => { cancelled = true }
-  }, [JSON.stringify(rawTokens.map(t => `${t.symbol}-${t.balance}`))])
+  }, [JSON.stringify(rawTokens.map(t => t.symbol + '-' + t.balance))])
 
   return { tokens, byChain, totalUSD, loading, error }
 }
-'@ | Set-Content hooks\usePortfolio.ts -Encoding UTF8
