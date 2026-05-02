@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Linking,
+  ScrollView, Alert, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Linking,
 } from "react-native"
 import { router } from "expo-router"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
 import { isValidAddress } from "../utils/crypto"
-import { getTxUrl, getProvider } from "../utils/chains"
+import { getTxUrl, getProvider, Chain } from "../utils/chains"
 
 const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
@@ -39,6 +40,113 @@ const CHAIN_TOKENS: Record<number, { symbol: string; name: string; decimals: num
   ],
 }
 
+// --- Gas Estimator Types ---
+type GasSpeed = "slow" | "standard" | "fast"
+type GasTier = {
+  speed:       GasSpeed
+  label:       string
+  gwei:        number
+  maxFeeGwei:  number
+  priorityGwei:number
+  limitedTime: string
+  costETH:     string
+  costUSD:     string
+  color:       string
+  bg:          string
+  icon:        string
+}
+
+type GasData = {
+  baseFeeGwei:  number
+  tiers:        GasTier[]
+  isEIP1559:    boolean
+  gasLimit:     bigint
+  lastUpdated:  number
+}
+
+// --- Gas Oracle ---
+async function fetchGasData(
+  chain: Chain,
+  addr: string,
+  toAddr: string,
+  isERC20: boolean,
+  contract: string | null,
+  decimals: number,
+  nativePrice: number,
+): Promise<GasData> {
+  const provider = getProvider(chain)
+
+  // Fetch fee data + estimate gas in parallel
+  const [feeData, gasLimit] = await Promise.all([
+    provider.getFeeData(),
+    (async () => {
+      try {
+        if (!isValidAddress(toAddr)) return isERC20 ? 65000n : 21000n
+        if (isERC20 && contract) {
+          return await provider.estimateGas({
+            from: addr, to: contract,
+            data: new ethers.Interface(ERC20_ABI).encodeFunctionData("transfer", [
+              toAddr, ethers.parseUnits("1", decimals),
+            ])
+          })
+        }
+        return await provider.estimateGas({ from: addr, to: toAddr, value: 1n })
+      } catch {
+        return isERC20 ? 65000n : 21000n
+      }
+    })(),
+  ])
+
+  const baseFeeWei  = feeData.lastBaseFeePerGas ?? feeData.gasPrice ?? 0n
+  const gasPriceWei = feeData.gasPrice ?? 0n
+  const isEIP1559   = feeData.lastBaseFeePerGas != null
+
+  const baseFeeGwei = Number(baseFeeWei) / 1e9
+
+  // Build 3 tiers
+  const buildTier = (
+    speed: GasSpeed,
+    label: string,
+    multiplier: number,
+    priorityGwei: number,
+    time: string,
+    color: string,
+    bg: string,
+    icon: string,
+  ): GasTier => {
+    const gasPriceGwei = isEIP1559
+      ? baseFeeGwei * multiplier + priorityGwei
+      : (Number(gasPriceWei) / 1e9) * multiplier
+
+    const maxFeeGwei = isEIP1559
+      ? baseFeeGwei * multiplier * 1.25 + priorityGwei
+      : gasPriceGwei
+
+    const costWei = BigInt(Math.floor(gasPriceGwei * 1e9)) * gasLimit
+    const costETH = (Number(costWei) / 1e18).toFixed(8)
+    const costUSD = (parseFloat(costETH) * nativePrice).toFixed(4)
+
+    return {
+      speed, label,
+      gwei:         parseFloat(gasPriceGwei.toFixed(2)),
+      maxFeeGwei:   parseFloat(maxFeeGwei.toFixed(2)),
+      priorityGwei,
+      limitedTime:  time,
+      costETH,
+      costUSD,
+      color, bg, icon,
+    }
+  }
+
+  const tiers: GasTier[] = [
+    buildTier("slow",     "Slow",     0.9,  1,  "~5 min",  "#64748B", "#F8FAFF", "S"),
+    buildTier("standard", "Standard", 1.0,  2,  "~1 min",  "#6366F1", "#EEF2FF", "M"),
+    buildTier("fast",     "Fast",     1.25, 5,  "~15 sec", "#10B981", "#D1FAE5", "F"),
+  ]
+
+  return { baseFeeGwei, tiers, isEIP1559, gasLimit, lastUpdated: Date.now() }
+}
+
 type Step = "form" | "confirm" | "success"
 
 export default function Send() {
@@ -53,73 +161,76 @@ export default function Send() {
   const [showPicker,    setShowPicker]    = useState(false)
   const [toAddress,     setToAddress]     = useState("")
   const [amount,        setAmount]        = useState("")
-  const [gasPrice,      setGasPrice]      = useState<string | null>(null)
-  const [gasLimit,      setGasLimit]      = useState<bigint>(21000n)
-  const [gasLoading,    setGasLoading]    = useState(false)
   const [nativePrice,   setNativePrice]   = useState(0)
   const [sending,       setSending]       = useState(false)
   const [step,          setStep]          = useState<Step>("form")
   const [txHash,        setTxHash]        = useState("")
 
-  useEffect(() => {
-    const tokens = [nativeToken, ...(CHAIN_TOKENS[activeChain.id] ?? [])]
-    setSelectedToken(tokens[0])
-    fetchGas()
-    fetchNativePrice()
-  }, [activeChain.id])
+  // Gas estimator state
+  const [gasData,       setGasData]       = useState<GasData | null>(null)
+  const [gasLoading,    setGasLoading]    = useState(false)
+  const [gasError,      setGasError]      = useState(false)
+  const [selectedSpeed, setSelectedSpeed] = useState<GasSpeed>("standard")
+  const gasTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    if (isValidAddress(toAddress)) estimateGas()
-  }, [selectedToken, toAddress])
+  const selectedTier = gasData?.tiers.find(t => t.speed === selectedSpeed) ?? null
 
   const addrValid  = isValidAddress(toAddress)
   const amtValid   = !isNaN(parseFloat(amount)) && parseFloat(amount) > 0
   const canProceed = addrValid && amtValid
 
-  async function fetchGas() {
-    setGasLoading(true)
-    try {
-      const provider = getProvider(activeChain)
-      const feeData  = await provider.getFeeData()
-      setGasPrice((Number(feeData.gasPrice ?? 0n) / 1e9).toFixed(1))
-    } catch { setGasPrice("--") }
-    finally   { setGasLoading(false) }
-  }
-
-  async function estimateGas() {
-    if (!addr || !isValidAddress(toAddress)) return
-    try {
-      const provider = getProvider(activeChain)
-      const estimate = selectedToken.contract
-        ? await provider.estimateGas({
-            from: addr, to: selectedToken.contract,
-            data: new ethers.Interface(ERC20_ABI).encodeFunctionData("transfer", [
-              toAddress, ethers.parseUnits("1", selectedToken.decimals),
-            ])
-          })
-        : await provider.estimateGas({ from: addr, to: toAddress, value: 1n })
-      setGasLimit(estimate)
-    } catch {
-      setGasLimit(selectedToken.contract ? 65000n : 21000n)
-    }
-  }
-
-  async function fetchNativePrice() {
+  // Fetch native price
+  const fetchNativePrice = useCallback(async () => {
     const cgId: Record<number, string> = {
-      1:"ethereum", 137:"matic-network", 42161:"ethereum", 10:"ethereum", 56:"binancecoin"
+      1:"ethereum", 137:"matic-network", 42161:"ethereum", 10:"ethereum", 56:"binancecoin", 8453:"ethereum"
     }
     try {
       const id  = cgId[activeChain.id] ?? "ethereum"
       const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`)
       const d   = await res.json()
       setNativePrice(d[id]?.usd ?? 0)
-    } catch {}
-  }
+      return d[id]?.usd ?? 0
+    } catch { return 0 }
+  }, [activeChain.id])
 
-  const gasCostETH = gasPrice && gasPrice !== "--"
-    ? ((parseFloat(gasPrice) * Number(gasLimit)) / 1e9).toFixed(6) : null
-  const gasCostUSD = gasCostETH
-    ? (parseFloat(gasCostETH) * nativePrice).toFixed(4) : null
+  // Full gas refresh
+  const refreshGas = useCallback(async (price?: number) => {
+    if (!addr) return
+    setGasLoading(true)
+    setGasError(false)
+    try {
+      const p    = price ?? nativePrice
+      const data = await fetchGasData(
+        activeChain, addr, toAddress,
+        !!selectedToken.contract, selectedToken.contract,
+        selectedToken.decimals, p,
+      )
+      setGasData(data)
+    } catch {
+      setGasError(true)
+    } finally {
+      setGasLoading(false)
+    }
+  }, [addr, activeChain, toAddress, selectedToken, nativePrice])
+
+  // Init on chain/token change
+  useEffect(() => {
+    const tokens = [nativeToken, ...(CHAIN_TOKENS[activeChain.id] ?? [])]
+    setSelectedToken(tokens[0])
+    setGasData(null)
+    fetchNativePrice().then(p => refreshGas(p))
+  }, [activeChain.id])
+
+  // Re-estimate when address/token changes
+  useEffect(() => {
+    if (addr) refreshGas()
+  }, [toAddress, selectedToken.symbol])
+
+  // Auto-refresh gas every 15 seconds
+  useEffect(() => {
+    gasTimer.current = setInterval(() => refreshGas(), 15000)
+    return () => { if (gasTimer.current) clearInterval(gasTimer.current) }
+  }, [refreshGas])
 
   async function handleSend() {
     setSending(true)
@@ -131,6 +242,19 @@ export default function Send() {
       }
       const provider = getProvider(activeChain)
       const wallet   = new ethers.Wallet(privateKey, provider)
+      const gasLimit = gasData?.gasLimit ?? (selectedToken.contract ? 65000n : 21000n)
+      const tier     = selectedTier
+
+      // Build gas params
+      const gasParams = gasData?.isEIP1559 && tier ? {
+        maxFeePerGas:         ethers.parseUnits(tier.maxFeeGwei.toFixed(9), "gwei"),
+        maxPriorityFeePerGas: ethers.parseUnits(tier.priorityGwei.toFixed(9), "gwei"),
+        gasLimit,
+      } : {
+        gasPrice: ethers.parseUnits((tier?.gwei ?? 20).toFixed(9), "gwei"),
+        gasLimit,
+      }
+
       let tx: ethers.TransactionResponse
 
       if (selectedToken.contract) {
@@ -138,13 +262,13 @@ export default function Send() {
         tx = await contract.transfer(
           toAddress,
           ethers.parseUnits(amount, selectedToken.decimals),
-          { gasLimit: gasLimit + 10000n }
+          gasParams
         )
       } else {
         tx = await wallet.sendTransaction({
-          to: ethers.getAddress(toAddress),
+          to:    ethers.getAddress(toAddress),
           value: ethers.parseEther(amount),
-          gasLimit,
+          ...gasParams,
         })
       }
 
@@ -158,11 +282,13 @@ export default function Send() {
     }
   }
 
-  // -- Success --
+  // --- Success ---
   if (step === "success") return (
     <View style={s.c}>
       <View style={s.successWrap}>
-        <View style={s.tick}><Text style={{ fontSize:32, fontWeight:"700", color:"#10B981" }}>OK</Text></View>
+        <View style={s.tick}>
+          <Text style={{ fontSize:32, fontWeight:"700", color:"#10B981" }}>OK</Text>
+        </View>
         <Text style={s.successTitle}>Sent!</Text>
         <Text style={s.successSub}>
           {amount} {selectedToken.symbol} on {activeChain.name}{"\n"}
@@ -173,7 +299,7 @@ export default function Send() {
           <Text style={s.hash} numberOfLines={2} selectable>{txHash}</Text>
         </View>
         <TouchableOpacity style={s.explorerBtn}
-          onPress={() => Linking.openURL(getTxUrl(activeChain.id, txHash))}>
+          onPress={() => Linking.openURL(getTxUrl(activeChain, txHash))}>
           <Text style={[s.explorerBtnT, { color: activeChain.color }]}>
             View on Explorer [->]
           </Text>
@@ -186,7 +312,7 @@ export default function Send() {
     </View>
   )
 
-  // -- Confirm --
+  // --- Confirm ---
   if (step === "confirm") return (
     <View style={s.c}>
       <View style={s.hdr}>
@@ -197,19 +323,33 @@ export default function Send() {
         <View style={{ width:38 }} />
       </View>
       <ScrollView style={s.scroll}>
+
+        {/* Amount card */}
         <View style={[s.confirmCard, { backgroundColor: activeChain.color }]}>
           <Text style={s.confirmLabel}>Sending on {activeChain.name}</Text>
           <Text style={s.confirmAmt}>{amount} {selectedToken.symbol}</Text>
+          {selectedTier && (
+            <View style={s.confirmGasBadge}>
+              <Text style={s.confirmGasBadgeT}>
+                {selectedTier.label} gas  ~{selectedTier.limitedTime}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {/* Details */}
         <View style={s.detailCard}>
           {[
-            { l:"Network",   v: activeChain.name },
-            { l:"From",      v: addr ? addr.slice(0,8)+"..."+addr.slice(-6) : "-" },
-            { l:"To",        v: toAddress.slice(0,8)+"..."+toAddress.slice(-6) },
-            { l:"Token",     v: `${selectedToken.name} (${selectedToken.symbol})` },
-            { l:"Gas limit", v: `${gasLimit.toLocaleString()} units` },
-            { l:"Gas price", v: gasPrice ? `${gasPrice} Gwei` : "..." },
-            { l:"Est. fee",  v: gasCostUSD ? `~$${gasCostUSD} (${gasCostETH} ${activeChain.symbol})` : "..." },
+            { l:"Network",    v: activeChain.name },
+            { l:"From",       v: addr ? addr.slice(0,8)+"..."+addr.slice(-6) : "-" },
+            { l:"To",         v: toAddress.slice(0,8)+"..."+toAddress.slice(-6) },
+            { l:"Token",      v: `${selectedToken.name} (${selectedToken.symbol})` },
+            { l:"Gas limit",  v: gasData ? `${gasData.gasLimit.toLocaleString()} units` : "..." },
+            { l:"Gas price",  v: selectedTier ? `${selectedTier.gwei} Gwei` : "..." },
+            { l:"Max fee",    v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.maxFeeGwei} Gwei` : "-" },
+            { l:"Priority",   v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.priorityGwei} Gwei` : "-" },
+            { l:"Est. fee",   v: selectedTier ? `~$${selectedTier.costUSD} (${selectedTier.costETH} ${activeChain.symbol})` : "..." },
+            { l:"Est. time",  v: selectedTier?.limitedTime ?? "..." },
           ].map(row => (
             <View key={row.l} style={s.detailRow}>
               <Text style={s.detailL}>{row.l}</Text>
@@ -217,9 +357,11 @@ export default function Send() {
             </View>
           ))}
         </View>
+
         <View style={s.bioHint}>
           <Text style={s.bioHintT}>[!] Review carefully. Transactions cannot be reversed.</Text>
         </View>
+
         <TouchableOpacity
           style={[s.sendBtn, { backgroundColor: activeChain.color }, sending && { opacity: 0.6 }]}
           onPress={handleSend}
@@ -230,11 +372,12 @@ export default function Send() {
             : <Text style={s.sendBtnT}>Confirm & Send</Text>
           }
         </TouchableOpacity>
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   )
 
-  // -- Form --
+  // --- Form ---
   return (
     <KeyboardAvoidingView style={s.c} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={s.hdr}>
@@ -312,17 +455,104 @@ export default function Send() {
           <Text style={s.inputSuffix}>{selectedToken.symbol}</Text>
         </View>
 
-        {/* Gas info */}
-        <View style={s.gasRow}>
-          <Text style={s.gasLabel}>Est. Gas Fee</Text>
-          {gasLoading
-            ? <ActivityIndicator size="small" color="#6366F1" />
-            : <Text style={s.gasVal}>
-                {gasCostUSD ? `~$${gasCostUSD}` : "--"}
-                {gasCostETH ? `  (${gasCostETH} ${activeChain.symbol})` : ""}
+        {/* ====== GAS ESTIMATOR ====== */}
+        <Text style={s.fieldLabel}>Gas Speed</Text>
+
+        {gasLoading && !gasData ? (
+          <View style={s.gasLoadingBox}>
+            <ActivityIndicator size="small" color="#6366F1" />
+            <Text style={s.gasLoadingT}>Fetching gas prices...</Text>
+          </View>
+        ) : gasError ? (
+          <View style={s.gasErrorBox}>
+            <Text style={s.gasErrorT}>[!] Could not fetch gas  using defaults</Text>
+            <TouchableOpacity onPress={() => refreshGas()}>
+              <Text style={s.gasRetryT}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : gasData ? (
+          <View style={s.gasTiersWrap}>
+            {/* EIP-1559 base fee info */}
+            {gasData.isEIP1559 && (
+              <View style={s.baseFeeRow}>
+                <Text style={s.baseFeeLabel}>Base fee</Text>
+                <Text style={s.baseFeeVal}>{gasData.baseFeeGwei.toFixed(2)} Gwei</Text>
+                <View style={s.liveIndicator}>
+                  <View style={s.liveDot} />
+                  <Text style={s.liveT}>Live</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Three speed tiers */}
+            {gasData.tiers.map(tier => (
+              <TouchableOpacity
+                key={tier.speed}
+                style={[
+                  s.gasTier,
+                  selectedSpeed === tier.speed && {
+                    borderColor: tier.color,
+                    backgroundColor: tier.bg,
+                  }
+                ]}
+                onPress={() => setSelectedSpeed(tier.speed)}
+                activeOpacity={0.8}
+              >
+                {/* Left: icon + label */}
+                <View style={[s.gasTierIcon, { backgroundColor: tier.color + "20" }]}>
+                  <Text style={[s.gasTierIconT, { color: tier.color }]}>{tier.icon}</Text>
+                </View>
+                <View style={s.gasTierMid}>
+                  <Text style={[s.gasTierLabel, selectedSpeed === tier.speed && { color: tier.color }]}>
+                    {tier.label}
+                  </Text>
+                  <Text style={s.gasTierTime}>{tier.limitedTime}</Text>
+                </View>
+
+                {/* Right: price */}
+                <View style={s.gasTierRight}>
+                  <Text style={[s.gasTierGwei, selectedSpeed === tier.speed && { color: tier.color }]}>
+                    {tier.gwei} Gwei
+                  </Text>
+                  <Text style={s.gasTierUSD}>
+                    {tier.costUSD !== "0.0000" ? `~$${tier.costUSD}` : `${tier.costETH} ${activeChain.symbol}`}
+                  </Text>
+                </View>
+
+                {/* Selected checkmark */}
+                {selectedSpeed === tier.speed && (
+                  <View style={[s.gasTierCheck, { backgroundColor: tier.color }]}>
+                    <Text style={s.gasTierCheckT}>[*]</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+
+            {/* Summary row */}
+            {selectedTier && (
+              <View style={s.gasSummary}>
+                <Text style={s.gasSummaryL}>Estimated fee</Text>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={s.gasSummaryAmt}>
+                    {selectedTier.costUSD !== "0.0000"
+                      ? `~$${selectedTier.costUSD}`
+                      : `${selectedTier.costETH} ${activeChain.symbol}`}
+                  </Text>
+                  <Text style={s.gasSummaryEth}>
+                    {selectedTier.costETH} {activeChain.symbol}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Last updated */}
+            <TouchableOpacity style={s.gasRefreshRow} onPress={() => refreshGas()}>
+              <Text style={s.gasRefreshT}>
+                Updated {Math.floor((Date.now() - gasData.lastUpdated) / 1000)}s ago  Tap to refresh
               </Text>
-          }
-        </View>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <TouchableOpacity
           style={[s.sendBtn, { backgroundColor: activeChain.color }, !canProceed && { opacity: 0.4 }]}
@@ -339,54 +569,85 @@ export default function Send() {
 }
 
 const s = StyleSheet.create({
-  c:              { flex:1, backgroundColor:"#F8FAFF" },
-  hdr:            { flexDirection:"row", alignItems:"center", justifyContent:"space-between", paddingHorizontal:20, paddingTop:20, paddingBottom:16 },
-  back:           { width:38, height:38, borderRadius:12, backgroundColor:"#fff", borderWidth:1, borderColor:"#E2E8F0", alignItems:"center", justifyContent:"center" },
-  backT:          { color:"#6366F1", fontSize:18, fontWeight:"700" },
-  hdrTitle:       { color:"#1E1B4B", fontSize:17, fontWeight:"700" },
-  scroll:         { flex:1, paddingHorizontal:20 },
-  fieldLabel:     { color:"#64748B", fontSize:13, fontWeight:"600", marginBottom:8, marginTop:16, textTransform:"uppercase", letterSpacing:0.3 },
-  tokenBtn:       { flexDirection:"row", alignItems:"center", backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", padding:14, gap:12 },
-  tokenDot:       { width:36, height:36, borderRadius:18, alignItems:"center", justifyContent:"center" },
-  tokenDotT:      { fontSize:13, fontWeight:"700" },
-  tokenBtnT:      { flex:1, color:"#1E1B4B", fontSize:15, fontWeight:"600" },
-  tokenChev:      { color:"#94A3B8", fontSize:12 },
-  picker:         { backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", marginTop:4, overflow:"hidden" },
-  pickerRow:      { flexDirection:"row", alignItems:"center", padding:14, gap:12, borderBottomWidth:1, borderBottomColor:"#F1F5F9" },
-  pickerRowActive:{ backgroundColor:"#EEF2FF" },
-  pickerSym:      { color:"#1E1B4B", fontSize:14, fontWeight:"700" },
-  pickerName:     { color:"#94A3B8", fontSize:12 },
-  pickerCheck:    { marginLeft:"auto", color:"#6366F1", fontSize:13, fontWeight:"700" },
-  inputWrap:      { flexDirection:"row", alignItems:"center", backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", paddingHorizontal:16, height:52 },
-  inputValid:     { borderColor:"#6EE7B7" },
-  inputError:     { borderColor:"#FCA5A5" },
-  input:          { flex:1, color:"#1E1B4B", fontSize:15, height:52 },
-  inputSuffix:    { color:"#94A3B8", fontSize:14, fontWeight:"600" },
-  validMark:      { color:"#10B981", fontSize:13, fontWeight:"700" },
-  errorMsg:       { color:"#EF4444", fontSize:12, marginTop:4, marginLeft:4 },
-  gasRow:         { flexDirection:"row", alignItems:"center", justifyContent:"space-between", backgroundColor:"#fff", borderRadius:12, padding:14, marginTop:12, borderWidth:1, borderColor:"#E2E8F0" },
-  gasLabel:       { color:"#64748B", fontSize:13, fontWeight:"600" },
-  gasVal:         { color:"#1E1B4B", fontSize:13, fontWeight:"600" },
-  sendBtn:        { borderRadius:16, paddingVertical:16, alignItems:"center", marginTop:20 },
-  sendBtnT:       { color:"#fff", fontSize:16, fontWeight:"700" },
-  confirmCard:    { borderRadius:20, padding:24, alignItems:"center", marginBottom:16 },
-  confirmLabel:   { color:"rgba(255,255,255,0.8)", fontSize:13, marginBottom:8 },
-  confirmAmt:     { color:"#fff", fontSize:32, fontWeight:"800" },
-  detailCard:     { backgroundColor:"#fff", borderRadius:16, borderWidth:1, borderColor:"#E2E8F0", overflow:"hidden", marginBottom:16 },
-  detailRow:      { flexDirection:"row", justifyContent:"space-between", padding:14, borderBottomWidth:1, borderBottomColor:"#F1F5F9" },
-  detailL:        { color:"#64748B", fontSize:13 },
-  detailV:        { color:"#1E1B4B", fontSize:13, fontWeight:"600", maxWidth:"55%" as any, textAlign:"right" },
-  bioHint:        { backgroundColor:"#FFF7ED", borderRadius:12, padding:14, marginBottom:16, borderWidth:1, borderColor:"#FED7AA" },
-  bioHintT:       { color:"#C2410C", fontSize:13, lineHeight:20 },
-  successWrap:    { flex:1, alignItems:"center", justifyContent:"center", padding:32 },
-  tick:           { width:72, height:72, borderRadius:36, backgroundColor:"#D1FAE5", alignItems:"center", justifyContent:"center", marginBottom:16 },
-  successTitle:   { color:"#1E1B4B", fontSize:28, fontWeight:"800", marginBottom:8 },
-  successSub:     { color:"#64748B", fontSize:14, textAlign:"center", lineHeight:22, marginBottom:24 },
-  hashBox:        { backgroundColor:"#F8FAFF", borderRadius:12, padding:16, width:"100%", marginBottom:16, borderWidth:1, borderColor:"#E2E8F0" },
-  hashLabel:      { color:"#94A3B8", fontSize:12, marginBottom:6 },
-  hash:           { color:"#1E1B4B", fontSize:12, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", lineHeight:18 },
-  explorerBtn:    { marginBottom:12 },
-  explorerBtnT:   { fontSize:14, fontWeight:"600" },
-  doneBtn:        { borderRadius:16, paddingVertical:16, paddingHorizontal:40, marginTop:8 },
-  doneBtnT:       { color:"#fff", fontSize:16, fontWeight:"700" },
+  c:                  { flex:1, backgroundColor:"#F8FAFF" },
+  hdr:                { flexDirection:"row", alignItems:"center", justifyContent:"space-between", paddingHorizontal:20, paddingTop:20, paddingBottom:16 },
+  back:               { width:38, height:38, borderRadius:12, backgroundColor:"#fff", borderWidth:1, borderColor:"#E2E8F0", alignItems:"center", justifyContent:"center" },
+  backT:              { color:"#6366F1", fontSize:18, fontWeight:"700" },
+  hdrTitle:           { color:"#1E1B4B", fontSize:17, fontWeight:"700" },
+  scroll:             { flex:1, paddingHorizontal:20 },
+  fieldLabel:         { color:"#64748B", fontSize:13, fontWeight:"600", marginBottom:8, marginTop:16, textTransform:"uppercase", letterSpacing:0.3 },
+  tokenBtn:           { flexDirection:"row", alignItems:"center", backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", padding:14, gap:12 },
+  tokenDot:           { width:36, height:36, borderRadius:18, alignItems:"center", justifyContent:"center" },
+  tokenDotT:          { fontSize:13, fontWeight:"700" },
+  tokenBtnT:          { flex:1, color:"#1E1B4B", fontSize:15, fontWeight:"600" },
+  tokenChev:          { color:"#94A3B8", fontSize:12 },
+  picker:             { backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", marginTop:4, overflow:"hidden" },
+  pickerRow:          { flexDirection:"row", alignItems:"center", padding:14, gap:12, borderBottomWidth:1, borderBottomColor:"#F1F5F9" },
+  pickerRowActive:    { backgroundColor:"#EEF2FF" },
+  pickerSym:          { color:"#1E1B4B", fontSize:14, fontWeight:"700" },
+  pickerName:         { color:"#94A3B8", fontSize:12 },
+  pickerCheck:        { marginLeft:"auto", color:"#6366F1", fontSize:13, fontWeight:"700" },
+  inputWrap:          { flexDirection:"row", alignItems:"center", backgroundColor:"#fff", borderRadius:16, borderWidth:1.5, borderColor:"#E2E8F0", paddingHorizontal:16, height:52 },
+  inputValid:         { borderColor:"#6EE7B7" },
+  inputError:         { borderColor:"#FCA5A5" },
+  input:              { flex:1, color:"#1E1B4B", fontSize:15, height:52 },
+  inputSuffix:        { color:"#94A3B8", fontSize:14, fontWeight:"600" },
+  validMark:          { color:"#10B981", fontSize:13, fontWeight:"700" },
+  errorMsg:           { color:"#EF4444", fontSize:12, marginTop:4, marginLeft:4 },
+
+  // Gas estimator
+  gasLoadingBox:      { flexDirection:"row", alignItems:"center", gap:10, backgroundColor:"#fff", borderRadius:14, padding:16, borderWidth:1, borderColor:"#E2E8F0" },
+  gasLoadingT:        { color:"#94A3B8", fontSize:13 },
+  gasErrorBox:        { flexDirection:"row", alignItems:"center", justifyContent:"space-between", backgroundColor:"#FEF2F2", borderRadius:14, padding:14, borderWidth:1, borderColor:"#FECACA" },
+  gasErrorT:          { color:"#EF4444", fontSize:13, flex:1 },
+  gasRetryT:          { color:"#6366F1", fontSize:13, fontWeight:"600", marginLeft:8 },
+  gasTiersWrap:       { backgroundColor:"#fff", borderRadius:18, borderWidth:1.5, borderColor:"#E2E8F0", overflow:"hidden" },
+  baseFeeRow:         { flexDirection:"row", alignItems:"center", paddingHorizontal:16, paddingVertical:10, borderBottomWidth:1, borderBottomColor:"#F1F5F9", gap:8 },
+  baseFeeLabel:       { color:"#94A3B8", fontSize:12, fontWeight:"600", flex:1 },
+  baseFeeVal:         { color:"#1E1B4B", fontSize:12, fontWeight:"700" },
+  liveIndicator:      { flexDirection:"row", alignItems:"center", gap:4 },
+  liveDot:            { width:6, height:6, borderRadius:3, backgroundColor:"#10B981" },
+  liveT:              { color:"#10B981", fontSize:11, fontWeight:"600" },
+  gasTier:            { flexDirection:"row", alignItems:"center", padding:14, gap:12, borderBottomWidth:1, borderBottomColor:"#F1F5F9", borderWidth:0, borderRadius:0 },
+  gasTierIcon:        { width:38, height:38, borderRadius:19, alignItems:"center", justifyContent:"center" },
+  gasTierIconT:       { fontSize:14, fontWeight:"800" },
+  gasTierMid:         { flex:1 },
+  gasTierLabel:       { color:"#1E1B4B", fontSize:14, fontWeight:"700" },
+  gasTierTime:        { color:"#94A3B8", fontSize:12, marginTop:2 },
+  gasTierRight:       { alignItems:"flex-end" },
+  gasTierGwei:        { color:"#1E1B4B", fontSize:14, fontWeight:"700" },
+  gasTierUSD:         { color:"#94A3B8", fontSize:12, marginTop:2 },
+  gasTierCheck:       { width:22, height:22, borderRadius:11, alignItems:"center", justifyContent:"center", marginLeft:8 },
+  gasTierCheckT:      { color:"#fff", fontSize:10, fontWeight:"800" },
+  gasSummary:         { flexDirection:"row", alignItems:"center", justifyContent:"space-between", paddingHorizontal:16, paddingVertical:12, borderTopWidth:1, borderTopColor:"#F1F5F9", backgroundColor:"#F8FAFF" },
+  gasSummaryL:        { color:"#64748B", fontSize:13, fontWeight:"600" },
+  gasSummaryAmt:      { color:"#1E1B4B", fontSize:15, fontWeight:"700" },
+  gasSummaryEth:      { color:"#94A3B8", fontSize:11, marginTop:2 },
+  gasRefreshRow:      { alignItems:"center", paddingVertical:10, borderTopWidth:1, borderTopColor:"#F1F5F9" },
+  gasRefreshT:        { color:"#94A3B8", fontSize:11 },
+
+  sendBtn:            { borderRadius:16, paddingVertical:16, alignItems:"center", marginTop:20 },
+  sendBtnT:           { color:"#fff", fontSize:16, fontWeight:"700" },
+  confirmCard:        { borderRadius:20, padding:24, alignItems:"center", marginBottom:16 },
+  confirmLabel:       { color:"rgba(255,255,255,0.8)", fontSize:13, marginBottom:8 },
+  confirmAmt:         { color:"#fff", fontSize:32, fontWeight:"800" },
+  confirmGasBadge:    { marginTop:10, backgroundColor:"rgba(255,255,255,0.2)", paddingVertical:5, paddingHorizontal:14, borderRadius:20 },
+  confirmGasBadgeT:   { color:"#fff", fontSize:12, fontWeight:"600" },
+  detailCard:         { backgroundColor:"#fff", borderRadius:16, borderWidth:1, borderColor:"#E2E8F0", overflow:"hidden", marginBottom:16 },
+  detailRow:          { flexDirection:"row", justifyContent:"space-between", padding:14, borderBottomWidth:1, borderBottomColor:"#F1F5F9" },
+  detailL:            { color:"#64748B", fontSize:13 },
+  detailV:            { color:"#1E1B4B", fontSize:13, fontWeight:"600", maxWidth:"55%" as any, textAlign:"right" },
+  bioHint:            { backgroundColor:"#FFF7ED", borderRadius:12, padding:14, marginBottom:16, borderWidth:1, borderColor:"#FED7AA" },
+  bioHintT:           { color:"#C2410C", fontSize:13, lineHeight:20 },
+  successWrap:        { flex:1, alignItems:"center", justifyContent:"center", padding:32 },
+  tick:               { width:72, height:72, borderRadius:36, backgroundColor:"#D1FAE5", alignItems:"center", justifyContent:"center", marginBottom:16 },
+  successTitle:       { color:"#1E1B4B", fontSize:28, fontWeight:"800", marginBottom:8 },
+  successSub:         { color:"#64748B", fontSize:14, textAlign:"center", lineHeight:22, marginBottom:24 },
+  hashBox:            { backgroundColor:"#F8FAFF", borderRadius:12, padding:16, width:"100%", marginBottom:16, borderWidth:1, borderColor:"#E2E8F0" },
+  hashLabel:          { color:"#94A3B8", fontSize:12, marginBottom:6 },
+  hash:               { color:"#1E1B4B", fontSize:12, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", lineHeight:18 },
+  explorerBtn:        { marginBottom:12 },
+  explorerBtnT:       { fontSize:14, fontWeight:"600" },
+  doneBtn:            { borderRadius:16, paddingVertical:16, paddingHorizontal:40, marginTop:8 },
+  doneBtnT:           { color:"#fff", fontSize:16, fontWeight:"700" },
 })
