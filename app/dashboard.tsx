@@ -55,7 +55,7 @@ function TxIcon({ type }: { type: string }) {
   const isSend = type === 'send' || type === 'token_send'
   return (
     <Text style={{ fontSize: 16, fontWeight: '800', color: isSend ? '#EF4444' : '#10B981' }}>
-      {isSend ? '' : ''}
+      {isSend ? 'OUT' : 'IN'}
     </Text>
   )
 }
@@ -102,9 +102,9 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    icon: '', route: '/send'    },
-  { l: 'Receive', icon: '', route: '/receive' },
-  { l: 'Swap',    icon: '', route: '/swap'    },
+  { l: 'Send',    icon: 'S', route: '/send'    },
+  { l: 'Receive', icon: 'R', route: '/receive' },
+  { l: 'Swap',    icon: 'SW', route: '/swap'    },
   { l: 'Buy',     icon: '+', route: '/buy'     },
 ]
 
@@ -235,7 +235,7 @@ export default function Dashboard() {
             <Text style={s.iconBtnText}>$</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/settings' as any)}>
-            <Text style={s.iconBtnText}></Text>
+            <Text style={s.iconBtnText}>ST</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -444,7 +444,7 @@ const s = StyleSheet.create({
   actions:         { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginBottom: 28 },
   actionItem:      { alignItems: 'center', gap: 8 },
   actionBtn:       { width: 58, height: 58, borderRadius: 29, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 2, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 4 },
-  actionIcon:      { fontSize: 22, fontWeight: '800' },
+  actionIcon:      { fontSize: 14, fontWeight: '800' },
   actionLabel:     { color: '#64748B', fontSize: 12, fontWeight: '600' },
   section:         { paddingHorizontal: 16, marginBottom: 24 },
   sectionHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
