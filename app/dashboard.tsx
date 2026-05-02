@@ -1,14 +1,41 @@
-﻿import { useEffect, useState, useCallback, useRef } from 'react'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Modal, Animated,
 } from 'react-native'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { router } from 'expo-router'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { ethers } from 'ethers'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { useWalletStore } from '../store/walletStore'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { CHAINS, Chain, getProvider } from '../utils/chains'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
 import { fetchChainTokenBalances } from '../utils/tokens'
+import { getUnreadCount } from '../utils/notifications'
+import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount } from '../utils/notifications'
 
 type TokenRow = {
   symbol: string; name: string
@@ -124,6 +151,7 @@ export default function Dashboard() {
   const [error,      setError]      = useState(false)
   const [chainModal, setChainModal] = useState(false)
   const [fundSheet,  setFundSheet]  = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
 
@@ -221,6 +249,20 @@ export default function Dashboard() {
 
   const onRefresh = () => { setRefreshing(true); fetchBalances(true); refreshTxns() }
 
+  // Load notification unread count on focus
+  useEffect(() => {
+    setUnreadCount(getUnreadCount())
+    const interval = setInterval(() => setUnreadCount(getUnreadCount()), 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Load notification unread count on focus
+  useEffect(() => {
+    setUnreadCount(getUnreadCount())
+    const interval = setInterval(() => setUnreadCount(getUnreadCount()), 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <View style={s.c}>
       {/* Header */}
@@ -232,7 +274,15 @@ export default function Dashboard() {
         </TouchableOpacity>
         <View style={s.headerRight}>
           <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
-            <Text style={s.iconBtnText}>$</Text>
+            <Text style={s.iconBtnText}>{'$'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
+            <Text style={s.iconBtnText}>B</Text>
+            {unreadCount > 0 && (
+              <View style={s.bellBadge}>
+                <Text style={s.bellBadgeT}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/settings' as any)}>
             <Text style={s.iconBtnText}>ST</Text>
