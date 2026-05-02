@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons'
 import { useState, useEffect, useCallback } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet,
@@ -202,7 +203,7 @@ export default function Notifications() {
             onPress={() => setTab(t)}
           >
             <Text style={[s.tabT, tab === t && s.tabTActive]}>
-              {t === "notifications" ? "[B] Inbox" : "[=] Settings"}
+              {t === "notifications" ? " Inbox" : " Settings"}
             </Text>
           </TouchableOpacity>
         ))}
