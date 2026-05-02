@@ -103,9 +103,9 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    icon: '', route: '/send'    },
-  { l: 'Receive', icon: '', route: '/receive' },
-  { l: 'Swap',    icon: '', route: '/swap'    },
+  { l: 'Send',    icon: 'S', route: '/send'    },
+  { l: 'Receive', icon: 'R', route: '/receive' },
+  { l: 'Swap',    icon: 'SW', route: '/swap'    },
   { l: 'Buy',     icon: '+', route: '/buy'     },
 ]
 
@@ -251,7 +251,7 @@ export default function Dashboard() {
             <Text style={s.iconBtnText}>{'$'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
-            <Text style={{fontSize: 20}}></Text>
+            <Text style={s.bellText}>N</Text>
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
                 <Text style={s.bellBadgeT}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
