@@ -248,10 +248,10 @@ export default function Dashboard() {
           <Text style={s.chevron}></Text>
         </TouchableOpacity>
         <View style={s.headerRight}>
-          <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + "55" }]} onPress={() => setFundSheet(true)}>
+          <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
             <Text style={s.iconBtnText}>{'$'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.bellBtn, { borderColor: activeChain.color + "55" }]} onPress={() => router.push('/notifications' as any)}>
+          <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
             <Ionicons name="notifications-outline" size={20} color={activeChain.color} />
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
@@ -450,8 +450,11 @@ const s = StyleSheet.create({
   chainName:       { fontSize: 13, fontWeight: '700', color: '#1E1B4B' },
   chevron:         { fontSize: 18, color: '#94A3B8', marginTop: -1 },
   headerRight:     { flexDirection: 'row', gap: 8 },
-  iconBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: activeChain.color + "33", alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  iconBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   iconBtnText:     { fontSize: 18,
+  bellBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: `#fff`, borderWidth: 1, borderColor: `#E2E8F0`, alignItems: `center`, justifyContent: `center`, shadowColor: `#000`, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  bellBadge:       { position: `absolute`, top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: `#EF4444`, alignItems: `center`, justifyContent: `center`, paddingHorizontal: 3, borderWidth: 1.5, borderColor: `#fff` },
+  bellBadgeT:      { color: `#fff`, fontSize: 9, fontWeight: `800` },
   bellBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: `#fff`, borderWidth: 1, borderColor: `#E2E8F0`, alignItems: `center`, justifyContent: `center`, shadowColor: `#000`, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   bellBadge:       { position: `absolute`, top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: `#EF4444`, alignItems: `center`, justifyContent: `center`, paddingHorizontal: 3, borderWidth: 1.5, borderColor: `#fff` },
   bellBadgeT:      { color: `#fff`, fontSize: 9, fontWeight: `800` }, color: '#6366F1', fontWeight: '700' },
