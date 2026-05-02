@@ -1,0 +1,16 @@
+export const COINGECKO_IDS: Record<string, string> = {
+  ETH:   'ethereum',
+  BNB:   'binancecoin',
+  MATIC: 'matic-network',
+  POL:   'matic-network',
+  ARB:   'arbitrum',
+  OP:    'optimism',
+  USDT:  'tether',
+  USDC:  'usd-coin',
+  WBTC:  'wrapped-bitcoin',
+  DAI:   'dai',
+  LINK:  'chainlink',
+  UNI:   'uniswap',
+  AAVE:  'aave',
+  WETH:  'weth',
+}
