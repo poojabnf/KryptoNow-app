@@ -5,6 +5,7 @@ import {
   FlatList, Platform, Linking,
 } from "react-native"
 import { router } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
@@ -144,7 +145,7 @@ function SlippageModal({
         </View>
         {sel > 2 && (
           <View style={sl.warn}>
-            <Text style={sl.warnT}>[!] High slippage - you may receive much less than expected.</Text>
+            <Text style={sl.warnT}>! High slippage - you may receive much less than expected.</Text>
           </View>
         )}
         <TouchableOpacity
@@ -421,7 +422,7 @@ export default function Swap() {
           )}
 
           <View style={s.bioHint}>
-            <Text style={s.bioHintT}>[!] Review carefully. Swaps cannot be reversed.</Text>
+            <Text style={s.bioHintT}>! Review carefully. Swaps cannot be reversed.</Text>
           </View>
 
           {busy ? (
@@ -520,7 +521,7 @@ export default function Swap() {
         {/* Quote info */}
         {quoteError ? (
           <View style={s.errorBox}>
-            <Text style={s.errorT}>[!] {quoteError}</Text>
+            <Text style={s.errorT}>! {quoteError}</Text>
           </View>
         ) : quote ? (
           <View style={s.quoteBox}>

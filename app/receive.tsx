@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Platform } from "react-native"
 import { router } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import * as Clipboard from "expo-clipboard"
 
@@ -33,7 +34,7 @@ export default function Receive() {
     <View style={s.c}>
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>{"<"}</Text>
+          <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Receive</Text>
         <View style={{ width: 38 }} />
@@ -86,7 +87,7 @@ export default function Receive() {
             activeOpacity={0.8}
           >
             <Text style={[s.copyBtnT, copied && { color: "#10B981" }]}>
-              {copied ? "[OK] Copied!" : "[C] Copy Address"}
+              {copied ? "Copied!" : "Copy Address"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -98,7 +99,7 @@ export default function Receive() {
             "Share only with trusted senders",
           ].map(tip => (
             <View key={tip} style={s.tip}>
-              <Text style={s.tipDot}>*</Text>
+              <Ionicons name="checkmark-circle-outline" size={14} color="#D97706" style={{ marginTop:2 }} />
               <Text style={s.tipT}>{tip}</Text>
             </View>
           ))}

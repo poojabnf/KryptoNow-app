@@ -4,6 +4,7 @@ import {
   Linking, Alert, SafeAreaView,
 } from "react-native"
 import { router } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 
 const TOKENS = [
@@ -102,7 +103,7 @@ export default function BuyScreen() {
     <SafeAreaView style={s.safe}>
       <View style={s.header}>
         <TouchableOpacity style={s.back} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={s.backT}>{"<"}</Text>
+          <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.title}>Buy Crypto</Text>
         <View style={{ width: 38 }} />
