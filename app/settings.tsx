@@ -102,7 +102,7 @@ export default function Settings() {
     )
   }
 
-  type ItemType = "nav" | "toggle" | "action" | "info"
+  type ItemType = "nav" | "toggle" | "action" | "info" | "theme"
   type Item = {
     icon: string; iconBg: string; label: string; sublabel?: string
     type: ItemType; value?: boolean; color?: string
@@ -118,6 +118,12 @@ export default function Settings() {
         { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
         { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
         { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
+      ],
+    },
+    {
+      title: "APPEARANCE",
+      items: [
+        { icon: "TH", iconBg: "#EEF2FF", label: "Theme", sublabel: mode === "light" ? "Light" : mode === "dark" ? "Dark" : "Pro", type: "theme", onPress: () => {} },
       ],
     },
     {
@@ -191,7 +197,7 @@ export default function Settings() {
                   key={item.label}
                   style={[st.row, idx < sec.items.length - 1 && st.rowBorder]}
                   onPress={item.type !== "toggle" && item.type !== "info" ? item.onPress : undefined}
-                  activeOpacity={item.type === "info" || item.type === "toggle" ? 1 : 0.7}
+                  activeOpacity={item.type === "info" || item.type === "toggle" || item.type === "theme" ? 1 : 0.7}
                 >
                   <View style={[st.iconWrap, { backgroundColor: item.color === "#EF4444" ? "#FEF2F2" : item.iconBg }]}>
                     <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
@@ -202,6 +208,29 @@ export default function Settings() {
                       <Text style={st.rowSub}>{item.sublabel}</Text>
                     )}
                   </View>
+                  {item.type === "theme" && (
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      {(["light", "dark", "pro"]).map((m) => (
+                        <TouchableOpacity
+                          key={m}
+                          onPress={() => setMode(m as any)}
+                          style={{
+                            paddingVertical: 5,
+                            paddingHorizontal: 12,
+                            borderRadius: 20,
+                            backgroundColor: mode === m ? activeChain.color : "#F1F5F9",
+                            borderWidth: 1.5,
+                            borderColor: mode === m ? activeChain.color : "#E2E8F0",
+                          }}
+                        >
+                          <Text style={{
+                            fontSize: 11, fontWeight: "700", textTransform: "capitalize",
+                            color: mode === m ? "#fff" : "#64748B",
+                          }}>{m}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                   {item.type === "toggle" && (
                     <Switch
                       value={item.value}
