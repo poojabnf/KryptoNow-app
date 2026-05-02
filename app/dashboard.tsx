@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons'
 import { getUnreadCount } from '../utils/notifications'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
@@ -103,10 +104,10 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    icon: 'S', route: '/send'    },
-  { l: 'Receive', icon: 'R', route: '/receive' },
-  { l: 'Swap',    icon: 'SW', route: '/swap'    },
-  { l: 'Buy',     icon: '+', route: '/buy'     },
+  { l: 'Send',    icon: 'send-outline', route: '/send'    },
+  { l: 'Receive', icon: 'download-outline', route: '/receive' },
+  { l: 'Swap',    icon: 'swap-horizontal-outline', route: '/swap'    },
+  { l: 'Buy',     icon: 'add-circle-outline', route: '/buy'     },
 ]
 
 export default function Dashboard() {
@@ -251,7 +252,7 @@ export default function Dashboard() {
             <Text style={s.iconBtnText}>{'$'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
-            <Text style={s.bellText}>N</Text>
+            <Ionicons name="notifications-outline" size={20} color="#6366F1" />
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
                 <Text style={s.bellBadgeT}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -259,7 +260,7 @@ export default function Dashboard() {
             )}
           </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/settings' as any)}>
-            <Text style={s.iconBtnText}>ST</Text>
+            <Ionicons name="settings-outline" size={20} color="#6366F1" />
           </TouchableOpacity>
         </View>
       </View>
@@ -307,7 +308,7 @@ export default function Dashboard() {
           {ACTIONS.map(a => (
             <TouchableOpacity key={a.l} style={s.actionItem} onPress={() => router.push(a.route as any)} activeOpacity={0.7}>
               <View style={[s.actionBtn, { borderColor: activeChain.color + '55' }]}>
-                <Text style={[s.actionIcon, { color: activeChain.color }]}>{a.icon}</Text>
+                <Ionicons name={a.icon as any} size={24} color={activeChain.color} />
               </View>
               <Text style={s.actionLabel}>{a.l}</Text>
             </TouchableOpacity>
