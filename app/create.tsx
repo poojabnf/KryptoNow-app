@@ -1,4 +1,4 @@
-import 'react-native-get-random-values';
+﻿import 'react-native-get-random-values';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@clerk/expo";
@@ -60,15 +60,13 @@ export default function Create() {
       const vault = await encryptPhrase(phrase, address);
       LOG("Save", "Phrase encrypted");
 
-      await AsyncStorage.setItem("kryptonow_vault", vault);
-      await AsyncStorage.setItem("kryptonow_address", address);
-      await AsyncStorage.setItem("kryptonow_profile", JSON.stringify({ onboarded: true }));
+      try { localStorage.setItem('kryptonow_vault', vault); localStorage.setItem('kryptonow_address', address); localStorage.setItem('kryptonow_profile', JSON.stringify({ onboarded: true })); } catch {}
       LOG("Save", "AsyncStorage written");
 
       await saveWalletKeys(privKey, phrase);
       LOG("Save", "Secure store keys saved");
 
-      useWalletStore.getState().setWallet(address);
+      useWalletStore.getState().setWallet({ address, phrase });
       LOG("Save", "WalletStore updated, navigating to dashboard");
 
       router.replace('/dashboard');
