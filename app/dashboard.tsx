@@ -248,10 +248,10 @@ export default function Dashboard() {
           <Text style={s.chevron}></Text>
         </TouchableOpacity>
         <View style={s.headerRight}>
-          <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + '55' }]} onPress={() => setFundSheet(true)}>
+          <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + '55', backgroundColor: activeChain.color + '15' }]} onPress={() => setFundSheet(true)}>
             <Ionicons name="card-outline" size={20} color={activeChain.color} />
           </TouchableOpacity>
-          <TouchableOpacity style={[s.bellBtn, { borderColor: activeChain.color + '55' }]} onPress={() => router.push('/notifications' as any)}>
+          <TouchableOpacity style={[s.bellBtn, { borderColor: activeChain.color + '55', backgroundColor: activeChain.color + '15' }]} onPress={() => router.push('/notifications' as any)}>
             <Ionicons name="notifications-outline" size={20} color={activeChain.color} />
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
@@ -259,7 +259,7 @@ export default function Dashboard() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + '55' }]} onPress={() => router.push('/settings' as any)}>
+          <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + '55', backgroundColor: activeChain.color + '15' }]} onPress={() => router.push('/settings' as any)}>
             <Ionicons name="settings-outline" size={20} color={activeChain.color} />
           </TouchableOpacity>
         </View>
