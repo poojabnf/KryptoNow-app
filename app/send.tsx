@@ -10,6 +10,8 @@ import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
 import { isValidAddress } from "../utils/crypto"
 import { getTxUrl, getProvider, Chain } from "../utils/chains"
+import TokenSearchModal from "../components/TokenSearchModal"
+import { CustomToken, loadCustomTokens } from "../utils/tokenSearch"
 
 const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
@@ -155,10 +157,20 @@ export default function Send() {
 
   const erc20List   = CHAIN_TOKENS[activeChain.id] ?? []
   const nativeToken = { symbol: activeChain.symbol, name: activeChain.nativeName, decimals: 18, contract: null as null, color: activeChain.color }
-  const allTokens   = [nativeToken, ...erc20List]
+  const allTokens   = [nativeToken, ...erc20List, ...customTokens.map(t => ({
+    symbol:   t.symbol,
+    name:     t.name,
+    decimals: t.decimals,
+    contract: t.address,
+    color:    t.color,
+  }))]
 
   const [selectedToken, setSelectedToken] = useState(allTokens[0])
   const [showPicker,    setShowPicker]    = useState(false)
+  const [showTokenSearch, setShowTokenSearch] = useState(false)
+  const [customTokens,    setCustomTokens]    = useState<CustomToken[]>(
+    () => loadCustomTokens(activeChain.id)
+  )
   const [toAddress,     setToAddress]     = useState("")
   const [amount,        setAmount]        = useState("")
   const [nativePrice,   setNativePrice]   = useState(0)
@@ -219,6 +231,7 @@ export default function Send() {
     setSelectedToken(tokens[0])
     setGasData(null)
     fetchNativePrice().then(p => refreshGas(p))
+    setCustomTokens(loadCustomTokens(activeChain.id))
   }, [activeChain.id])
 
   // Re-estimate when address/token changes
@@ -391,7 +404,15 @@ export default function Send() {
       <ScrollView style={s.scroll} keyboardShouldPersistTaps="handled">
 
         {/* Token selector */}
-        <Text style={s.fieldLabel}>Token</Text>
+        <View style={{ flexDirection:"row", alignItems:"center", justifyContent:"space-between", marginBottom:8, marginTop:16 }}>
+          <Text style={[s.fieldLabel, { marginBottom:0, marginTop:0 }]}>Token</Text>
+          <TouchableOpacity
+            style={s.searchTokenBtn}
+            onPress={() => setShowTokenSearch(true)}
+          >
+            <Text style={s.searchTokenBtnT}>[S] Search Tokens</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={s.tokenBtn} onPress={() => setShowPicker(!showPicker)}>
           <View style={[s.tokenDot, { backgroundColor: selectedToken.color + "20" }]}>
             <Text style={[s.tokenDotT, { color: selectedToken.color }]}>
@@ -564,6 +585,17 @@ export default function Send() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <TokenSearchModal
+        visible={showTokenSearch}
+        chain={activeChain}
+        walletAddress={addr ?? ""}
+        onClose={() => setShowTokenSearch(false)}
+        onTokenAdded={token => {
+          setCustomTokens(loadCustomTokens(activeChain.id))
+          setShowTokenSearch(false)
+        }}
+      />
     </KeyboardAvoidingView>
   )
 }
@@ -650,4 +682,6 @@ const s = StyleSheet.create({
   explorerBtnT:       { fontSize:14, fontWeight:"600" },
   doneBtn:            { borderRadius:16, paddingVertical:16, paddingHorizontal:40, marginTop:8 },
   doneBtnT:           { color:"#fff", fontSize:16, fontWeight:"700" },
+  searchTokenBtn:     { backgroundColor:"#EEF2FF", paddingVertical:6, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:"#C7D2FE" },
+  searchTokenBtnT:    { color:"#6366F1", fontSize:12, fontWeight:"700" },
 })
