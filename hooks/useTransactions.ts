@@ -25,23 +25,11 @@ export type Tx = {
   status:      "success" | "failed" | "pending"
 }
 
-const EXPLORER_API: Record<number, string> = {
-  1:     "https://api.etherscan.io/api",
-  137:   "https://api.polygonscan.com/api",
-  56:    "https://api.bscscan.com/api",
-  42161: "https://api.arbiscan.io/api",
-  10:    "https://api-optimistic.etherscan.io/api",
-  8453:  "https://api.basescan.org/api",
-}
+// ONE Etherscan V2 endpoint covers ALL chains via chainid param
+const ETHERSCAN_V2 = "https://api.etherscan.io/v2/api"
 
-const API_KEYS: Record<number, string> = {
-  1:     process.env.EXPO_PUBLIC_ETHERSCAN_KEY   ?? "",
-  137:   process.env.EXPO_PUBLIC_POLYGONSCAN_KEY ?? "",
-  56:    process.env.EXPO_PUBLIC_BSCSCAN_KEY     ?? "",
-  42161: process.env.EXPO_PUBLIC_ARBISCAN_KEY    ?? "",
-  10:    process.env.EXPO_PUBLIC_OPTIMISM_KEY    ?? "",
-  8453:  process.env.EXPO_PUBLIC_BASESCAN_KEY    ?? "",
-}
+// Chain IDs map directly to Etherscan V2 chainid param
+const SUPPORTED_CHAINS = new Set([1, 137, 42161, 10, 8453, 56])
 
 function fromWei(value: string, decimals = 18): string {
   try {
@@ -50,28 +38,20 @@ function fromWei(value: string, decimals = 18): string {
     const whole   = n / d
     const frac    = n % d
     const fracStr = frac.toString().padStart(decimals, "0").slice(0, 6)
-    const result  = `${whole}.${fracStr}`
-    const trimmed = result.replace(/\.?0+$/, "")
-    return trimmed || "0"
-  } catch {
-    return "0"
-  }
+    return `${whole}.${fracStr}`.replace(/\.?0+$/, "") || "0"
+  } catch { return "0" }
 }
 
 function calcGasCost(gasUsed: string, gasPrice: string): string {
   try {
-    const cost = (parseInt(gasUsed) * parseInt(gasPrice)) / 1e18
-    return cost.toFixed(8)
-  } catch {
-    return "0"
-  }
+    return ((parseInt(gasUsed) * parseInt(gasPrice)) / 1e18).toFixed(8)
+  } catch { return "0" }
 }
 
 function normaliseTx(raw: any, address: string, chainSymbol: string, chainName: string): Tx {
-  const isSend    = raw.from?.toLowerCase() === address.toLowerCase()
-  const gasUsed   = raw.gasUsed   ?? "0"
-  const gasPrice  = raw.gasPrice  ?? "0"
-
+  const isSend  = raw.from?.toLowerCase() === address.toLowerCase()
+  const gasUsed = raw.gasUsed  ?? "0"
+  const gasPrice= raw.gasPrice ?? "0"
   return {
     hash:        raw.hash        ?? "",
     from:        raw.from        ?? "",
@@ -97,7 +77,6 @@ function normaliseERC20(raw: any, address: string): Tx {
   const dec     = parseInt(raw.tokenDecimal ?? "18", 10)
   const gasUsed = raw.gasUsed  ?? "0"
   const gasPrice= raw.gasPrice ?? "0"
-
   return {
     hash:        raw.hash        ?? "",
     from:        raw.from        ?? "",
@@ -116,22 +95,25 @@ function normaliseERC20(raw: any, address: string): Tx {
   }
 }
 
-async function fetchTxns(address: string, chainId: number, chainSymbol: string, chainName: string): Promise<Tx[]> {
-  const base   = EXPLORER_API[chainId]
-  const apikey = API_KEYS[chainId]
-  if (!base || !address) return []
+async function fetchTxns(
+  address:     string,
+  chainId:     number,
+  chainSymbol: string,
+  chainName:   string
+): Promise<Tx[]> {
+  if (!SUPPORTED_CHAINS.has(chainId) || !address) return []
 
-  const keyParam = apikey ? `&apikey=${apikey}` : ""
+  const apiKey     = process.env.EXPO_PUBLIC_ETHERSCAN_KEY ?? ""
+  const keyParam   = apiKey ? `&apikey=${apiKey}` : ""
+  const chainParam = `&chainid=${chainId}`
 
   async function get(action: string): Promise<any[]> {
-    const url = `${base}?module=account&action=${action}&address=${address}&sort=desc&offset=50&page=1${keyParam}`
+    const url = `${ETHERSCAN_V2}?module=account&action=${action}&address=${address}&sort=desc&offset=50&page=1${chainParam}${keyParam}`
     try {
       const res  = await fetch(url)
       const json = await res.json()
       return Array.isArray(json.result) ? json.result : []
-    } catch {
-      return []
-    }
+    } catch { return [] }
   }
 
   const [native, erc20] = await Promise.all([
@@ -179,7 +161,6 @@ export function useTransactions(address: string | null) {
   }, [address, activeChain.id, activeChain.symbol, activeChain.name])
 
   const loadMore = useCallback(async () => {
-    // Pagination placeholder - already loaded top 100
     setHasMore(false)
   }, [])
 
