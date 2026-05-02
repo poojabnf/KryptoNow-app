@@ -252,7 +252,7 @@ export default function Dashboard() {
             <Ionicons name="card-outline" size={20} color={activeChain.color} />
           </TouchableOpacity>
           <TouchableOpacity style={[s.bellBtn, { borderColor: activeChain.color + '55', backgroundColor: activeChain.color + '15' }]} onPress={() => router.push('/notifications' as any)}>
-            <Ionicons name="notifications-outline" size={20} color={activeChain.color} />
+            <Ionicons name="notifications-outline" size={22} color={activeChain.color} />
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
                 <Text style={s.bellBadgeT}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
