@@ -155,6 +155,10 @@ export default function Send() {
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
 
+  const [customTokens,    setCustomTokens]    = useState<CustomToken[]>(
+    () => loadCustomTokens(activeChain.id)
+  )
+
   const erc20List   = CHAIN_TOKENS[activeChain.id] ?? []
   const nativeToken = { symbol: activeChain.symbol, name: activeChain.nativeName, decimals: 18, contract: null as null, color: activeChain.color }
   const allTokens   = [nativeToken, ...erc20List, ...customTokens.map(t => ({
@@ -168,9 +172,6 @@ export default function Send() {
   const [selectedToken, setSelectedToken] = useState(allTokens[0])
   const [showPicker,    setShowPicker]    = useState(false)
   const [showTokenSearch, setShowTokenSearch] = useState(false)
-  const [customTokens,    setCustomTokens]    = useState<CustomToken[]>(
-    () => loadCustomTokens(activeChain.id)
-  )
   const [toAddress,     setToAddress]     = useState("")
   const [amount,        setAmount]        = useState("")
   const [nativePrice,   setNativePrice]   = useState(0)
