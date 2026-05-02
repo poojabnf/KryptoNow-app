@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useState, useCallback, useRef } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
@@ -184,10 +185,10 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: "Send",    icon: "^",  route: "/send"    },
-  { l: "Receive", icon: "v",  route: "/receive" },
-  { l: "Swap",    icon: "<>", route: "/swap"    },
-  { l: "Buy",     icon: "$",  route: "/buy"     },
+  { l: "Send",    icon: "send-outline",             route: "/send"    },
+  { l: "Receive", icon: "download-outline",         route: "/receive" },
+  { l: "Swap",    icon: "swap-horizontal-outline",  route: "/swap"    },
+  { l: "Buy",     icon: "add-circle-outline",       route: "/buy"     },
 ]
 
 export default function Dashboard() {
@@ -373,7 +374,7 @@ export default function Dashboard() {
             activeOpacity={0.7}
           >
             <View style={[s.actionBtn, { borderColor: activeChain.color + "55" }]}>
-              <Text style={[s.actionIcon, { color: activeChain.color }]}>{a.icon}</Text>
+              <Ionicons name={a.icon as any} size={24} color={activeChain.color} />
             </View>
             <Text style={s.actionLabel}>{a.l}</Text>
           </TouchableOpacity>
@@ -496,13 +497,13 @@ export default function Dashboard() {
                   style={s.iconBtn}
                   onPress={() => setFundSheet(true)}
                 >
-                  <Text style={[s.iconBtnText, { color: activeChain.color }]}>$</Text>
+                  <Ionicons name="card-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={s.bellBtn}
                   onPress={() => router.push("/notifications" as any)}
                 >
-                  <Text style={[s.iconBtnText, { color: activeChain.color }]}>B</Text>
+                  <Ionicons name="notifications-outline" size={22} color={activeChain.color} />
                   {unreadCount > 0 && (
                     <View style={s.bellBadge}>
                       <Text style={s.bellBadgeT}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -529,10 +530,10 @@ export default function Dashboard() {
             </TouchableOpacity>
             <View style={s.headerRight}>
               <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
-                <Text style={[s.iconBtnText, { color: activeChain.color }]}>$</Text>
+                <Ionicons name="card-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
               <TouchableOpacity style={s.bellBtn} onPress={() => router.push("/notifications" as any)}>
-                <Text style={[s.iconBtnText, { color: activeChain.color }]}>B</Text>
+                <Ionicons name="notifications-outline" size={22} color={activeChain.color} />
                 {unreadCount > 0 && (
                   <View style={s.bellBadge}>
                     <Text style={s.bellBadgeT}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -540,7 +541,7 @@ export default function Dashboard() {
                 )}
               </TouchableOpacity>
               <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/settings" as any)}>
-                <Text style={[s.iconBtnText, { color: activeChain.color }]}>ST</Text>
+                <Ionicons name="settings-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
             </View>
           </View>
