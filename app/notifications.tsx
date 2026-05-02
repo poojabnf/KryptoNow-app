@@ -202,9 +202,7 @@ export default function Notifications() {
             style={[s.tab, tab === t && s.tabActive]}
             onPress={() => setTab(t)}
           >
-            <Text style={[s.tabT, tab === t && s.tabTActive]}>
-              {t === "notifications" ? " Inbox" : " Settings"}
-            </Text>
+            <Ionicons name={t === "notifications" ? "notifications-outline" : "settings-outline"} size={16} color={tab === t ? "#6366F1" : "#94A3B8"} /><Text style={[s.tabT, tab === t && s.tabTActive]}>{t === "notifications" ? " Inbox" : " Settings"}</Text>
           </TouchableOpacity>
         ))}
       </View>
