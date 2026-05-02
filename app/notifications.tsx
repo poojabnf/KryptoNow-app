@@ -1,378 +1,466 @@
-/**
- * app/notifications.tsx
- * Notification settings + history screen
- */
-
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from "react"
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  Switch, Alert, ActivityIndicator, TextInput,
-} from 'react-native'
-import { router } from 'expo-router'
+  View, Text, TouchableOpacity, StyleSheet,
+  ScrollView, Switch, Alert, FlatList, RefreshControl,
+} from "react-native"
+import { router } from "expo-router"
 import {
-  registerForPushNotifications, loadNotifPrefs, saveNotifPrefs,
-  loadNotifHistory, markAllRead, NotifPrefs, NotifRecord, DEFAULT_PREFS,
-} from '../utils/notifications'
+  loadNotifPrefs, saveNotifPrefs, loadNotifHistory, markAllRead,
+  markOneRead, clearAllNotifications, getUnreadCount,
+  seedDemoNotifications, checkPriceAlerts,
+  NotifPrefs, NotifRecord,
+} from "../utils/notifications"
 
-// --- Toggle row ---------------------------------------------------------------
+// --- Helpers ---
+function relativeTime(ts: number): string {
+  const diff = Math.floor(Date.now() / 1000) - ts
+  if (diff < 60)        return `${diff}s ago`
+  if (diff < 3600)      return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400)     return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`
+  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+const TYPE_META: Record<NotifRecord["type"], { icon: string; color: string; bg: string; label: string }> = {
+  price:    { icon: "$", color: "#F59E0B", bg: "#FEF3C7", label: "Price"    },
+  tx:       { icon: "T", color: "#6366F1", bg: "#EEF2FF", label: "Transaction" },
+  security: { icon: "!", color: "#EF4444", bg: "#FEF2F2", label: "Security" },
+  news:     { icon: "N", color: "#10B981", bg: "#D1FAE5", label: "News"     },
+}
+
+type Tab = "notifications" | "settings"
+type FilterKey = "all" | "price" | "tx" | "security" | "news"
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all",      label: "All"      },
+  { key: "price",    label: "Price"    },
+  { key: "tx",       label: "Txns"     },
+  { key: "security", label: "Security" },
+  { key: "news",     label: "News"     },
+]
+
+// --- Notif Item ---
+function NotifItem({ notif, onPress }: { notif: NotifRecord; onPress: () => void }) {
+  const meta = TYPE_META[notif.type]
+  return (
+    <TouchableOpacity
+      style={[n.row, !notif.read && n.rowUnread]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[n.iconWrap, { backgroundColor: meta.bg }]}>
+        <Text style={[n.icon, { color: meta.color }]}>{meta.icon}</Text>
+      </View>
+      <View style={n.mid}>
+        <View style={n.topRow}>
+          <Text style={[n.title, !notif.read && n.titleUnread]}>{notif.title}</Text>
+          {!notif.read && <View style={n.unreadDot} />}
+        </View>
+        <Text style={n.body} numberOfLines={2}>{notif.body}</Text>
+        <View style={n.bottomRow}>
+          <View style={[n.typeBadge, { backgroundColor: meta.bg }]}>
+            <Text style={[n.typeBadgeT, { color: meta.color }]}>{meta.label}</Text>
+          </View>
+          <Text style={n.time}>{relativeTime(notif.timestamp)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+// --- Toggle Row ---
 function ToggleRow({
-  icon, title, subtitle, value, onToggle, disabled = false,
+  icon, iconBg, iconColor, title, subtitle, value, onToggle, disabled = false,
 }: {
-  icon: string; title: string; subtitle: string
+  icon: string; iconBg: string; iconColor: string
+  title: string; subtitle: string
   value: boolean; onToggle: (v: boolean) => void; disabled?: boolean
 }) {
   return (
-    <View style={[t.row, disabled && { opacity: 0.5 }]}>
-      <View style={t.iconWrap}>
-        <Text style={t.icon}>{icon}</Text>
+    <View style={[s.row, disabled && { opacity: 0.5 }]}>
+      <View style={[s.iconWrap, { backgroundColor: iconBg }]}>
+        <Text style={[s.iconT, { color: iconColor }]}>{icon}</Text>
       </View>
-      <View style={t.mid}>
-        <Text style={t.title}>{title}</Text>
-        <Text style={t.sub}>{subtitle}</Text>
+      <View style={s.rowMid}>
+        <Text style={s.rowLabel}>{title}</Text>
+        <Text style={s.rowSub}>{subtitle}</Text>
       </View>
       <Switch
         value={value}
         onValueChange={onToggle}
         disabled={disabled}
-        trackColor={{ false: '#E2E8F0', true: '#6366F1' }}
-        thumbColor={value ? '#fff' : '#f4f3f4'}
+        trackColor={{ false: "#E2E8F0", true: "#6366F1" }}
+        thumbColor="#fff"
       />
     </View>
   )
 }
 
-// --- Notification history item ------------------------------------------------
-function NotifItem({ notif }: { notif: NotifRecord }) {
-  const icons: Record<NotifRecord['type'], string> = {
-    tx_in:         '💸',
-    tx_out:        '↑',
-    large_transfer:'🚨',
-    price_alert:   '📊',
-    security:      '🔐',
-  }
-  const colors: Record<NotifRecord['type'], string> = {
-    tx_in:         '#D1FAE5',
-    tx_out:        '#EEF2FF',
-    large_transfer:'#FEF2F2',
-    price_alert:   '#FFFBEB',
-    security:      '#FEF2F2',
-  }
+// --- Main Screen ---
+export default function Notifications() {
+  const [tab,       setTab]       = useState<Tab>("notifications")
+  const [prefs,     setPrefs]     = useState<NotifPrefs>(loadNotifPrefs())
+  const [history,   setHistory]   = useState<NotifRecord[]>([])
+  const [filter,    setFilter]    = useState<FilterKey>("all")
+  const [unread,    setUnread]    = useState(0)
+  const [refreshing,setRefreshing]= useState(false)
 
-  const relTime = (ts: number) => {
-    const d = Date.now() - ts
-    if (d < 60000)   return 'Just now'
-    if (d < 3600000) return `${Math.floor(d/60000)}m ago`
-    if (d < 86400000)return `${Math.floor(d/3600000)}h ago`
-    return new Date(ts).toLocaleDateString()
-  }
-
-  return (
-    <View style={[n.item, !notif.read && n.unread]}>
-      <View style={[n.iconWrap, { backgroundColor: colors[notif.type] }]}>
-        <Text style={n.icon}>{icons[notif.type]}</Text>
-      </View>
-      <View style={n.mid}>
-        <Text style={n.title}>{notif.title}</Text>
-        <Text style={n.body}>{notif.body}</Text>
-        <Text style={n.time}>{relTime(notif.timestamp)}</Text>
-      </View>
-      {!notif.read && <View style={n.dot} />}
-    </View>
-  )
-}
-
-// --- Main Screen --------------------------------------------------------------
-export default function NotificationsScreen() {
-  const [tab,         setTab]         = useState<'settings' | 'history'>('settings')
-  const [prefs,       setPrefs]       = useState<NotifPrefs>(DEFAULT_PREFS)
-  const [history,     setHistory]     = useState<NotifRecord[]>([])
-  const [pushToken,   setPushToken]   = useState<string | null>(null)
-  const [registering, setRegistering] = useState(false)
-  const [saving,      setSaving]      = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
-
-  const load = useCallback(async () => {
-    const [p, h] = await Promise.all([loadNotifPrefs(), loadNotifHistory()])
-    setPrefs(p)
+  const loadData = useCallback(() => {
+    seedDemoNotifications()
+    const h = loadNotifHistory()
     setHistory(h)
-    setUnreadCount(h.filter(n => !n.read).length)
+    setUnread(getUnreadCount())
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { loadData() }, [loadData])
 
-  async function handleRegister() {
-    setRegistering(true)
-    const token = await registerForPushNotifications()
-    setRegistering(false)
-    if (token) {
-      setPushToken(token)
-      Alert.alert('Notifications enabled!', 'You\'ll receive alerts for transactions and price changes.')
-    } else {
-      Alert.alert(
-        'Permission denied',
-        'Go to Settings → Kryptonow → Notifications to enable push notifications.',
-      )
-    }
-  }
-
-  async function handleToggle(key: keyof NotifPrefs, value: boolean | number) {
+  function updatePref<K extends keyof NotifPrefs>(key: K, value: NotifPrefs[K]) {
     const updated = { ...prefs, [key]: value }
     setPrefs(updated)
-    setSaving(true)
-    await saveNotifPrefs(updated)
-    setSaving(false)
+    saveNotifPrefs(updated)
   }
 
-  async function handleMarkAllRead() {
-    await markAllRead()
-    setHistory(h => h.map(n => ({ ...n, read: true })))
-    setUnreadCount(0)
+  function handleMarkAllRead() {
+    markAllRead()
+    loadData()
+  }
+
+  function handleClearAll() {
+    Alert.alert(
+      "Clear All",
+      "This will permanently delete all notifications.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Clear All", style: "destructive", onPress: () => {
+          clearAllNotifications()
+          loadData()
+        }},
+      ]
+    )
+  }
+
+  function handleNotifPress(notif: NotifRecord) {
+    markOneRead(notif.id)
+    loadData()
+  }
+
+  function handleRefresh() {
+    setRefreshing(true)
+    checkPriceAlerts(prefs).finally(() => {
+      loadData()
+      setRefreshing(false)
+    })
+  }
+
+  const filtered = history.filter(n =>
+    filter === "all" ? true : n.type === filter
+  )
+
+  // Group by date
+  type Section = { type: "header"; date: string } | { type: "notif"; notif: NotifRecord }
+  const sectioned: Section[] = []
+  let lastDate = ""
+  for (const notif of filtered) {
+    const diff  = Math.floor(Date.now() / 1000 - notif.timestamp) / 86400
+    const label = diff < 1 ? "Today"
+      : diff < 2 ? "Yesterday"
+      : new Date(notif.timestamp * 1000).toLocaleDateString("en-US", {
+          weekday: "long", month: "short", day: "numeric"
+        })
+    if (label !== lastDate) {
+      sectioned.push({ type: "header", date: label })
+      lastDate = label
+    }
+    sectioned.push({ type: "notif", notif })
   }
 
   return (
     <View style={s.c}>
+
+      {/* Header */}
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>←</Text>
+          <Text style={s.backT}>{"<"}</Text>
         </TouchableOpacity>
-        <Text style={s.hdrTitle}>Notifications</Text>
-        {saving ? <ActivityIndicator size="small" color="#6366F1" /> : <View style={{ width: 24 }} />}
+        <View style={s.hdrCenter}>
+          <Text style={s.hdrTitle}>Notifications</Text>
+          {unread > 0 && (
+            <View style={s.badge}>
+              <Text style={s.badgeT}>{unread}</Text>
+            </View>
+          )}
+        </View>
+        <View style={{ width: 38 }} />
       </View>
 
-      {/* Tabs */}
-      <View style={s.tabs}>
-        {(['settings', 'history'] as const).map(tb => (
+      {/* Tab switcher */}
+      <View style={s.tabRow}>
+        {(["notifications", "settings"] as Tab[]).map(t => (
           <TouchableOpacity
-            key={tb}
-            style={[s.tab, tab === tb && s.tabActive]}
-            onPress={() => setTab(tb)}
+            key={t}
+            style={[s.tab, tab === t && s.tabActive]}
+            onPress={() => setTab(t)}
           >
-            <Text style={[s.tabT, tab === tb && s.tabTActive]}>
-              {tb === 'settings' ? '⚙  Settings' : `🔔  History${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+            <Text style={[s.tabT, tab === t && s.tabTActive]}>
+              {t === "notifications" ? "[B] Inbox" : "[=] Settings"}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {tab === 'settings' ? (
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-
-          {/* Push token status */}
-          <View style={s.tokenCard}>
-            {pushToken ? (
-              <>
-                <View style={s.tokenActive}>
-                  <View style={s.tokenDot} />
-                  <Text style={s.tokenActiveT}>Push notifications active</Text>
-                </View>
-                <Text style={s.tokenSub} numberOfLines={1}>{pushToken.slice(0, 32)}...</Text>
-              </>
-            ) : (
-              <>
-                <Text style={s.tokenInactive}>Push notifications not enabled</Text>
-                <TouchableOpacity
-                  style={[s.enableBtn, registering && { opacity: 0.7 }]}
-                  onPress={handleRegister}
-                  disabled={registering}
-                >
-                  {registering
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={s.enableBtnT}>Enable Push Notifications</Text>
-                  }
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-
-          {/* Transaction alerts */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Transaction Alerts</Text>
-            <View style={s.card}>
-              <ToggleRow
-                icon="💸" title="Transaction Alerts"
-                subtitle="Get notified for every incoming and outgoing transaction"
-                value={prefs.txAlerts}
-                onToggle={v => handleToggle('txAlerts', v)}
-              />
-              <View style={s.divider} />
-              <ToggleRow
-                icon="🚨" title="Large Transfer Warnings"
-                subtitle={`Alert when transfer value exceeds $${prefs.largeThreshold}`}
-                value={prefs.largeTransfer}
-                onToggle={v => handleToggle('largeTransfer', v)}
-              />
-              {prefs.largeTransfer && (
-                <View style={s.thresholdRow}>
-                  <Text style={s.thresholdLabel}>Alert threshold (USD)</Text>
-                  <View style={s.thresholdInput}>
-                    <Text style={s.thresholdPrefix}>$</Text>
-                    <TextInput
-                      style={s.thresholdField}
-                      value={String(prefs.largeThreshold)}
-                      onChangeText={v => {
-                        const n = parseInt(v)
-                        if (!isNaN(n) && n > 0) handleToggle('largeThreshold', n)
-                      }}
-                      keyboardType="number-pad"
-                      selectTextOnFocus
-                    />
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Price alerts */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Price Alerts</Text>
-            <View style={s.card}>
-              <ToggleRow
-                icon="📊" title="ETH Price Alerts"
-                subtitle={`Notify when ETH moves more than ${prefs.priceThreshold}% in 24h`}
-                value={prefs.priceAlerts}
-                onToggle={v => handleToggle('priceAlerts', v)}
-              />
-              {prefs.priceAlerts && (
-                <View style={s.thresholdRow}>
-                  <Text style={s.thresholdLabel}>Price change threshold</Text>
-                  <View style={s.thresholdInput}>
-                    <TextInput
-                      style={s.thresholdField}
-                      value={String(prefs.priceThreshold)}
-                      onChangeText={v => {
-                        const n = parseInt(v)
-                        if (!isNaN(n) && n > 0) handleToggle('priceThreshold', n)
-                      }}
-                      keyboardType="number-pad"
-                      selectTextOnFocus
-                    />
-                    <Text style={s.thresholdPrefix}>%</Text>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Security alerts */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>Security</Text>
-            <View style={s.card}>
-              <ToggleRow
-                icon="🔐" title="Security Alerts"
-                subtitle="Notify for new WalletConnect connections and unusual activity"
-                value={prefs.securityAlerts}
-                onToggle={v => handleToggle('securityAlerts', v)}
-              />
-            </View>
-          </View>
-
-          {/* Info box */}
-          <View style={s.infoBox}>
-            <Text style={s.infoTitle}>How notifications work</Text>
-            <Text style={s.infoBody}>
-              Kryptonow polls your wallet address every 2 minutes for new transactions. Notifications are delivered via Expo Push Service (FCM on Android, APNs on iOS). Your private key is never transmitted - only your public wallet address is used for monitoring.
-            </Text>
-          </View>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      ) : (
+      {/* --- NOTIFICATIONS TAB --- */}
+      {tab === "notifications" && (
         <View style={{ flex: 1 }}>
-          {/* History header */}
-          <View style={s.histHdr}>
-            <Text style={s.histCount}>
-              {history.length} notification{history.length !== 1 ? 's' : ''}
-              {unreadCount > 0 ? ` · ${unreadCount} unread` : ''}
-            </Text>
-            {unreadCount > 0 && (
-              <TouchableOpacity onPress={handleMarkAllRead}>
-                <Text style={s.markRead}>Mark all read</Text>
-              </TouchableOpacity>
-            )}
+
+          {/* Actions row */}
+          <View style={s.actionsRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
+              {FILTERS.map(f => (
+                <TouchableOpacity
+                  key={f.key}
+                  style={[s.filterTab, filter === f.key && s.filterTabActive]}
+                  onPress={() => setFilter(f.key)}
+                >
+                  <Text style={[s.filterTabT, filter === f.key && s.filterTabTActive]}>
+                    {f.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={s.actionBtns}>
+              {unread > 0 && (
+                <TouchableOpacity style={s.actionBtn} onPress={handleMarkAllRead}>
+                  <Text style={s.actionBtnT}>Mark read</Text>
+                </TouchableOpacity>
+              )}
+              {history.length > 0 && (
+                <TouchableOpacity style={[s.actionBtn, s.actionBtnDanger]} onPress={handleClearAll}>
+                  <Text style={[s.actionBtnT, { color: "#EF4444" }]}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
-          {history.length === 0 ? (
-            <View style={s.center}>
-              <Text style={{ fontSize: 48, marginBottom: 16 }}>🔔</Text>
-              <Text style={s.emptyTitle}>No notifications yet</Text>
+          {/* List */}
+          {filtered.length === 0 ? (
+            <View style={s.empty}>
+              <Text style={s.emptyIcon}>[B]</Text>
+              <Text style={s.emptyTitle}>No notifications</Text>
               <Text style={s.emptySub}>
-                Transaction alerts and price notifications will appear here.
+                {filter === "all"
+                  ? "You are all caught up!"
+                  : `No ${filter} notifications yet`}
               </Text>
             </View>
           ) : (
-            <ScrollView
-              style={{ flex: 1, paddingHorizontal: 16 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {history.map(notif => (
-                <NotifItem key={notif.id} notif={notif} />
-              ))}
-              <View style={{ height: 32 }} />
-            </ScrollView>
+            <FlatList
+              data={sectioned}
+              keyExtractor={(item, i) =>
+                item.type === "header" ? `hdr-${item.date}` : `notif-${item.notif.id}-${i}`
+              }
+              contentContainerStyle={s.list}
+              showsVerticalScrollIndicator={true}
+              persistentScrollbar={true}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor="#6366F1"
+                />
+              }
+              renderItem={({ item }) =>
+                item.type === "header" ? (
+                  <Text style={s.sectionHdr}>{item.date}</Text>
+                ) : (
+                  <NotifItem
+                    notif={item.notif}
+                    onPress={() => handleNotifPress(item.notif)}
+                  />
+                )
+              }
+            />
           )}
         </View>
+      )}
+
+      {/* --- SETTINGS TAB --- */}
+      {tab === "settings" && (
+        <ScrollView
+          showsVerticalScrollIndicator={true}
+          persistentScrollbar={true}
+          contentContainerStyle={{ paddingBottom: 48 }}
+        >
+          {/* Master toggle */}
+          <View style={s.settingsSection}>
+            <Text style={s.sectionTitle}>MASTER CONTROL</Text>
+            <View style={s.card}>
+              <ToggleRow
+                icon="B"
+                iconBg="#EEF2FF"
+                iconColor="#6366F1"
+                title="Enable Notifications"
+                subtitle="Turn all notifications on or off"
+                value={prefs.pushEnabled}
+                onToggle={v => updatePref("pushEnabled", v)}
+              />
+            </View>
+          </View>
+
+          {/* Alert types */}
+          <View style={s.settingsSection}>
+            <Text style={s.sectionTitle}>ALERT TYPES</Text>
+            <View style={s.card}>
+              <ToggleRow
+                icon="T"
+                iconBg="#EEF2FF"
+                iconColor="#6366F1"
+                title="Transaction Alerts"
+                subtitle="Get notified when you send or receive crypto"
+                value={prefs.txAlerts}
+                onToggle={v => updatePref("txAlerts", v)}
+                disabled={!prefs.pushEnabled}
+              />
+              <View style={s.divider} />
+              <ToggleRow
+                icon="$"
+                iconBg="#FEF3C7"
+                iconColor="#F59E0B"
+                title="Price Alerts"
+                subtitle="Notify on significant price movements (5%+)"
+                value={prefs.priceAlerts}
+                onToggle={v => updatePref("priceAlerts", v)}
+                disabled={!prefs.pushEnabled}
+              />
+              <View style={s.divider} />
+              <ToggleRow
+                icon="!"
+                iconBg="#FEF2F2"
+                iconColor="#EF4444"
+                title="Security Alerts"
+                subtitle="New sign-ins and suspicious activity"
+                value={prefs.securityAlerts}
+                onToggle={v => updatePref("securityAlerts", v)}
+                disabled={!prefs.pushEnabled}
+              />
+              <View style={s.divider} />
+              <ToggleRow
+                icon="N"
+                iconBg="#D1FAE5"
+                iconColor="#10B981"
+                title="News & Updates"
+                subtitle="Kryptonow product updates and announcements"
+                value={prefs.newsAlerts}
+                onToggle={v => updatePref("newsAlerts", v)}
+                disabled={!prefs.pushEnabled}
+              />
+            </View>
+          </View>
+
+          {/* Info card */}
+          <View style={s.settingsSection}>
+            <Text style={s.sectionTitle}>ABOUT</Text>
+            <View style={s.infoCard}>
+              {[
+                { icon: "B", text: "Transaction alerts fire when sends/receives are confirmed on-chain" },
+                { icon: "$", text: "Price alerts check every 30 mins for 5%+ movements" },
+                { icon: "!", text: "Security alerts are always enabled for your protection" },
+              ].map((item, i) => (
+                <View key={i} style={s.infoRow}>
+                  <Text style={s.infoIcon}>{item.icon}</Text>
+                  <Text style={s.infoText}>{item.text}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Test button */}
+          <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+            <TouchableOpacity
+              style={s.testBtn}
+              onPress={() => {
+                const { addNotification } = require("../utils/notifications")
+                addNotification({
+                  title: "Test Notification",
+                  body:  "This is a test notification from Kryptonow!",
+                  type:  "news",
+                })
+                loadData()
+                setTab("notifications")
+                Alert.alert("Sent!", "Check your notifications inbox.")
+              }}
+            >
+              <Text style={s.testBtnT}>[>] Send Test Notification</Text>
+            </TouchableOpacity>
+          </View>
+
+        </ScrollView>
       )}
     </View>
   )
 }
 
+// --- Styles ---
 const s = StyleSheet.create({
-  c:              { flex: 1, backgroundColor: '#F8FAFF' },
-  hdr:            { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
-  back:           { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  backT:          { color: '#6366F1', fontSize: 18 },
-  hdrTitle:       { color: '#1E1B4B', fontSize: 17, fontWeight: '700' },
-  tabs:           { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 16 },
-  tab:            { flex: 1, paddingVertical: 10, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E2E8F0', alignItems: 'center' },
-  tabActive:      { backgroundColor: '#6366F1', borderColor: '#6366F1' },
-  tabT:           { color: '#64748B', fontSize: 13, fontWeight: '600' },
-  tabTActive:     { color: '#fff' },
-  tokenCard:      { marginHorizontal: 16, marginBottom: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16 },
-  tokenActive:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  tokenDot:       { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
-  tokenActiveT:   { color: '#10B981', fontSize: 14, fontWeight: '600' },
-  tokenSub:       { color: '#CBD5E1', fontSize: 11, fontFamily: 'monospace' },
-  tokenInactive:  { color: '#94A3B8', fontSize: 14, marginBottom: 12 },
-  enableBtn:      { backgroundColor: '#6366F1', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
-  enableBtnT:     { color: '#fff', fontSize: 14, fontWeight: '600' },
-  section:        { paddingHorizontal: 16, marginBottom: 16 },
-  sectionTitle:   { color: '#94A3B8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  card:           { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  divider:        { height: 1, backgroundColor: '#F8FAFF', marginHorizontal: 16 },
-  thresholdRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F8FAFF' },
-  thresholdLabel: { color: '#64748B', fontSize: 13 },
-  thresholdInput: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFF', borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 10 },
-  thresholdPrefix:{ color: '#94A3B8', fontSize: 14 },
-  thresholdField: { color: '#1E1B4B', fontSize: 15, fontWeight: '600', minWidth: 60, paddingVertical: 8, textAlign: 'center' },
-  infoBox:        { marginHorizontal: 16, backgroundColor: '#EEF2FF', borderRadius: 14, borderWidth: 1, borderColor: '#C7D2FE', padding: 16 },
-  infoTitle:      { color: '#4338CA', fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  infoBody:       { color: '#4338CA', fontSize: 12, lineHeight: 20 },
-  histHdr:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 },
-  histCount:      { color: '#94A3B8', fontSize: 12, fontWeight: '600' },
-  markRead:       { color: '#6366F1', fontSize: 13, fontWeight: '600' },
-  center:         { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle:     { color: '#1E1B4B', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptySub:       { color: '#94A3B8', fontSize: 14, textAlign: 'center', lineHeight: 22 },
-})
-
-const t = StyleSheet.create({
-  row:     { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  iconWrap:{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
-  icon:    { fontSize: 20 },
-  mid:     { flex: 1 },
-  title:   { color: '#1E1B4B', fontSize: 14, fontWeight: '600', marginBottom: 3 },
-  sub:     { color: '#94A3B8', fontSize: 12, lineHeight: 18 },
+  c:               { flex: 1, backgroundColor: "#F8FAFF" },
+  hdr:             { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
+  back:            { width: 38, height: 38, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#E2E8F0", alignItems: "center", justifyContent: "center" },
+  backT:           { color: "#6366F1", fontSize: 18, fontWeight: "700" },
+  hdrCenter:       { flexDirection: "row", alignItems: "center", gap: 8 },
+  hdrTitle:        { color: "#1E1B4B", fontSize: 17, fontWeight: "700" },
+  badge:           { backgroundColor: "#EF4444", borderRadius: 10, minWidth: 20, height: 20, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
+  badgeT:          { color: "#fff", fontSize: 11, fontWeight: "700" },
+  tabRow:          { flexDirection: "row", marginHorizontal: 16, marginBottom: 12, backgroundColor: "#F1F5F9", borderRadius: 14, padding: 4 },
+  tab:             { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 11 },
+  tabActive:       { backgroundColor: "#fff", shadowColor: "#64748B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  tabT:            { color: "#94A3B8", fontSize: 13, fontWeight: "600" },
+  tabTActive:      { color: "#1E1B4B" },
+  actionsRow:      { flexDirection: "row", alignItems: "center", paddingRight: 16, marginBottom: 8 },
+  filterRow:       { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
+  filterTab:       { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#E2E8F0" },
+  filterTabActive: { backgroundColor: "#6366F1", borderColor: "#6366F1" },
+  filterTabT:      { color: "#64748B", fontSize: 12, fontWeight: "600" },
+  filterTabTActive:{ color: "#fff" },
+  actionBtns:      { flexDirection: "row", gap: 8, marginLeft: 8 },
+  actionBtn:       { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#EEF2FF" },
+  actionBtnDanger: { backgroundColor: "#FEF2F2" },
+  actionBtnT:      { color: "#6366F1", fontSize: 12, fontWeight: "600" },
+  list:            { paddingHorizontal: 16, paddingBottom: 40 },
+  sectionHdr:      { color: "#94A3B8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 16, marginBottom: 8, marginLeft: 4 },
+  empty:           { flex: 1, alignItems: "center", justifyContent: "center", padding: 48 },
+  emptyIcon:       { fontSize: 40, color: "#CBD5E1", marginBottom: 12 },
+  emptyTitle:      { color: "#1E1B4B", fontSize: 18, fontWeight: "700", marginBottom: 6 },
+  emptySub:        { color: "#94A3B8", fontSize: 14, textAlign: "center" },
+  settingsSection: { paddingHorizontal: 16, marginBottom: 20, marginTop: 8 },
+  sectionTitle:    { color: "#94A3B8", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8, paddingLeft: 4 },
+  card:            { backgroundColor: "#fff", borderRadius: 20, borderWidth: 1, borderColor: "#F1F5F9", overflow: "hidden" },
+  row:             { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 16, gap: 14 },
+  iconWrap:        { width: 38, height: 38, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  iconT:           { fontSize: 15, fontWeight: "800" },
+  rowMid:          { flex: 1 },
+  rowLabel:        { color: "#1E1B4B", fontSize: 15, fontWeight: "600" },
+  rowSub:          { color: "#94A3B8", fontSize: 12, marginTop: 2 },
+  divider:         { height: 1, backgroundColor: "#F8FAFF", marginHorizontal: 16 },
+  infoCard:        { backgroundColor: "#fff", borderRadius: 20, borderWidth: 1, borderColor: "#F1F5F9", padding: 16, gap: 12 },
+  infoRow:         { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  infoIcon:        { color: "#6366F1", fontSize: 14, fontWeight: "700", width: 20 },
+  infoText:        { flex: 1, color: "#64748B", fontSize: 13, lineHeight: 20 },
+  testBtn:         { backgroundColor: "#EEF2FF", borderRadius: 16, paddingVertical: 16, alignItems: "center", borderWidth: 1.5, borderColor: "#C7D2FE" },
+  testBtnT:        { color: "#6366F1", fontSize: 15, fontWeight: "700" },
 })
 
 const n = StyleSheet.create({
-  item:    { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#fff', borderRadius: 14, padding: 13, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', gap: 12 },
-  unread:  { borderColor: '#C7D2FE', backgroundColor: '#FAFBFF' },
-  iconWrap:{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  icon:    { fontSize: 18 },
-  mid:     { flex: 1 },
-  title:   { color: '#1E1B4B', fontSize: 14, fontWeight: '700', marginBottom: 3 },
-  body:    { color: '#64748B', fontSize: 13, lineHeight: 19, marginBottom: 4 },
-  time:    { color: '#CBD5E1', fontSize: 11 },
-  dot:     { width: 8, height: 8, borderRadius: 4, backgroundColor: '#6366F1', marginTop: 4, flexShrink: 0 },
+  row:         { flexDirection: "row", backgroundColor: "#fff", borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: "#F1F5F9", gap: 12, shadowColor: "#64748B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  rowUnread:   { borderColor: "#C7D2FE", backgroundColor: "#FAFBFF" },
+  iconWrap:    { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  icon:        { fontSize: 16, fontWeight: "800" },
+  mid:         { flex: 1 },
+  topRow:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
+  title:       { color: "#1E1B4B", fontSize: 14, fontWeight: "600", flex: 1 },
+  titleUnread: { fontWeight: "800" },
+  unreadDot:   { width: 8, height: 8, borderRadius: 4, backgroundColor: "#6366F1", marginLeft: 8 },
+  body:        { color: "#64748B", fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  bottomRow:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  typeBadge:   { paddingVertical: 2, paddingHorizontal: 8, borderRadius: 8 },
+  typeBadgeT:  { fontSize: 11, fontWeight: "600" },
+  time:        { color: "#CBD5E1", fontSize: 11 },
 })
-
