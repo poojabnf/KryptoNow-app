@@ -5,7 +5,6 @@ import {
 } from "react-native"
 import { Chain } from "../utils/chains"
 import { Ionicons } from "@expo/vector-icons"
-import { Ionicons } from "@expo/vector-icons"
 import {
   CustomToken, POPULAR_TOKENS, loadCustomTokens, saveCustomToken,
   removeCustomToken, lookupContractToken, searchPopularTokens,
