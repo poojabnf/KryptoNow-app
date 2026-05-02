@@ -5,6 +5,7 @@ import {
   Linking, Platform, RefreshControl,
 } from "react-native"
 import { router } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { CHAINS } from "../utils/chains"
 import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
@@ -25,11 +26,11 @@ function shortAddr(addr: string) {
 }
 
 const TYPE_META: Record<TxType, { label: string; icon: string; color: string; bgColor: string }> = {
-  send:          { label: "Sent",         icon: "[^]", color: "#EF4444", bgColor: "#FEF2F2" },
-  receive:       { label: "Received",     icon: "[v]", color: "#10B981", bgColor: "#D1FAE5" },
-  token_send:    { label: "Token Send",   icon: "[^]", color: "#F59E0B", bgColor: "#FEF3C7" },
-  token_receive: { label: "Token Recv",   icon: "[v]", color: "#06B6D4", bgColor: "#CFFAFE" },
-  contract:      { label: "Contract",     icon: "[*]", color: "#8B5CF6", bgColor: "#EDE9FE" },
+  send:          { label: "Sent",         icon: "arrow-up-outline",       color: "#EF4444", bgColor: "#FEF2F2" },
+  receive:       { label: "Received",     icon: "arrow-down-outline",     color: "#10B981", bgColor: "#D1FAE5" },
+  token_send:    { label: "Token Send",   icon: "arrow-up-circle-outline",color: "#F59E0B", bgColor: "#FEF3C7" },
+  token_receive: { label: "Token Recv",   icon: "arrow-down-circle-outline",color: "#06B6D4", bgColor: "#CFFAFE" },
+  contract:      { label: "Contract",     icon: "code-slash-outline",     color: "#8B5CF6", bgColor: "#EDE9FE" },
 }
 
 type FilterKey = "all" | "sent" | "received" | "tokens"
@@ -57,7 +58,7 @@ function TxRow({ tx, onPress }: { tx: Tx; onPress: () => void }) {
   return (
     <TouchableOpacity style={r.row} onPress={onPress} activeOpacity={0.7}>
       <View style={[r.iconWrap, { backgroundColor: meta.bgColor }]}>
-        <Text style={[r.icon, { color: meta.color }]}>{meta.icon}</Text>
+        <Ionicons name={meta.icon as any} size={18} color={meta.color} />
       </View>
       <View style={r.mid}>
         <View style={r.topRow}>
@@ -135,7 +136,7 @@ function TxDetail({
 
         <View style={d.hdr}>
           <View style={[d.typeIcon, { backgroundColor: meta.bgColor }]}>
-            <Text style={[d.typeIconT, { color: meta.color }]}>{meta.icon}</Text>
+            <Ionicons name={meta.icon as any} size={22} color={meta.color} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={d.typeLabel}>{meta.label}</Text>
@@ -144,7 +145,7 @@ function TxDetail({
             </Text>
           </View>
           <TouchableOpacity style={d.closeBtn} onPress={onClose}>
-            <Text style={d.closeBtnT}>[X]</Text>
+            <Ionicons name="close" size={20} color="#64748B" />
           </TouchableOpacity>
         </View>
 
@@ -177,7 +178,10 @@ function TxDetail({
             style={d.explorerBtn}
             onPress={() => Linking.openURL(`${explorerBase}/tx/${tx.hash}`)}
           >
-            <Text style={d.explorerBtnT}>View on Explorer [->]</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={d.explorerBtnT}>View on Explorer</Text>
+              <Ionicons name="open-outline" size={14} color="#6366F1" />
+            </View>
           </TouchableOpacity>
 
           <View style={{ height: 40 }} />
@@ -237,14 +241,14 @@ export default function History() {
       {/* Header */}
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>{"<"}</Text>
+          <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Transaction History</Text>
         <TouchableOpacity style={s.refreshBtn} onPress={() => {
           // Force refresh by resetting debounce
           refresh()
         }}>
-          <Text style={s.refreshBtnT}>[R]</Text>
+          <Ionicons name="refresh-outline" size={22} color="#6366F1" />
         </TouchableOpacity>
       </View>
 
@@ -307,7 +311,7 @@ export default function History() {
         </View>
       ) : error ? (
         <View style={s.center}>
-          <Text style={s.errIcon}>[!]</Text>
+          <Ionicons name="cloud-offline-outline" size={56} color="#CBD5E1" />
           <Text style={s.errTitle}>Could not load transactions</Text>
           <Text style={s.errSub}>Check your connection or try again</Text>
           <TouchableOpacity style={s.retryBtn} onPress={refresh}>
@@ -316,7 +320,7 @@ export default function History() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={s.center}>
-          <Text style={s.errIcon}>[=]</Text>
+          <Ionicons name="receipt-outline" size={56} color="#CBD5E1" />
           <Text style={s.errTitle}>No transactions yet</Text>
           <Text style={s.errSub}>
             {filter === "all"
