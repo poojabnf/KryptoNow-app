@@ -1,57 +1,51 @@
-import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+﻿import { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/expo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LOG = (tag: string, msg: string, data?: any) => {
-  if (data !== undefined) console.log(`[KryptoNow][${tag}] ${msg}`, JSON.stringify(data, null, 2));
-  else console.log(`[KryptoNow][${tag}] ${msg}`);
-};
+async function getItem(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    try { return localStorage.getItem(key) } catch { return null }
+  }
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default
+  return AsyncStorage.getItem(key)
+}
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    LOG("Index", "Mounted", { isLoaded, isSignedIn });
-  }, []);
-
-  useEffect(() => {
-    LOG("Index", "Auth state changed", { isLoaded, isSignedIn });
-    if (!isLoaded) {
-      LOG("Index", "⏳ Waiting for Clerk...");
-      return;
-    }
+    if (!isLoaded) return;
 
     (async () => {
       if (!isSignedIn) {
-        LOG("Index", "🔒 Not signed in → redirecting to sign-in");
         router.replace('/(auth)/sign-in');
         return;
       }
 
-      LOG("Index", "✅ Signed in, checking wallet...");
-      const address = await AsyncStorage.getItem('kryptonow_address');
-      LOG("Index", "Wallet check", { address: address ? "EXISTS" : "NULL" });
+      // Check wallet  works on both web and native
+      const address = await getItem('kryptonow_address')
+      console.log('[KryptoNow] wallet address:', address ? 'EXISTS' : 'NULL')
 
       if (!address) {
-        LOG("Index", "💳 No wallet → /create");
         router.replace('/create');
         return;
       }
 
-      const profileRaw = await AsyncStorage.getItem('kryptonow_profile');
-      const profile = profileRaw ? JSON.parse(profileRaw) : null;
-      LOG("Index", "Profile check", { onboarded: profile?.onboarded ?? false });
+      // Load wallet into store
+      const { useWalletStore } = require('../store/walletStore')
+      const vault = await getItem('kryptonow_vault')
+      useWalletStore.getState().setWallet({ address, phrase: '' })
+
+      const profileRaw = await getItem('kryptonow_profile')
+      const profile = profileRaw ? JSON.parse(profileRaw) : null
 
       if (!profile?.onboarded) {
-        LOG("Index", "📋 Not onboarded → /onboarding");
         router.replace('/onboarding');
         return;
       }
 
-      LOG("Index", "🏠 All good → /dashboard");
       router.replace('/dashboard');
     })();
   }, [isLoaded, isSignedIn]);
