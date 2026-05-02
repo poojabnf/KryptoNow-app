@@ -9,7 +9,6 @@ import { useWalletStore } from '../store/walletStore'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
 import { CHAINS, Chain, getProvider } from '../utils/chains'
 import { fetchChainTokenBalances } from '../utils/tokens'
-import { IS_WEB, HEADER_TOP, webContainer, webInner, WEB_MAX_WIDTH } from '../utils/webLayout'
 
 type TokenRow = {
   symbol: string; name: string
@@ -17,12 +16,12 @@ type TokenRow = {
   isNative: boolean; icon?: string; color?: string
 }
 
-const TX_META: Record<TxType, { icon: string; color: string; bg: string }> = {
-  send:          { icon: '↑', color: '#EF4444', bg: '#FEF2F2' },
-  receive:       { icon: '↓', color: '#10B981', bg: '#D1FAE5' },
-  token_send:          { icon: '↑', color: '#F59E0B', bg: '#FEF3C7' },
-  token_receive:       { icon: '↓', color: '#06B6D4', bg: '#CFFAFE' },
-  contract:      { icon: '⚙', color: '#8B5CF6', bg: '#EDE9FE' },
+const TX_META: Record<TxType, { icon: string; color: string; bg: string; label: string }> = {
+  send:          { icon: 'UP',   label: 'Sent',     color: '#EF4444', bg: '#FEF2F2' },
+  receive:       { icon: 'DN',   label: 'Received', color: '#10B981', bg: '#D1FAE5' },
+  token_send:    { icon: 'UP',   label: 'Sent',     color: '#F59E0B', bg: '#FEF3C7' },
+  token_receive: { icon: 'DN',   label: 'Received', color: '#06B6D4', bg: '#CFFAFE' },
+  contract:      { icon: 'FN',   label: 'Contract', color: '#8B5CF6', bg: '#EDE9FE' },
 }
 
 const NATIVE_CG: Record<number, string> = {
@@ -33,13 +32,8 @@ const NATIVE_BINANCE: Record<number, string> = {
   1: 'ETHUSDT', 137: 'MATICUSDT',
   42161: 'ETHUSDT', 10: 'ETHUSDT', 56: 'BNBUSDT',
 }
-
 const NATIVE_CC: Record<number, string> = {
-  1:     'ETH',
-  137:   'MATIC',
-  42161: 'ETH',
-  10:    'ETH',
-  56:    'BNB',
+  1: 'ETH', 137: 'MATIC', 42161: 'ETH', 10: 'ETH', 56: 'BNB',
 }
 
 function relTime(ts: number) {
@@ -55,6 +49,15 @@ function fmt(n: number) {
   return n >= 1000
     ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : `$${n.toFixed(2)}`
+}
+
+function TxIcon({ type }: { type: string }) {
+  const isSend = type === 'send' || type === 'token_send'
+  return (
+    <Text style={{ fontSize: 16, fontWeight: '800', color: isSend ? '#EF4444' : '#10B981' }}>
+      {isSend ? '' : ''}
+    </Text>
+  )
 }
 
 function ChainModal({ visible, current, onSelect, onClose }: {
@@ -82,11 +85,11 @@ function ChainModal({ visible, current, onSelect, onClose }: {
             activeOpacity={0.7}
           >
             <View style={[m.iconWrap, { backgroundColor: chain.color + '22' }]}>
-              <Text style={m.icon}>{chain.icon}</Text>
+              <Text style={[m.icon, { color: chain.color }]}>{chain.icon}</Text>
             </View>
             <View style={m.mid}>
               <Text style={m.chainName}>{chain.name}</Text>
-              <Text style={m.chainSymbol}>Native: {chain.symbol}</Text>
+              <Text style={m.chainSymbol}>{chain.symbol}</Text>
             </View>
             {chain.id === current.id && (
               <View style={[m.activeDot, { backgroundColor: chain.color }]} />
@@ -99,35 +102,33 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    i: '↑', c: '#6366F1', route: '/send'    },
-  { l: 'Receive', i: '↓', c: '#8B5CF6', route: '/receive' },
-  { l: 'Swap',    i: '⇄', c: '#06B6D4', route: '/swap'    },
-  { l: 'Buy',     i: '+', c: '#10B981', route: '/buy'     },
+  { l: 'Send',    icon: '', route: '/send'    },
+  { l: 'Receive', icon: '', route: '/receive' },
+  { l: 'Swap',    icon: '', route: '/swap'    },
+  { l: 'Buy',     icon: '+', route: '/buy'     },
 ]
 
 export default function Dashboard() {
-  const addr         = useWalletStore(s => s.address)
-  const activeChain  = useWalletStore(s => s.activeChain)
+  const addr           = useWalletStore(s => s.address)
+  const activeChain    = useWalletStore(s => s.activeChain)
   const setActiveChain = useWalletStore(s => s.setActiveChain)
   const setChainCache  = useWalletStore(s => s.setChainCache)
   const getChainCache  = useWalletStore(s => s.getChainCache)
 
   const short = addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : ''
 
-  const [tokens,      setTokens]      = useState<TokenRow[]>([])
-  const [totalUSD,    setTotalUSD]    = useState(0)
-  const [loading,     setLoading]     = useState(true)
-  const [refreshing,  setRefreshing]  = useState(false)
-  const [error,       setError]       = useState(false)
-  const [errMsg,      setErrMsg]      = useState('')
-  const [chainModal,  setChainModal]  = useState(false)
-  const [fundSheet,   setFundSheet]   = useState(false)
+  const [tokens,     setTokens]     = useState<TokenRow[]>([])
+  const [totalUSD,   setTotalUSD]   = useState(0)
+  const [loading,    setLoading]    = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error,      setError]      = useState(false)
+  const [chainModal, setChainModal] = useState(false)
+  const [fundSheet,  setFundSheet]  = useState(false)
 
   const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
 
   const fetchBalances = useCallback(async (force = false) => {
     if (!addr) return
-
     const cached = getChainCache(activeChain.id)
     if (cached && !force) {
       const nativeRow: TokenRow = {
@@ -141,35 +142,29 @@ export default function Dashboard() {
       setLoading(false)
       return
     }
-
     setError(false)
     try {
-      //  1. Native balance (7s timeout - prevents infinite spinner)
       const provider = getProvider(activeChain)
       const weiBalance = await Promise.race([
         provider.getBalance(addr),
-        new Promise<never>((_, r) =>
-          setTimeout(() => r(new Error('RPC timeout - check connection')), 7000)
-        ),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error('timeout')), 7000)),
       ])
-      const nativeBal  = parseFloat(ethers.formatEther(weiBalance))
+      const nativeBal = parseFloat(ethers.formatEther(weiBalance))
 
-      //  2. Native price: CoinGecko  Binance fallback 
-      let nativePrice  = 0
-      let nativeChange = 0
+      let nativePrice = 0, nativeChange = 0
       try {
-        const cgKey  = NATIVE_CG[activeChain.id] ?? 'ethereum'
-        const cgRes  = await Promise.race([fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${cgKey}&vs_currencies=usd&include_24hr_change=true&x_cg_demo_api_key=`,
-          { headers: { Accept: 'application/json' } }), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),8000))])
-        if (cgRes.ok) {
-          const cgData  = await cgRes.json()
-          nativePrice   = cgData[cgKey]?.usd ?? 0
-          nativeChange  = cgData[cgKey]?.usd_24h_change ?? 0
+        const cgKey = NATIVE_CG[activeChain.id] ?? 'ethereum'
+        const cgRes = await Promise.race([
+          fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cgKey}&vs_currencies=usd&include_24hr_change=true`),
+          new Promise<never>((_, r) => setTimeout(() => r(new Error('timeout')), 8000)),
+        ])
+        if ((cgRes as Response).ok) {
+          const cgData = await (cgRes as Response).json()
+          nativePrice  = cgData[cgKey]?.usd ?? 0
+          nativeChange = cgData[cgKey]?.usd_24h_change ?? 0
         }
       } catch {}
 
-      // Binance fallback
       if (nativePrice === 0) {
         try {
           const bSym = NATIVE_BINANCE[activeChain.id] ?? 'ETHUSDT'
@@ -185,47 +180,34 @@ export default function Dashboard() {
       if (nativePrice === 0) {
         try {
           const ccSym = NATIVE_CC[activeChain.id] ?? 'ETH'
-          const ccRes = await fetch(
-            `https://min-api.cryptocompare.com/data/price?fsym=${ccSym}&tsyms=USD`
-          )
-          if (ccRes.ok) {
-            const ccData = await ccRes.json()
-            nativePrice = ccData.USD ?? 0
-          }
+          const ccRes = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${ccSym}&tsyms=USD`)
+          if (ccRes.ok) { const ccData = await ccRes.json(); nativePrice = ccData.USD ?? 0 }
         } catch {}
       }
 
       const nativeUSD = nativeBal * nativePrice
-
-      //  3. ERC-20 tokens via direct balanceOf calls 
       let tokenRows: TokenRow[] = []
       try {
         const fetched = await fetchChainTokenBalances(addr, activeChain)
         tokenRows = fetched.map(t => ({ ...t, isNative: false }))
       } catch {}
 
-      //  4. Build final rows 
       const nativeRow: TokenRow = {
         symbol: activeChain.symbol, name: activeChain.nativeName,
         balance: nativeBal.toFixed(6),
         price: nativePrice, change24h: nativeChange,
         valueUSD: nativeUSD, isNative: true,
       }
-
       const allRows = [nativeRow, ...tokenRows]
-      const total   = allRows.reduce((s, t) => s + t.valueUSD, 0)
       setTokens(allRows)
-      setTotalUSD(total)
-
+      setTotalUSD(allRows.reduce((s, t) => s + t.valueUSD, 0))
       setChainCache(activeChain.id, {
         nativeBalance: nativeBal.toFixed(6), nativeUSD,
         tokens: tokenRows, lastFetch: Date.now(),
       })
     } catch (e: any) {
       setError(true)
-      const em = e?.message ?? e?.code ?? String(e) ?? "unknown"
-      setErrMsg(em)
-      console.error("[Kryptonow_ERR]", em)
+      console.error('[KryptoNow]', e?.message)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -240,157 +222,148 @@ export default function Dashboard() {
   const onRefresh = () => { setRefreshing(true); fetchBalances(true); refreshTxns() }
 
   return (
-    <View style={webContainer}>
-      <View style={[webInner, { backgroundColor: '#F8FAFF' }]}>
-      <View style={s.top}>
-        <TouchableOpacity style={s.net} onPress={() => setChainModal(true)} activeOpacity={0.7}>
-          <View style={[s.nd, { backgroundColor: activeChain.color }]} />
-          <Text style={s.nt}>{activeChain.name}</Text>
+    <View style={s.c}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.chainPill} onPress={() => setChainModal(true)} activeOpacity={0.7}>
+          <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
+          <Text style={s.chainName}>{activeChain.name}</Text>
           <Text style={s.chevron}></Text>
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={s.cog} onPress={() => setFundSheet(true)}>
-            <Text style={{ fontSize: 18 }}>ðŸ‘›</Text>
+        <View style={s.headerRight}>
+          <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
+            <Text style={s.iconBtnText}>$</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.cog} onPress={() => router.push('/settings' as any)}>
-            <Text style={{ fontSize: 18, color: '#64748B' }}>⚙ï¸</Text>
+          <TouchableOpacity style={s.iconBtn} onPress={() => router.push('/settings' as any)}>
+            <Text style={s.iconBtnText}></Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={activeChain.color} />}
         contentContainerStyle={{ paddingBottom: 48 }}
       >
-        {/* Balance card */}
-        <View style={[s.card, { backgroundColor: activeChain.color, shadowColor: activeChain.color }]}>
-          <View style={s.av}><Text style={s.avt}>{addr ? addr.slice(2,4).toUpperCase() : 'VT'}</Text></View>
-          <Text style={s.addr}>{short}</Text>
-          <Text style={s.bl}>Total Balance</Text>
+        {/* Balance Card */}
+        <View style={[s.balanceCard, { backgroundColor: activeChain.color }]}>
+          <View style={s.avatarWrap}>
+            <Text style={s.avatarText}>{addr ? addr.slice(2, 4).toUpperCase() : '--'}</Text>
+          </View>
+          <Text style={s.walletAddr}>{short}</Text>
+          <Text style={s.balLabel}>Total Balance</Text>
           {loading
-            ? <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 8 }} />
-            : <Text style={s.bal}>{fmt(totalUSD)}</Text>
+            ? <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 12 }} />
+            : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
           }
           {!loading && tokens[0] && (
-            <View style={{ alignItems: 'center', marginTop: 4 }}>
-              <Text style={s.nativeSub}>
-                {parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}
-              </Text>
-              <Text style={[s.chg, { color: tokens[0].change24h >= 0 ? '#86EFAC' : '#FCA5A5' }]}>
-                {tokens[0].change24h >= 0 ? '▲' : '▼'} {Math.abs(tokens[0].change24h).toFixed(2)}%
-              </Text>
+            <View style={s.balMeta}>
+              <Text style={s.balNative}>{parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}</Text>
+              <View style={[s.changePill, { backgroundColor: tokens[0].change24h >= 0 ? 'rgba(134,239,172,0.25)' : 'rgba(252,165,165,0.25)' }]}>
+                <Text style={[s.changeText, { color: tokens[0].change24h >= 0 ? '#86EFAC' : '#FCA5A5' }]}>
+                  {tokens[0].change24h >= 0 ? '+' : ''}{tokens[0].change24h.toFixed(2)}%
+                </Text>
+              </View>
             </View>
           )}
-          <View style={[s.chainBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-            <Text style={s.chainBadgeT}>{activeChain.name}  · Encrypted</Text>
+          <View style={s.networkBadge}>
+            <Text style={s.networkBadgeText}>{activeChain.name}  Encrypted</Text>
           </View>
         </View>
 
-        {/* Error banner */}
+        {/* Error */}
         {error && (
-          <TouchableOpacity style={s.err} onPress={() => fetchBalances(true)} activeOpacity={0.7}>
-            <Text style={s.errT}> Unable to fetch live data. Tap to retry.</Text>
+          <TouchableOpacity style={s.errorBanner} onPress={() => fetchBalances(true)}>
+            <Text style={s.errorText}>Unable to fetch data  tap to retry</Text>
           </TouchableOpacity>
         )}
 
-        {/* Actions */}
-        <View style={s.acts}>
+        {/* Action Buttons */}
+        <View style={s.actions}>
           {ACTIONS.map(a => (
-            <TouchableOpacity key={a.l} style={s.act} onPress={() => router.push(a.route as any)} activeOpacity={0.7}>
-              <View style={[s.ai, { borderColor: activeChain.color + '44' }]}>
-                <Text style={[s.ait, { color: activeChain.color }]}>{a.i}</Text>
+            <TouchableOpacity key={a.l} style={s.actionItem} onPress={() => router.push(a.route as any)} activeOpacity={0.7}>
+              <View style={[s.actionBtn, { borderColor: activeChain.color + '55' }]}>
+                <Text style={[s.actionIcon, { color: activeChain.color }]}>{a.icon}</Text>
               </View>
-              <Text style={s.al}>{a.l}</Text>
+              <Text style={s.actionLabel}>{a.l}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Assets */}
-        <View style={s.sec}>
-          <Text style={s.st}>Assets on {activeChain.name}</Text>
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Assets on {activeChain.name}</Text>
           {loading ? (
             <View style={s.loadBox}>
               <ActivityIndicator color={activeChain.color} />
-              <Text style={s.loadT}>Fetching {activeChain.name} balances</Text>
+              <Text style={s.loadText}>Fetching balances...</Text>
+            </View>
+          ) : tokens.length === 0 ? (
+            <View style={s.emptyBox}>
+              <Text style={s.emptyIcon}>{activeChain.icon}</Text>
+              <Text style={s.emptyTitle}>No assets yet</Text>
+              <Text style={s.emptySub}>Bridge or receive {activeChain.symbol} to get started</Text>
             </View>
           ) : (
-            <>
-              {tokens.map((t, i) => (
-                <View key={i} style={s.row}>
-                  <View style={[s.icon, { backgroundColor: (t.color ?? activeChain.color) + '22' }]}>
-                    <Text style={[s.iconT, { color: t.color ?? activeChain.color }]}>
-                      {t.isNative ? activeChain.icon : (t.icon ?? t.symbol.slice(0, 2))}
-                    </Text>
-                  </View>
-                  <View style={s.rowMid}>
-                    <Text style={s.rn}>{t.name}</Text>
-                    <Text style={s.rs}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
-                  </View>
-                  <View style={s.rowRight}>
-                    <Text style={s.rv}>{fmt(t.valueUSD)}</Text>
-                    <Text style={[s.rc, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
-                      {t.change24h === 0 ? '-' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
-                    </Text>
-                  </View>
+            tokens.map((t, i) => (
+              <View key={i} style={s.assetRow}>
+                <View style={[s.assetIcon, { backgroundColor: (t.color ?? activeChain.color) + '18' }]}>
+                  <Text style={[s.assetIconText, { color: t.color ?? activeChain.color }]}>
+                    {t.isNative ? activeChain.icon : (t.icon ?? t.symbol.slice(0, 2))}
+                  </Text>
                 </View>
-              ))}
-              {tokens.length === 0 && (
-                <View style={s.empty}>
-                  <Text style={{ fontSize: 36, marginBottom: 10 }}>{activeChain.icon}</Text>
-                  <Text style={s.et}>No assets on {activeChain.name}</Text>
-                  <Text style={s.es}>Bridge or receive {activeChain.symbol} to get started</Text>
+                <View style={s.assetMid}>
+                  <Text style={s.assetName}>{t.name}</Text>
+                  <Text style={s.assetBal}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
                 </View>
-              )}
-            </>
+                <View style={s.assetRight}>
+                  <Text style={s.assetValue}>{fmt(t.valueUSD)}</Text>
+                  <Text style={[s.assetChange, { color: t.change24h >= 0 ? '#10B981' : '#EF4444' }]}>
+                    {t.change24h === 0 ? '--' : (t.change24h >= 0 ? '+' : '') + t.change24h.toFixed(2) + '%'}
+                  </Text>
+                </View>
+              </View>
+            ))
           )}
         </View>
 
         {/* Recent Activity */}
-        <View style={s.sec}>
-          <View style={s.secHdr}>
-            <Text style={s.st}>Recent Activity</Text>
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Recent Activity</Text>
             <TouchableOpacity onPress={() => router.push('/history' as any)}>
-              <Text style={[s.viewAll, { color: activeChain.color }]}>View all →</Text>
+              <Text style={[s.viewAll, { color: activeChain.color }]}>View all</Text>
             </TouchableOpacity>
           </View>
           {txLoading ? (
-            <ActivityIndicator color={activeChain.color} />
+            <ActivityIndicator color={activeChain.color} style={{ marginTop: 16 }} />
           ) : recentTxns.length === 0 ? (
-            <View style={[s.txEmpty,{alignItems:'center',paddingVertical:24}]}>
-              <Text style={{fontSize:28,marginBottom:6}}>ðŸ“­</Text><Text style={s.txEmptyT}>No transactions yet</Text><Text style={{fontSize:12,color:'#94a3b8',marginTop:2}}>Send or receive to see activity</Text>
+            <View style={s.emptyBox}>
+              <Text style={s.emptyTitle}>No transactions yet</Text>
+              <Text style={s.emptySub}>Send or receive to see activity</Text>
             </View>
           ) : (
-            <>
-              {recentTxns.slice(0, 5).map((tx, i) => {
-                const meta   = TX_META[tx.type]
-                const isSend = tx.type === 'send' || tx.type === 'token_send'
-                return (
-                  <TouchableOpacity
-                    key={i} style={s.txRow}
-                    onPress={() => router.push('/history' as any)} activeOpacity={0.7}
-                  >
-                    <View style={[s.txIcon, { backgroundColor: meta.bg }]}>
-                      <Text style={[s.txIconT, { color: meta.color }]}>{meta.icon}</Text>
-                    </View>
-                    <View style={s.txMid}>
-                      <Text style={s.txLabel}>
-                        {isSend
-                          ? `To: ${tx.to.slice(0,6)}${tx.to.slice(-4)}`
-                          : `From: ${tx.from.slice(0,6)}${tx.from.slice(-4)}`}
-                      </Text>
-                      <Text style={s.txTime}>{relTime(tx.timestamp)}</Text>
-                    </View>
-                    <Text style={[s.txAmt, { color: meta.color }]}>
-                      {isSend ? '' : '+'}{tx.value} {tx.symbol}
+            recentTxns.slice(0, 5).map((tx, i) => {
+              const meta   = TX_META[tx.type]
+              const isSend = tx.type === 'send' || tx.type === 'token_send'
+              return (
+                <TouchableOpacity key={i} style={s.txRow} onPress={() => router.push('/history' as any)} activeOpacity={0.7}>
+                  <View style={[s.txIcon, { backgroundColor: meta.bg }]}>
+                    <TxIcon type={tx.type} />
+                  </View>
+                  <View style={s.txMid}>
+                    <Text style={s.txLabel}>{meta.label}</Text>
+                    <Text style={s.txAddr}>
+                      {isSend ? `To: ${tx.to.slice(0,6)}...${tx.to.slice(-4)}` : `From: ${tx.from.slice(0,6)}...${tx.from.slice(-4)}`}
                     </Text>
-                  </TouchableOpacity>
-                )
-              })}
-              <TouchableOpacity style={s.viewAllBtn} onPress={() => router.push('/history' as any)}>
-                <Text style={[s.viewAllBtnT, { color: activeChain.color }]}>View Full History →</Text>
-              </TouchableOpacity>
-            </>
+                    <Text style={s.txTime}>{relTime(tx.timestamp)}</Text>
+                  </View>
+                  <Text style={[s.txAmt, { color: meta.color }]}>
+                    {isSend ? '-' : '+'}{tx.value} {tx.symbol}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })
           )}
         </View>
       </ScrollView>
@@ -402,75 +375,40 @@ export default function Dashboard() {
           <View style={m.handle} />
           <Text style={m.title}>Add Funds</Text>
           <Text style={m.fundSub}>Choose how to fund your wallet</Text>
-
-          {/* Balance Summary Card */}
           <View style={[m.balCard, { backgroundColor: activeChain.color + '12', borderColor: activeChain.color + '30' }]}>
-            <View style={m.balCardLeft}>
+            <View>
               <Text style={m.balCardLabel}>Wallet Balance</Text>
-              <Text style={[m.balCardAmount, { color: activeChain.color }]}>
-                {loading ? '...' : fmt(totalUSD)}
-              </Text>
-              <Text style={m.balCardSub}>
-                {tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '-'}
-              </Text>
+              <Text style={[m.balCardAmount, { color: activeChain.color }]}>{loading ? '...' : fmt(totalUSD)}</Text>
+              <Text style={m.balCardSub}>{tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + ' ' + activeChain.symbol : '--'}</Text>
             </View>
-            <View style={m.balCardRight}>
-              <View style={[m.balChainBadge, { backgroundColor: activeChain.color }]}>
-                <Text style={m.balChainIcon}>{activeChain.icon}</Text>
-              </View>
-              <Text style={m.balCardChain}>{activeChain.name}</Text>
+            <View style={[m.balChainBadge, { backgroundColor: activeChain.color }]}>
+              <Text style={m.balChainIcon}>{activeChain.icon}</Text>
             </View>
           </View>
-
-
-          <TouchableOpacity
-            style={m.fundCard}
-            activeOpacity={0.85}
-            onPress={() => { setFundSheet(false); router.push('/buy' as any) }}
-          >
-            <View style={[m.fundIconWrap, { backgroundColor: '#EEF2FF' }]}>
-              <Text style={{ fontSize: 28 }}>ðŸ’³</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={m.fundCardTitle}>Buy Crypto</Text>
-              <Text style={m.fundCardDesc}>Purchase with card via MoonPay, Transak, Ramp & more</Text>
-            </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={m.fundCard}
-            activeOpacity={0.85}
-            onPress={() => { setFundSheet(false); router.push('/earn' as any) }}
-          >
-            <View style={[m.fundIconWrap, { backgroundColor: '#ECFDF5' }]}>
-              <Text style={{ fontSize: 28 }}>ðŸ“ˆ</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={m.fundCardTitle}>Earn Yield</Text>
-              <Text style={m.fundCardDesc}>Put idle crypto to work with DeFi - up to 5.9% APY</Text>
-            </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[m.fundCard, { marginBottom: 0 }]}
-            activeOpacity={0.85}
-            onPress={() => { setFundSheet(false); router.push('/receive' as any) }}
-          >
-            <View style={[m.fundIconWrap, { backgroundColor: '#FFF7ED' }]}>
-              <Text style={{ fontSize: 28 }}>ðŸ“¥</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={m.fundCardTitle}>Receive Crypto</Text>
-              <Text style={m.fundCardDesc}>Deposit from another wallet or exchange</Text>
-            </View>
-            <Text style={{ fontSize: 18, color: '#94A3B8' }}>›</Text>
-          </TouchableOpacity>
+          {[
+            { icon: '$', bg: '#EEF2FF', title: 'Buy Crypto',      desc: 'Purchase with card via MoonPay, Transak & more', route: '/buy'     },
+            { icon: '%', bg: '#ECFDF5', title: 'Earn Yield',       desc: 'Put idle crypto to work  up to 5.9% APY',      route: '/earn'    },
+            { icon: 'v', bg: '#FFF7ED', title: 'Receive Crypto',   desc: 'Deposit from another wallet or exchange',        route: '/receive' },
+          ].map(item => (
+            <TouchableOpacity
+              key={item.title}
+              style={m.fundCard}
+              activeOpacity={0.85}
+              onPress={() => { setFundSheet(false); router.push(item.route as any) }}
+            >
+              <View style={[m.fundIconWrap, { backgroundColor: item.bg }]}>
+                <Text style={m.fundIconText}>{item.icon}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={m.fundCardTitle}>{item.title}</Text>
+                <Text style={m.fundCardDesc}>{item.desc}</Text>
+              </View>
+              <Text style={m.fundCardChevron}></Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </Modal>
 
-      </View>
       <ChainModal
         visible={chainModal} current={activeChain}
         onSelect={setActiveChain} onClose={() => setChainModal(false)}
@@ -480,95 +418,87 @@ export default function Dashboard() {
 }
 
 const s = StyleSheet.create({
-  c:           { flex:1, backgroundColor:'#F8FAFF' },
-  top:         { flexDirection:'row', justifyContent:'space-between', alignItems:'center', paddingHorizontal:20, paddingTop: IS_WEB ? 20 : 60, paddingBottom:12 },
-  net:         { flexDirection:'row', alignItems:'center', gap:6, backgroundColor:'#fff', paddingVertical:7, paddingHorizontal:13, borderRadius:20, borderWidth:1, borderColor:'#E2E8F0' },
-  nd:          { width:7, height:7, borderRadius:4 },
-  nt:          { fontSize:13, fontWeight:'600', color:'#1E1B4B' },
-  chevron:     { fontSize:11, color:'#94A3B8' },
-  cog:         { width:38, height:38, borderRadius:12, backgroundColor:'#fff', borderWidth:1, borderColor:'#E2E8F0', alignItems:'center', justifyContent:'center' },
-  card:        { marginHorizontal:16, marginBottom:16, borderRadius:24, padding:24, alignItems:'center', shadowOffset:{width:0,height:8}, shadowOpacity:0.35, shadowRadius:20, elevation:10 },
-  av:          { width:52, height:52, borderRadius:26, backgroundColor:'rgba(255,255,255,0.25)', alignItems:'center', justifyContent:'center', marginBottom:10 },
-  avt:         { color:'#fff', fontSize:22, fontWeight:'700' },
-  addr:        { color:'rgba(255,255,255,0.7)', fontSize:13, marginBottom:14 },
-  bl:          { color:'rgba(255,255,255,0.65)', fontSize:13, marginBottom:5 },
-  bal:         { color:'#fff', fontSize:40, fontWeight:'700', letterSpacing:-1 },
-  nativeSub:   { color:'rgba(255,255,255,0.7)', fontSize:13, marginTop:4 },
-  chg:         { fontSize:12, fontWeight:'600', marginTop:4, marginBottom:10 },
-  chainBadge:  { marginTop:10, paddingVertical:5, paddingHorizontal:14, borderRadius:20 },
-  chainBadgeT: { color:'#fff', fontSize:11, fontWeight:'500' },
-  err:         { marginHorizontal:16, marginBottom:12, backgroundColor:'#FEF2F2', borderRadius:14, borderWidth:1, borderColor:'#FECACA', padding:13 },
-  errT:        { color:'#DC2626', fontSize:13, textAlign:'center' },
-  acts:        { flexDirection:'row', justifyContent:'space-around', paddingHorizontal:16, marginBottom:28 },
-  act:         { alignItems:'center', gap:8 },
-  ai:          { width:54, height:54, borderRadius:27, backgroundColor:'#fff', alignItems:'center', justifyContent:'center', borderWidth:2, shadowColor:'#64748B', shadowOffset:{width:0,height:2}, shadowOpacity:0.12, shadowRadius:8, elevation:3 },
-  ait:         { fontSize:22, fontWeight:'700', textAlign:'center' },
-  al:          { color:'#64748B', fontSize:12, fontWeight:'500' },
-  sec:         { paddingHorizontal:16, marginBottom:24 },
-  secHdr:      { flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:12 },
-  st:          { color:'#1E1B4B', fontSize:17, fontWeight:'700', marginBottom:12 },
-  viewAll:     { fontSize:13, fontWeight:'600' },
-  loadBox:     { backgroundColor:'#fff', borderRadius:16, padding:24, alignItems:'center', gap:10 },
-  loadT:       { color:'#94A3B8', fontSize:13 },
-  row:         { flexDirection:'row', alignItems:'center', backgroundColor:'#fff', borderRadius:16, padding:14, marginBottom:10, borderWidth:1, borderColor:'#F1F5F9' },
-  icon:        { width:42, height:42, borderRadius:21, alignItems:'center', justifyContent:'center', marginRight:12 },
-  iconT:       { fontSize:16, fontWeight:'700' },
-  rowMid:      { flex:1 },
-  rn:          { color:'#1E1B4B', fontSize:14, fontWeight:'600' },
-  rs:          { color:'#94A3B8', fontSize:12, marginTop:2 },
-  rowRight:    { alignItems:'flex-end' },
-  rv:          { color:'#1E1B4B', fontSize:14, fontWeight:'600' },
-  rc:          { fontSize:12, fontWeight:'500', marginTop:2 },
-  empty:       { backgroundColor:'#fff', borderRadius:20, padding:28, alignItems:'center', borderWidth:1, borderColor:'#E2E8F0' },
-  et:          { color:'#1E1B4B', fontSize:16, fontWeight:'600', marginBottom:5 },
-  es:          { color:'#94A3B8', fontSize:13, textAlign:'center' },
-  txEmpty:     { backgroundColor:'#fff', borderRadius:14, padding:20, alignItems:'center', borderWidth:1, borderColor:'#F1F5F9' },
-  txEmptyT:    { color:'#CBD5E1', fontSize:13 },
-  txRow:       { flexDirection:'row', alignItems:'center', backgroundColor:'#fff', borderRadius:14, padding:13, marginBottom:8, borderWidth:1, borderColor:'#F1F5F9' },
-  txIcon:      { width:38, height:38, borderRadius:19, alignItems:'center', justifyContent:'center', marginRight:12 },
-  txIconT:     { fontSize:16, fontWeight:'700' },
-  txMid:       { flex:1 },
-  txLabel:     { color:'#1E1B4B', fontSize:13, fontWeight:'500', marginBottom:2 },
-  txTime:      { color:'#CBD5E1', fontSize:11 },
-  txAmt:       { fontSize:13, fontWeight:'600' },
-  viewAllBtn:  { backgroundColor:'#F8FAFF', borderRadius:12, borderWidth:1.5, borderColor:'#E0E7FF', paddingVertical:12, alignItems:'center', marginTop:4 },
-  viewAllBtnT: { fontSize:14, fontWeight:'600' },
+  c:               { flex: 1, backgroundColor: '#F0F4FF' },
+  header:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
+  chainPill:       { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  chainDot:        { width: 8, height: 8, borderRadius: 4 },
+  chainName:       { fontSize: 13, fontWeight: '700', color: '#1E1B4B' },
+  chevron:         { fontSize: 18, color: '#94A3B8', marginTop: -1 },
+  headerRight:     { flexDirection: 'row', gap: 8 },
+  iconBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  iconBtnText:     { fontSize: 18, color: '#6366F1', fontWeight: '700' },
+  balanceCard:     { marginHorizontal: 16, marginBottom: 20, borderRadius: 28, padding: 28, alignItems: 'center', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24, elevation: 12 },
+  avatarWrap:      { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
+  avatarText:      { color: '#fff', fontSize: 20, fontWeight: '800' },
+  walletAddr:      { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginBottom: 16, letterSpacing: 0.5 },
+  balLabel:        { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '500', marginBottom: 6 },
+  balAmount:       { color: '#fff', fontSize: 42, fontWeight: '800', letterSpacing: -1.5 },
+  balMeta:         { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, marginBottom: 16 },
+  balNative:       { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
+  changePill:      { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  changeText:      { fontSize: 12, fontWeight: '700' },
+  networkBadge:    { backgroundColor: 'rgba(255,255,255,0.15)', paddingVertical: 5, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  networkBadgeText:{ color: '#fff', fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
+  errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#FEF2F2', borderRadius: 14, borderWidth: 1, borderColor: '#FECACA', padding: 13 },
+  errorText:       { color: '#DC2626', fontSize: 13, textAlign: 'center', fontWeight: '500' },
+  actions:         { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginBottom: 28 },
+  actionItem:      { alignItems: 'center', gap: 8 },
+  actionBtn:       { width: 58, height: 58, borderRadius: 29, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 2, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 4 },
+  actionIcon:      { fontSize: 22, fontWeight: '800' },
+  actionLabel:     { color: '#64748B', fontSize: 12, fontWeight: '600' },
+  section:         { paddingHorizontal: 16, marginBottom: 24 },
+  sectionHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionTitle:    { color: '#1E1B4B', fontSize: 17, fontWeight: '800', marginBottom: 14 },
+  viewAll:         { fontSize: 13, fontWeight: '600' },
+  loadBox:         { backgroundColor: '#fff', borderRadius: 18, padding: 28, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+  loadText:        { color: '#94A3B8', fontSize: 13 },
+  emptyBox:        { backgroundColor: '#fff', borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  emptyIcon:       { fontSize: 36, marginBottom: 10 },
+  emptyTitle:      { color: '#1E1B4B', fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  emptySub:        { color: '#94A3B8', fontSize: 13, textAlign: 'center' },
+  assetRow:        { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  assetIcon:       { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  assetIconText:   { fontSize: 16, fontWeight: '800' },
+  assetMid:        { flex: 1 },
+  assetName:       { color: '#1E1B4B', fontSize: 14, fontWeight: '700' },
+  assetBal:        { color: '#94A3B8', fontSize: 12, marginTop: 3 },
+  assetRight:      { alignItems: 'flex-end' },
+  assetValue:      { color: '#1E1B4B', fontSize: 14, fontWeight: '700' },
+  assetChange:     { fontSize: 12, fontWeight: '600', marginTop: 3 },
+  txRow:           { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#F1F5F9' },
+  txIcon:          { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  txMid:           { flex: 1 },
+  txLabel:         { color: '#1E1B4B', fontSize: 13, fontWeight: '700' },
+  txAddr:          { color: '#94A3B8', fontSize: 11, marginTop: 2 },
+  txTime:          { color: '#CBD5E1', fontSize: 11, marginTop: 1 },
+  txAmt:           { fontSize: 13, fontWeight: '700' },
 })
 
 const m = StyleSheet.create({
-  overlay:     { ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(15,23,42,0.5)' },
-  sheet:       { position:'absolute', bottom:0, left:0, right:0, backgroundColor:'#fff', borderTopLeftRadius:28, borderTopRightRadius:28, paddingTop:12, paddingHorizontal:16, paddingBottom:32 },
-  handle:      { width:36, height:4, borderRadius:2, backgroundColor:'#E2E8F0', alignSelf:'center', marginBottom:16 },
-  title:       { color:'#1E1B4B', fontSize:17, fontWeight:'700', marginBottom:16, paddingLeft:4 },
-  row:         { flexDirection:'row', alignItems:'center', padding:14, borderRadius:16, marginBottom:8, backgroundColor:'#F8FAFF' },
-  rowActive:   { backgroundColor:'#EEF2FF' },
-  iconWrap:    { width:44, height:44, borderRadius:22, alignItems:'center', justifyContent:'center', marginRight:14 },
-  icon:        { fontSize:20 },
-  mid:         { flex:1 },
-  chainName:   { color:'#1E1B4B', fontSize:15, fontWeight:'600' },
-  chainSymbol: { color:'#94A3B8', fontSize:12, marginTop:2 },
-  activeDot:   { width:10, height:10, borderRadius:5 },
-  balCard:        { flexDirection:'row', justifyContent:'space-between', alignItems:'center', borderRadius:16, borderWidth:1, padding:16, marginBottom:20 },
-  balCardLeft:    { flex:1 },
-  balCardLabel:   { color:'#64748B', fontSize:11, fontWeight:'600', textTransform:'uppercase', letterSpacing:0.5, marginBottom:4 },
-  balCardAmount:  { fontSize:26, fontWeight:'800', letterSpacing:-0.5, marginBottom:2 },
-  balCardSub:     { color:'#94A3B8', fontSize:12 },
-  balCardRight:   { alignItems:'center', gap:6 },
-  balChainBadge:  { width:44, height:44, borderRadius:22, alignItems:'center', justifyContent:'center' },
-  balChainIcon:   { fontSize:22 },
-  balCardChain:   { color:'#64748B', fontSize:11, fontWeight:'600' },
-  fundSheet:     { position:'absolute', bottom:0, left:0, right:0, backgroundColor:'#fff', borderTopLeftRadius:28, borderTopRightRadius:28, paddingTop:12, paddingHorizontal:16, paddingBottom:40 },
-  fundSub:       { color:'#94A3B8', fontSize:13, marginTop:2, marginBottom:20, paddingLeft:4 },
-  fundCard:      { flexDirection:'row', alignItems:'center', gap:14, backgroundColor:'#F8FAFF', borderRadius:16, padding:16, marginBottom:12, borderWidth:1, borderColor:'#E2E8F0' },
-  fundIconWrap:  { width:52, height:52, borderRadius:26, alignItems:'center', justifyContent:'center' },
-  fundCardTitle: { color:'#1E1B4B', fontSize:15, fontWeight:'700', marginBottom:3 },
-  fundCardDesc:  { color:'#64748B', fontSize:12, lineHeight:17 },
+  overlay:       { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.6)' },
+  sheet:         { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 36 },
+  handle:        { width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 20 },
+  title:         { color: '#1E1B4B', fontSize: 18, fontWeight: '800', marginBottom: 4, paddingLeft: 4 },
+  row:           { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, marginBottom: 8, backgroundColor: '#F8FAFF' },
+  rowActive:     { backgroundColor: '#EEF2FF' },
+  iconWrap:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  icon:          { fontSize: 18, fontWeight: '700' },
+  mid:           { flex: 1 },
+  chainName:     { color: '#1E1B4B', fontSize: 15, fontWeight: '700' },
+  chainSymbol:   { color: '#94A3B8', fontSize: 12, marginTop: 2 },
+  activeDot:     { width: 10, height: 10, borderRadius: 5 },
+  balCard:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 18, borderWidth: 1, padding: 18, marginBottom: 20 },
+  balCardLabel:  { color: '#64748B', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  balCardAmount: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5, marginBottom: 2 },
+  balCardSub:    { color: '#94A3B8', fontSize: 12 },
+  balChainBadge: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  balChainIcon:  { fontSize: 22, color: '#fff' },
+  fundSheet:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 44 },
+  fundSub:       { color: '#94A3B8', fontSize: 13, marginBottom: 20, paddingLeft: 4 },
+  fundCard:      { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#F8FAFF', borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  fundIconWrap:  { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  fundIconText:  { fontSize: 22, fontWeight: '800', color: '#6366F1' },
+  fundCardTitle: { color: '#1E1B4B', fontSize: 15, fontWeight: '700', marginBottom: 3 },
+  fundCardDesc:  { color: '#64748B', fontSize: 12, lineHeight: 18 },
+  fundCardChevron: { fontSize: 22, color: '#CBD5E1', fontWeight: '300' },
 })
-
-
-
-
-
-
-
-
