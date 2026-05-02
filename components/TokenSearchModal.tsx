@@ -4,6 +4,8 @@ import {
   Modal, Animated, FlatList, ActivityIndicator, Alert,
 } from "react-native"
 import { Chain } from "../utils/chains"
+import { Ionicons } from "@expo/vector-icons"
+import { Ionicons } from "@expo/vector-icons"
 import {
   CustomToken, POPULAR_TOKENS, loadCustomTokens, saveCustomToken,
   removeCustomToken, lookupContractToken, searchPopularTokens,
@@ -30,7 +32,10 @@ function TokenRow({
           <Text style={r.sym}>{token.symbol}</Text>
           {isCustom && !("verified" in token && token.verified) && (
             <View style={r.unverifiedBadge}>
-              <Text style={r.unverifiedT}>[?] Unverified</Text>
+              <View style={{ flexDirection:"row", alignItems:"center", gap:3 }}>
+                <Ionicons name="help-circle-outline" size={11} color="#F59E0B" />
+                <Text style={r.unverifiedT}>Unverified</Text>
+              </View>
             </View>
           )}
         </View>
@@ -48,7 +53,7 @@ function TokenRow({
           onPress={onRemove}
           activeOpacity={0.7}
         >
-          <Text style={r.removeBtnT}>[X]</Text>
+          <Ionicons name="trash-outline" size={16} color="#EF4444" />
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -56,7 +61,10 @@ function TokenRow({
           onPress={onAdd}
           activeOpacity={0.7}
         >
-          <Text style={r.addBtnT}>[+] Add</Text>
+          <View style={{ flexDirection:"row", alignItems:"center", gap:4 }}>
+            <Ionicons name="add" size={14} color="#6366F1" />
+            <Text style={r.addBtnT}>Add</Text>
+          </View>
         </TouchableOpacity>
       )}
     </View>
@@ -191,15 +199,15 @@ export default function TokenSearchModal({
             </View>
           </View>
           <TouchableOpacity style={s.closeBtn} onPress={onClose}>
-            <Text style={s.closeBtnT}>[X]</Text>
+            <Ionicons name="close" size={20} color="#64748B" />
           </TouchableOpacity>
         </View>
 
         {/* Tabs */}
         <View style={s.tabRow}>
           {([
-            { key: "search", label: "[S] Search"   },
-            { key: "custom", label: "[+] Custom"   },
+            { key: "search", label: "Search"   },
+            { key: "custom", label: "Custom"   },
           ] as { key: TabKey; label: string }[]).map(t => (
             <TouchableOpacity
               key={t.key}
@@ -215,7 +223,7 @@ export default function TokenSearchModal({
         {tab === "search" && (
           <View style={{ flex: 1 }}>
             <View style={s.searchWrap}>
-              <Text style={s.searchIcon}>[S]</Text>
+              <Ionicons name="search-outline" size={16} color="#94A3B8" style={{ paddingLeft:4 }} />
               <TextInput
                 style={s.searchInput}
                 value={query}
@@ -227,7 +235,7 @@ export default function TokenSearchModal({
               />
               {query.length > 0 && (
                 <TouchableOpacity onPress={() => setQuery("")}>
-                  <Text style={s.clearBtn}>[X]</Text>
+                  <Ionicons name="close-circle" size={18} color="#CBD5E1" />
                 </TouchableOpacity>
               )}
             </View>
@@ -287,7 +295,10 @@ export default function TokenSearchModal({
 
               {lookupError ? (
                 <View style={s.errorBox}>
-                  <Text style={s.errorT}>[!] {lookupError}</Text>
+                  <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
+                    <Ionicons name="warning-outline" size={14} color="#EF4444" />
+                    <Text style={s.errorT}>{lookupError}</Text>
+                  </View>
                 </View>
               ) : null}
 
@@ -303,7 +314,10 @@ export default function TokenSearchModal({
                 {lookupLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={s.lookupBtnT}>[S] Look Up Token</Text>
+                  <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
+                    <Ionicons name="search-outline" size={15} color="#fff" />
+                    <Text style={s.lookupBtnT}>Look Up Token</Text>
+                  </View>
                 )}
               </TouchableOpacity>
 
@@ -313,7 +327,10 @@ export default function TokenSearchModal({
                   <View style={s.lookupResultHdr}>
                     <Text style={s.lookupResultTitle}>Token Found</Text>
                     <View style={s.unverifiedPill}>
-                      <Text style={s.unverifiedPillT}>[?] Unverified</Text>
+                      <View style={{ flexDirection:"row", alignItems:"center", gap:4 }}>
+                        <Ionicons name="help-circle-outline" size={12} color="#F59E0B" />
+                        <Text style={s.unverifiedPillT}>Unverified</Text>
+                      </View>
                     </View>
                   </View>
                   <View style={s.lookupDetails}>
@@ -331,16 +348,19 @@ export default function TokenSearchModal({
                     ))}
                   </View>
                   <View style={s.warningBox}>
-                    <Text style={s.warningT}>
-                      [!] Always verify contract addresses from official sources.
-                      Scam tokens can mimic real ones.
-                    </Text>
+                    <View style={{ flexDirection:"row", gap:8 }}>
+                      <Ionicons name="shield-outline" size={14} color="#C2410C" style={{ marginTop:1 }} />
+                      <Text style={[s.warningT, { flex:1 }]}>Always verify contract addresses from official sources. Scam tokens can mimic real ones.</Text>
+                    </View>
                   </View>
                   <TouchableOpacity
                     style={[s.addTokenBtn, { backgroundColor: chain.color }]}
                     onPress={() => handleAdd(lookupResult)}
                   >
-                    <Text style={s.addTokenBtnT}>[+] Add {lookupResult.symbol} to Wallet</Text>
+                    <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
+                      <Ionicons name="add-circle-outline" size={16} color="#fff" />
+                      <Text style={s.addTokenBtnT}>Add {lookupResult.symbol} to Wallet</Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
               )}

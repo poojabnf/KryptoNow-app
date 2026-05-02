@@ -11,7 +11,9 @@ import {
   Platform, ActivityIndicator, Animated,
 } from 'react-native'
 import { router } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
+
 import { ethers } from 'ethers'
 
 const ENS_PROVIDER = 'https://eth.llamarpc.com'
@@ -68,27 +70,27 @@ async function resolveENS(input: string): Promise<{ address: string; ens?: strin
 }
 
 // --- Storage helpers ----------------------------------------------------------
-async function loadContacts(): Promise<Contact[]> {
+function loadContacts(): Contact[] {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
 
-async function saveContacts(contacts: Contact[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(contacts))
+function saveContacts(contacts: Contact[]): void {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts)) } catch {}
 }
 
-export async function loadRecents(): Promise<RecentAddress[]> {
+export function loadRecents(): RecentAddress[] {
   try {
-    const raw = await AsyncStorage.getItem(RECENT_KEY)
+    const raw = localStorage.getItem(RECENT_KEY)
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
 
-export async function recordRecentAddress(address: string, ens?: string): Promise<void> {
+export function recordRecentAddress(address: string, ens?: string): void {
   try {
-    const recents = await loadRecents()
+    const recents = loadRecents()
     const existing = recents.find(r => r.address.toLowerCase() === address.toLowerCase())
     if (existing) {
       existing.lastUsed = Date.now()
@@ -98,7 +100,7 @@ export async function recordRecentAddress(address: string, ens?: string): Promis
       recents.unshift({ address, ens, lastUsed: Date.now(), txCount: 1 })
     }
     const trimmed = recents.slice(0, 20)  // keep last 20
-    await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(trimmed))
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed)) } catch {}
   } catch {}
 }
 
@@ -225,7 +227,7 @@ function ContactModal({
               autoCorrect={false}
             />
             {resolving && <ActivityIndicator size="small" color="#6366F1" style={{ paddingRight: 12 }} />}
-            {resolvedENS && !resolving && <Text style={{ paddingRight: 12, fontSize: 16 }}>OK</Text>}
+            {resolvedENS && !resolving && <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ paddingRight:12 }} />}
           </View>
 
           {resolvedENS && (
@@ -281,6 +283,7 @@ function ContactRow({
         {contact.note ? <Text style={r.note} numberOfLines={1}>{contact.note}</Text> : null}
       </View>
       <TouchableOpacity style={r.sendBtn} onPress={onPress}>
+        <Ionicons name="send-outline" size={14} color="#6366F1" />
         <Text style={r.sendBtnT}>Send</Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -297,8 +300,9 @@ export default function AddressBook() {
   const [editing,   setEditing]   = useState<Contact | null>(null)
   const [loading,   setLoading]   = useState(true)
 
-  const load = useCallback(async () => {
-    const [c, r] = await Promise.all([loadContacts(), loadRecents()])
+  const load = useCallback(() => {
+    const c = loadContacts()
+    const r = loadRecents()
     setContacts(c)
     setRecents(r)
     setLoading(false)
@@ -311,7 +315,7 @@ export default function AddressBook() {
       ? contacts.map(c => c.id === contact.id ? contact : c)
       : [...contacts, contact]
     setContacts(updated)
-    await saveContacts(updated)
+    saveContacts(updated)
     setModalVis(false)
     setEditing(null)
   }
@@ -319,7 +323,7 @@ export default function AddressBook() {
   async function handleDelete(id: string) {
     const updated = contacts.filter(c => c.id !== id)
     setContacts(updated)
-    await saveContacts(updated)
+    saveContacts(updated)
   }
 
   function handleLongPress(contact: Contact) {
@@ -356,7 +360,10 @@ export default function AddressBook() {
           style={s.addBtn}
           onPress={() => { setEditing(null); setModalVis(true) }}
         >
-          <Text style={s.addBtnT}>+ Add</Text>
+          <View style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
+            <Ionicons name="add" size={16} color="#6366F1" />
+            <Text style={s.addBtnT}>Add</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -413,7 +420,10 @@ export default function AddressBook() {
                 style={s.emptyAddBtn}
                 onPress={() => { setEditing(null); setModalVis(true) }}
               >
-                <Text style={s.emptyAddBtnT}>+ Add First Contact</Text>
+                <View style={{ flexDirection:'row', alignItems:'center', gap:6 }}>
+                  <Ionicons name="person-add-outline" size={16} color="#fff" />
+                  <Text style={s.emptyAddBtnT}>Add First Contact</Text>
+                </View>
               </TouchableOpacity>
             )}
           </View>
