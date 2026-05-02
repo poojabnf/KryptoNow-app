@@ -9,15 +9,6 @@ import { CHAINS } from '../utils/chains'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Clipboard from 'expo-clipboard'
 
-type Section = { title: string; items: Item[] }
-type Item = {
-  icon: string; label: string; sublabel?: string
-  type: 'nav' | 'toggle' | 'action' | 'info'
-  value?: boolean; color?: string
-  onPress?: () => void
-  onToggle?: (v: boolean) => void
-}
-
 export default function Settings() {
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
@@ -50,7 +41,11 @@ export default function Settings() {
           style: 'destructive',
           onPress: async () => {
             clearWallet?.()
-            await AsyncStorage.clear()
+            if (Platform.OS === 'web') {
+              localStorage.clear()
+            } else {
+              await AsyncStorage.clear()
+            }
             router.replace('/')
           },
         },
@@ -58,243 +53,111 @@ export default function Settings() {
     )
   }
 
+  type ItemType = 'nav' | 'toggle' | 'action' | 'info'
+  type Item = {
+    icon: string; iconBg: string; label: string; sublabel?: string
+    type: ItemType; value?: boolean; color?: string
+    onPress?: () => void; onToggle?: (v: boolean) => void
+  }
+  type Section = { title: string; items: Item[] }
+
   const sections: Section[] = [
     {
       title: 'WALLET',
       items: [
-        {
-          icon: 'clipboard',
-          label: 'Wallet Address',
-          sublabel: short,
-          type: 'action',
-          onPress: copyAddress,
-        },
-        {
-          icon: 'key',
-          label: 'Export Private Key',
-          sublabel: 'Tap to reveal (keep secret)',
-          type: 'nav',
-          onPress: () => Alert.alert(
-            'Security Notice',
-            'Never share your private key. This feature requires biometric authentication.'
-          ),
-        },
-        {
-          icon: 'seed',
-          label: 'Backup Seed Phrase',
-          sublabel: 'Verify your recovery words',
-          type: 'nav',
-          onPress: () => Alert.alert(
-            'Backup',
-            'Write down your 12-word seed phrase and store it safely offline.'
-          ),
-        },
-        {
-          icon: 'network',
-          label: 'Active Network',
-          sublabel: activeChain.name,
-          type: 'info',
-        },
+        { icon: '#', iconBg: '#EEF2FF', label: 'Wallet Address', sublabel: short, type: 'action', onPress: copyAddress },
+        { icon: '*', iconBg: '#FFF7ED', label: 'Export Private Key', sublabel: 'Tap to reveal (keep secret)', type: 'nav', onPress: () => Alert.alert('Security Notice', 'Never share your private key.') },
+        { icon: 'S', iconBg: '#ECFDF5', label: 'Backup Seed Phrase', sublabel: 'Verify your recovery words', type: 'nav', onPress: () => Alert.alert('Backup', 'Write down your 12-word seed phrase safely.') },
+        { icon: 'N', iconBg: '#F0F9FF', label: 'Active Network', sublabel: activeChain.name, type: 'info' },
       ],
     },
     {
       title: 'SECURITY',
       items: [
-        {
-          icon: 'eye',
-          label: 'Hide Balance',
-          sublabel: 'Mask amounts on dashboard',
-          type: 'toggle',
-          value: hideBalance,
-          onToggle: setHideBalance,
-        },
-        {
-          icon: 'lock',
-          label: 'Biometric Lock',
-          sublabel: 'Require Face ID / fingerprint',
-          type: 'toggle',
-          value: biometrics,
-          onToggle: setBiometrics,
-        },
+        { icon: 'H', iconBg: '#F8FAFF', label: 'Hide Balance', sublabel: 'Mask amounts on dashboard', type: 'toggle', value: hideBalance, onToggle: setHideBalance },
+        { icon: 'L', iconBg: '#F8FAFF', label: 'Biometric Lock', sublabel: 'Require Face ID / fingerprint', type: 'toggle', value: biometrics, onToggle: setBiometrics },
       ],
     },
     {
       title: 'APP',
       items: [
-        {
-          icon: 'bell',
-          label: 'Push Notifications',
-          sublabel: 'Transaction alerts',
-          type: 'toggle',
-          value: notifications,
-          onToggle: setNotifications,
-        },
-        {
-          icon: 'flask',
-          label: 'Testnet Mode',
-          sublabel: 'Show test networks',
-          type: 'toggle',
-          value: testnet,
-          onToggle: setTestnet,
-        },
-        {
-          icon: 'history',
-          label: 'Transaction History',
-          sublabel: 'View all past activity',
-          type: 'nav',
-          onPress: () => router.push('/history' as any),
-        },
-        {
-          icon: 'contacts',
-          label: 'Address Book',
-          sublabel: 'Saved contacts',
-          type: 'nav',
-          onPress: () => router.push('/addressbook' as any),
-        },
+        { icon: 'B', iconBg: '#FFF7ED', label: 'Push Notifications', sublabel: 'Transaction alerts', type: 'toggle', value: notifications, onToggle: setNotifications },
+        { icon: 'T', iconBg: '#F8FAFF', label: 'Testnet Mode', sublabel: 'Show test networks', type: 'toggle', value: testnet, onToggle: setTestnet },
+        { icon: 'H', iconBg: '#EEF2FF', label: 'Transaction History', sublabel: 'View all past activity', type: 'nav', onPress: () => router.push('/history' as any) },
+        { icon: 'C', iconBg: '#ECFDF5', label: 'Address Book', sublabel: 'Saved contacts', type: 'nav', onPress: () => router.push('/addressbook' as any) },
       ],
     },
     {
       title: 'ABOUT',
       items: [
-        { icon: 'info',  label: 'Version',    sublabel: '1.0.0',           type: 'info' },
-        { icon: 'shield',label: 'Encryption', sublabel: 'AES-256-GCM',     type: 'info' },
-        { icon: 'chain', label: 'Networks',   sublabel: `${CHAINS.length} chains`, type: 'info' },
+        { icon: 'V', iconBg: '#F8FAFF', label: 'Version',    sublabel: '1.0.0',                      type: 'info' },
+        { icon: 'E', iconBg: '#F8FAFF', label: 'Encryption', sublabel: 'AES-256-GCM',                type: 'info' },
+        { icon: 'N', iconBg: '#F8FAFF', label: 'Networks',   sublabel: `${CHAINS.length} chains`,    type: 'info' },
       ],
     },
     {
       title: 'DANGER ZONE',
       items: [
-        {
-          icon: 'trash',
-          label: 'Wipe Wallet',
-          sublabel: 'Remove all data from device',
-          type: 'action',
-          color: '#EF4444',
-          onPress: confirmWipe,
-        },
+        { icon: 'X', iconBg: '#FEF2F2', label: 'Wipe Wallet', sublabel: 'Remove all data from device', type: 'action', color: '#EF4444', onPress: confirmWipe },
       ],
     },
   ]
 
-  // Render icon as colored text symbol - no emoji, no encoding issues
-  function renderIcon(icon: string, color: string, danger?: string) {
-    const MAP: Record<string, string> = {
-      clipboard: 'âŠž',
-      key:       'âš¿',
-      seed:      '⬡',
-      network:   'â-‰',
-      eye:       'â-Ž',
-      lock:      'âŠ˜',
-      bell:      'â-ˆ',
-      flask:     'â¬¢',
-      history:   'â-·',
-      contacts:  'âŠ•',
-      info:      'â„¹',
-      shield:    'âŠ›',
-      chain:     'âŠ-',
-      trash:     'âŠ ',
-    }
-    return (
-      <View style={[
-        styles.iconWrap,
-        { backgroundColor: danger ? '#FEF2F2' : color + '18' }
-      ]}>
-        <Text style={[styles.iconT, { color: danger ?? color }]}>
-          {MAP[icon] ?? '•'}
-        </Text>
-      </View>
-    )
-  }
-
   return (
-    <View style={styles.c}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.back}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backT}>{'<'}</Text>
+    <View style={st.c}>
+      <View style={st.header}>
+        <TouchableOpacity style={st.back} onPress={() => router.back()} activeOpacity={0.7}>
+          <Text style={st.backT}>{'<'}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={st.title}>Settings</Text>
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
-      >
-        {/* Profile card */}
-        <View style={[styles.profileCard, { backgroundColor: activeChain.color }]}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarT}>V</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
+        {/* Profile Card */}
+        <View style={[st.profileCard, { backgroundColor: activeChain.color }]}>
+          <View style={st.avatar}>
+            <Text style={st.avatarT}>{addr ? addr.slice(2,4).toUpperCase() : 'KN'}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileLabel}>Kryptonow Wallet</Text>
-            <Text style={styles.profileAddr} numberOfLines={1}>{short}</Text>
+            <Text style={st.profileLabel}>Kryptonow Wallet</Text>
+            <Text style={st.profileAddr} numberOfLines={1}>{short}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.copyBtn}
-            onPress={copyAddress}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.copyBtnT}>{copied ? 'Copied!' : 'Copy'}</Text>
+          <TouchableOpacity style={st.copyBtn} onPress={copyAddress} activeOpacity={0.8}>
+            <Text style={st.copyBtnT}>{copied ? 'Copied!' : 'Copy'}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Sections */}
         {sections.map(sec => (
-          <View key={sec.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{sec.title}</Text>
-            <View style={styles.card}>
+          <View key={sec.title} style={st.section}>
+            <Text style={st.sectionTitle}>{sec.title}</Text>
+            <View style={st.card}>
               {sec.items.map((item, idx) => (
                 <TouchableOpacity
                   key={item.label}
-                  style={[
-                    styles.row,
-                    idx < sec.items.length - 1 && styles.rowBorder,
-                  ]}
-                  onPress={
-                    item.type !== 'toggle' && item.type !== 'info'
-                      ? item.onPress
-                      : undefined
-                  }
-                  activeOpacity={
-                    item.type === 'info' || item.type === 'toggle' ? 1 : 0.7
-                  }
+                  style={[st.row, idx < sec.items.length - 1 && st.rowBorder]}
+                  onPress={item.type !== 'toggle' && item.type !== 'info' ? item.onPress : undefined}
+                  activeOpacity={item.type === 'info' || item.type === 'toggle' ? 1 : 0.7}
                 >
-                  {renderIcon(item.icon, activeChain.color, item.color)}
-
-                  <View style={styles.rowMid}>
-                    <Text style={[
-                      styles.rowLabel,
-                      item.color ? { color: item.color } : {},
-                    ]}>
-                      {item.label}
-                    </Text>
+                  <View style={[st.iconWrap, { backgroundColor: item.color ? '#FEF2F2' : item.iconBg }]}>
+                    <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
+                  </View>
+                  <View style={st.rowMid}>
+                    <Text style={[st.rowLabel, item.color ? { color: item.color } : {}]}>{item.label}</Text>
                     {item.sublabel && item.type !== 'info' && (
-                      <Text style={styles.rowSub}>{item.sublabel}</Text>
+                      <Text style={st.rowSub}>{item.sublabel}</Text>
                     )}
                   </View>
-
                   {item.type === 'toggle' && (
                     <Switch
                       value={item.value}
                       onValueChange={item.onToggle}
-                      trackColor={{
-                        false: '#E2E8F0',
-                        true:  activeChain.color,
-                      }}
+                      trackColor={{ false: '#E2E8F0', true: activeChain.color }}
                       thumbColor="#fff"
                     />
                   )}
-                  {item.type === 'nav' && (
-                    <Text style={styles.chevron}>{'>'}</Text>
-                  )}
-                  {item.type === 'info' && (
-                    <Text style={styles.infoVal}>{item.sublabel}</Text>
-                  )}
+                  {item.type === 'nav' && <Text style={st.chevron}>{'>'}</Text>}
+                  {item.type === 'info' && <Text style={st.infoVal}>{item.sublabel}</Text>}
                 </TouchableOpacity>
               ))}
             </View>
@@ -305,31 +168,29 @@ export default function Settings() {
   )
 }
 
-const styles = StyleSheet.create({
-  c:            { flex: 1, backgroundColor: '#F8FAFF' },
+const st = StyleSheet.create({
+  c:            { flex: 1, backgroundColor: '#F0F4FF' },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
   back:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  backT:        { fontSize: 18, color: '#6366F1', fontWeight: '700' },
-  title:        { color: '#1E1B4B', fontSize: 18, fontWeight: '700' },
-  profileCard:  { marginHorizontal: 16, marginBottom: 24, borderRadius: 20, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5 },
-  avatar:       { width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  avatarT:      { color: '#fff', fontSize: 20, fontWeight: '700' },
+  backT:        { fontSize: 16, color: '#6366F1', fontWeight: '800' },
+  title:        { color: '#1E1B4B', fontSize: 18, fontWeight: '800' },
+  profileCard:  { marginHorizontal: 16, marginBottom: 24, borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 6 },
+  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
+  avatarT:      { color: '#fff', fontSize: 18, fontWeight: '800' },
   profileLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
   profileAddr:  { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-  copyBtn:      { backgroundColor: 'rgba(255,255,255,0.2)', paddingVertical: 7, paddingHorizontal: 14, borderRadius: 20 },
-  copyBtnT:     { color: '#fff', fontSize: 13, fontWeight: '600' },
+  copyBtn:      { backgroundColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  copyBtnT:     { color: '#fff', fontSize: 13, fontWeight: '700' },
   section:      { paddingHorizontal: 16, marginBottom: 20 },
-  sectionTitle: { color: '#94A3B8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 },
-  card:         { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: '#F1F5F9', overflow: 'hidden' },
-  row:          { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12 },
-  rowBorder:    { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  iconWrap:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconT:        { fontSize: 18, fontWeight: '600' },
+  sectionTitle: { color: '#94A3B8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingLeft: 4 },
+  card:         { backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#F1F5F9', overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  row:          { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 16, gap: 14 },
+  rowBorder:    { borderBottomWidth: 1, borderBottomColor: '#F8FAFF' },
+  iconWrap:     { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  iconT:        { fontSize: 15, fontWeight: '800' },
   rowMid:       { flex: 1 },
-  rowLabel:     { color: '#1E1B4B', fontSize: 15, fontWeight: '500' },
+  rowLabel:     { color: '#1E1B4B', fontSize: 15, fontWeight: '600' },
   rowSub:       { color: '#94A3B8', fontSize: 12, marginTop: 2 },
   chevron:      { color: '#CBD5E1', fontSize: 18, fontWeight: '700' },
-  infoVal:      { color: '#94A3B8', fontSize: 13 },
+  infoVal:      { color: '#94A3B8', fontSize: 13, fontWeight: '500' },
 })
-
-
