@@ -62,6 +62,7 @@ const NAV_ITEMS = [
   { label: "Swap",          icon: "swap-horizontal-outline", route: "/swap",          active: false },
   { label: "Buy",           icon: "card-outline",          route: "/buy",           active: false },
   { label: "History",       icon: "time-outline",          route: "/history",       active: false },
+  { label: "Portfolio",     icon: "pie-chart-outline",     route: "/portfolio",     active: false },
   { label: "Notifications", icon: "notifications-outline", route: "/notifications", active: false },
   { label: "Settings",      icon: "settings-outline",      route: "/settings",      active: false },
 ]
@@ -189,6 +190,7 @@ const ACTIONS = [
   { l: "Receive", icon: "download-outline",         route: "/receive" },
   { l: "Swap",    icon: "swap-horizontal-outline",  route: "/swap"    },
   { l: "Buy",     icon: "add-circle-outline",       route: "/buy"     },
+  { l: "Portfolio", icon: "pie-chart-outline", route: "/portfolio" },
 ]
 
 export default function Dashboard() {
