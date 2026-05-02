@@ -160,11 +160,11 @@ export default function Settings() {
 
   return (
     <View style={[st.c, { backgroundColor: theme.bgApp }]}>
-      <View style={st.header}>
+      <View style={[st.header, { backgroundColor: theme.bgApp }]}>
         <TouchableOpacity style={st.back} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={st.backT}>{"<"}</Text>
+          <Text style={[st.backT, { color: theme.accent }]}>{"<"}</Text>
         </TouchableOpacity>
-        <Text style={st.title}>Settings</Text>
+        <Text style={[st.title, { color: theme.textPrimary }]}>Settings</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -190,12 +190,12 @@ export default function Settings() {
 
         {sections.map(sec => (
           <View key={sec.title} style={st.section}>
-            <Text style={st.sectionTitle}>{sec.title}</Text>
-            <View style={st.card}>
+            <Text style={[st.sectionTitle, { color: theme.textMuted }]}>{sec.title}</Text>
+            <View style={[st.card, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
               {sec.items.map((item, idx) => (
                 <TouchableOpacity
                   key={item.label}
-                  style={[st.row, idx < sec.items.length - 1 && st.rowBorder]}
+                  style={[st.row, idx < sec.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.borderLight }]}
                   onPress={item.type !== "toggle" && item.type !== "info" ? item.onPress : undefined}
                   activeOpacity={item.type === "info" || item.type === "toggle" || item.type === "theme" ? 1 : 0.7}
                 >
@@ -205,7 +205,7 @@ export default function Settings() {
                   <View style={st.rowMid}>
                     <Text style={[st.rowLabel, { color: item.color ?? theme.textPrimary }]}>{item.label}</Text>
                     {item.sublabel && item.type !== "info" && (
-                      <Text style={st.rowSub}>{item.sublabel}</Text>
+                      <Text style={[st.rowSub, { color: theme.textMuted }]}>{item.sublabel}</Text>
                     )}
                   </View>
                   {item.type === "theme" && (
@@ -218,14 +218,14 @@ export default function Settings() {
                             paddingVertical: 5,
                             paddingHorizontal: 12,
                             borderRadius: 20,
-                            backgroundColor: mode === m ? activeChain.color : "#F1F5F9",
+                            backgroundColor: mode === m ? activeChain.color : theme.bgCardAlt,
                             borderWidth: 1.5,
-                            borderColor: mode === m ? activeChain.color : "#E2E8F0",
+                            borderColor: mode === m ? activeChain.color : theme.border,
                           }}
                         >
                           <Text style={{
                             fontSize: 11, fontWeight: "700", textTransform: "capitalize",
-                            color: mode === m ? "#fff" : "#64748B",
+                            color: mode === m ? "#fff" : theme.textSecondary,
                           }}>{m}</Text>
                         </TouchableOpacity>
                       ))}
@@ -239,8 +239,8 @@ export default function Settings() {
                       thumbColor="#fff"
                     />
                   )}
-                  {item.type === "nav"    && <Text style={st.chevron}>{">"}</Text>}
-                  {item.type === "info"   && <Text style={st.infoVal}>{item.sublabel}</Text>}
+                  {item.type === "nav"    && <Text style={[st.chevron, { color: theme.textMuted }]}>{">"}</Text>}
+                  {item.type === "info"   && <Text style={[st.infoVal, { color: theme.textMuted }]}>{item.sublabel}</Text>}
                   {item.type === "action" && item.color && (
                     <Text style={[st.chevron, { color: item.color }]}>{">"}</Text>
                   )}
@@ -252,9 +252,9 @@ export default function Settings() {
 
         {/* Logout button at bottom */}
         <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-          <TouchableOpacity style={st.logoutBtn} onPress={confirmLogout} activeOpacity={0.85}>
-            <Text style={st.logoutIcon}>O</Text>
-            <Text style={st.logoutT}>Log Out</Text>
+          <TouchableOpacity style={[st.logoutBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={confirmLogout} activeOpacity={0.85}>
+            <Text style={[st.logoutIcon, { color: theme.error }]}>O</Text>
+            <Text style={[st.logoutT, { color: theme.textSecondary }]}>Log Out</Text>
           </TouchableOpacity>
         </View>
 
