@@ -4,6 +4,8 @@ import {
   ScrollView, Switch, Alert, Platform,
 } from "react-native"
 import { router } from "expo-router"
+import { useTheme, ThemeMode } from "../context/ThemeContext"
+import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { CHAINS } from "../utils/chains"
 import { useAuth } from "@clerk/expo"
@@ -14,6 +16,7 @@ export default function Settings() {
   const activeChain = useWalletStore(s => s.activeChain)
   const clearWallet = useWalletStore(s => s.clearWallet)
   const { signOut } = useAuth()
+  const { theme, mode, setMode } = useTheme()
 
   const [biometrics,    setBiometrics]    = useState(false)
   const [notifications, setNotifications] = useState(true)
@@ -150,7 +153,7 @@ export default function Settings() {
   ]
 
   return (
-    <View style={st.c}>
+    <View style={[st.c, { backgroundColor: theme.bgApp }]}>
       <View style={st.header}>
         <TouchableOpacity style={st.back} onPress={() => router.back()} activeOpacity={0.7}>
           <Text style={st.backT}>{"<"}</Text>
@@ -194,7 +197,7 @@ export default function Settings() {
                     <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
                   </View>
                   <View style={st.rowMid}>
-                    <Text style={[st.rowLabel, item.color ? { color: item.color } : {}]}>{item.label}</Text>
+                    <Text style={[st.rowLabel, { color: item.color ?? theme.textPrimary }]}>{item.label}</Text>
                     {item.sublabel && item.type !== "info" && (
                       <Text style={st.rowSub}>{item.sublabel}</Text>
                     )}

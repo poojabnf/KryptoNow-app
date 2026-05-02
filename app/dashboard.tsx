@@ -11,6 +11,7 @@ import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
 import { CHAINS, Chain, getProvider } from "../utils/chains"
 import { fetchChainTokenBalances } from "../utils/tokens"
 import { getUnreadCount } from "../utils/notifications"
+import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "@clerk/expo"
 
 type TokenRow = {
@@ -194,6 +195,7 @@ const ACTIONS = [
 ]
 
 export default function Dashboard() {
+  const { theme } = useTheme()
   const addr           = useWalletStore(s => s.address)
   const activeChain    = useWalletStore(s => s.activeChain)
   const setActiveChain = useWalletStore(s => s.setActiveChain)
@@ -472,7 +474,7 @@ export default function Dashboard() {
   )
 
   return (
-    <View style={s.c}>
+    <View style={[s.c, { backgroundColor: theme.bgApp }]}>
       {/* WEB LAYOUT: sidebar + content */}
       {isWeb ? (
         <View style={s.webLayout}>
@@ -491,7 +493,7 @@ export default function Dashboard() {
                 activeOpacity={0.7}
               >
                 <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-                <Text style={s.chainName}>{activeChain.name}</Text>
+                <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
                 <Text style={s.chevron}>[v]</Text>
               </TouchableOpacity>
               <View style={s.headerRight}>
@@ -526,18 +528,18 @@ export default function Dashboard() {
       ) : (
         // MOBILE LAYOUT: original header + content
         <>
-          <View style={s.header}>
+          <View style={[s.header, { backgroundColor: theme.bgApp }]}>
             <TouchableOpacity
               style={s.chainPill}
               onPress={() => setChainModal(true)}
               activeOpacity={0.7}
             >
               <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-              <Text style={s.chainName}>{activeChain.name}</Text>
+              <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
               <Text style={s.chevron}>[v]</Text>
             </TouchableOpacity>
             <View style={s.headerRight}>
-              <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
+              <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => setFundSheet(true)}>
                 <Ionicons name="card-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
               <TouchableOpacity style={s.bellBtn} onPress={() => router.push("/notifications" as any)}>
