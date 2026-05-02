@@ -522,8 +522,6 @@ export default function Dashboard() {
             </View>
             {mainContent}
           </View>
-                  <Ionicons name="help-circle-outline" size={20} color={activeChain.color} />
-                </TouchableOpacity>
         </View>
       ) : (
         // MOBILE LAYOUT: original header + content
