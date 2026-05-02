@@ -1,41 +1,15 @@
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
+import { getUnreadCount } from '../utils/notifications'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Modal, Animated,
 } from 'react-native'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { router } from 'expo-router'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { ethers } from 'ethers'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { useWalletStore } from '../store/walletStore'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { CHAINS, Chain, getProvider } from '../utils/chains'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
 import { fetchChainTokenBalances } from '../utils/tokens'
-import { getUnreadCount } from '../utils/notifications'
-import { getUnreadCount, } from '../utils/notifications'
-import { getUnreadCount } from '../utils/notifications'
 
 type TokenRow = {
   symbol: string; name: string
@@ -129,9 +103,9 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: 'Send',    icon: 'S', route: '/send'    },
-  { l: 'Receive', icon: 'R', route: '/receive' },
-  { l: 'Swap',    icon: 'SW', route: '/swap'    },
+  { l: 'Send',    icon: '', route: '/send'    },
+  { l: 'Receive', icon: '', route: '/receive' },
+  { l: 'Swap',    icon: '', route: '/swap'    },
   { l: 'Buy',     icon: '+', route: '/buy'     },
 ]
 
@@ -277,7 +251,7 @@ export default function Dashboard() {
             <Text style={s.iconBtnText}>{'$'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
-            <Text style={s.iconBtnText}>B</Text>
+            <Text style={{fontSize: 20}}></Text>
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
                 <Text style={s.bellBadgeT}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
