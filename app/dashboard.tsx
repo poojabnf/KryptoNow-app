@@ -251,7 +251,7 @@ export default function Dashboard() {
           <TouchableOpacity style={[s.iconBtn, { borderColor: activeChain.color + '55' }]} onPress={() => setFundSheet(true)}>
             <Ionicons name="card-outline" size={20} color={activeChain.color} />
           </TouchableOpacity>
-          <TouchableOpacity style={s.bellBtn} onPress={() => router.push('/notifications' as any)}>
+          <TouchableOpacity style={[s.bellBtn, { borderColor: activeChain.color + '55' }]} onPress={() => router.push('/notifications' as any)}>
             <Ionicons name="notifications-outline" size={20} color={activeChain.color} />
             {unreadCount > 0 && (
               <View style={s.bellBadge}>
@@ -455,9 +455,7 @@ const s = StyleSheet.create({
   bellBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: `#fff`, borderWidth: 1, borderColor: `#E2E8F0`, alignItems: `center`, justifyContent: `center`, shadowColor: `#000`, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   bellBadge:       { position: `absolute`, top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: `#EF4444`, alignItems: `center`, justifyContent: `center`, paddingHorizontal: 3, borderWidth: 1.5, borderColor: `#fff` },
   bellBadgeT:      { color: `#fff`, fontSize: 9, fontWeight: `800` },
-  bellBtn:         { width: 38, height: 38, borderRadius: 12, backgroundColor: `#fff`, borderWidth: 1, borderColor: `#E2E8F0`, alignItems: `center`, justifyContent: `center`, shadowColor: `#000`, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-  bellBadge:       { position: `absolute`, top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: `#EF4444`, alignItems: `center`, justifyContent: `center`, paddingHorizontal: 3, borderWidth: 1.5, borderColor: `#fff` },
-  bellBadgeT:      { color: `#fff`, fontSize: 9, fontWeight: `800` }, color: '#6366F1', fontWeight: '700' },
+ color: '#6366F1', fontWeight: '700' },
   balanceCard:     { marginHorizontal: 16, marginBottom: 20, borderRadius: 28, padding: 28, alignItems: 'center', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.4, shadowRadius: 24, elevation: 12 },
   avatarWrap:      { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
   avatarText:      { color: '#fff', fontSize: 20, fontWeight: '800' },
