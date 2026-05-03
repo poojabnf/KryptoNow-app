@@ -217,6 +217,16 @@ export default function Dashboard() {
   const [chainModal,  setChainModal]  = useState(false)
   const [fundSheet,   setFundSheet]   = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [drawerOpen,   setDrawerOpen]   = useState(false)
+  const drawerAnim = useRef(new Animated.Value(-260)).current
+
+  function openDrawer() {
+    setDrawerOpen(true)
+    Animated.spring(drawerAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }).start()
+  }
+  function closeDrawer() {
+    Animated.timing(drawerAnim, { toValue: -260, duration: 200, useNativeDriver: true }).start(() => setDrawerOpen(false))
+  }
 
   const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
 
@@ -531,7 +541,32 @@ export default function Dashboard() {
       ) : (
         // MOBILE LAYOUT: original header + content
         <>
+          {/* Mobile slide-in drawer */}
+          {drawerOpen && (
+            <>
+              <TouchableOpacity
+                style={s.drawerOverlay}
+                activeOpacity={1}
+                onPress={closeDrawer}
+              />
+              <Animated.View style={[s.drawer, { transform: [{ translateX: drawerAnim }] }]}>
+                <Sidebar
+                  activeChain={activeChain}
+                  addr={addr}
+                  unreadCount={unreadCount}
+                  onSignOut={() => { closeDrawer(); handleSignOut() }}
+                />
+              </Animated.View>
+            </>
+          )}
           <View style={[s.header, { backgroundColor: theme.bgApp }]}>
+            <TouchableOpacity
+              style={s.hamburger}
+              onPress={openDrawer}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="menu-outline" size={24} color={theme.textPrimary} />
+            </TouchableOpacity>
             <TouchableOpacity
               style={s.chainPill}
               onPress={() => setChainModal(true)}
@@ -649,6 +684,9 @@ const s = StyleSheet.create({
   c:               { flex: 1, backgroundColor: "#F0F4FF" },
   webLayout:       { flex: 1, flexDirection: "row" },
   webLayoutMobile: { flex: 1, flexDirection: "column" },
+  hamburger:       { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 4 },
+  drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: "#fff", shadowColor: "#000", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 20 },
+  drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.45)", zIndex: 99 },
   webMain:         { flex: 1, backgroundColor: "#F0F4FF", overflow: "hidden" },
   webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },

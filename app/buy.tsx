@@ -201,11 +201,17 @@ export default function BuyScreen() {
               <Text style={s.tokenName}>{token.name}</Text>
               <Text style={s.tokenSymbol}>{token.symbol}</Text>
             </View>
-            <Text style={{ color: "#94A3B8", fontSize: 14 }}>{showTokens ? "[^]" : "[v]"}</Text>
+            <Ionicons name={showTokens ? "chevron-up" : "chevron-down"} size={18} color="#94A3B8" />
           </TouchableOpacity>
 
           {showTokens && (
             <View style={s.tokenDropdown}>
+              <ScrollView
+                style={{ maxHeight: 320 }}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled={true}
+              >
               <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:'#F8FAFF', borderRadius:12, borderWidth:1, borderColor:'#E2E8F0', marginHorizontal:16, marginBottom:8, paddingHorizontal:12, gap:8 }}>
                 <Ionicons name="search-outline" size={16} color="#94A3B8" />
                 <TextInput
@@ -243,10 +249,11 @@ export default function BuyScreen() {
                   </Text>
                   <Text style={s.tokenItemSym}>{t.symbol}</Text>
                   {selToken === t.symbol && (
-                    <Text style={{ color: activeChain.color, fontWeight: "700", fontSize: 12 }}>OK</Text>
+                    <Ionicons name="checkmark-circle" size={16} color={activeChain.color} />
                   )}
                 </TouchableOpacity>
               ))}
+              </ScrollView>
             </View>
           )}
         </View>
