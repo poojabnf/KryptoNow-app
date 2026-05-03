@@ -9,15 +9,19 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
   Image, ActivityIndicator, RefreshControl, Modal,
-  ScrollView, Linking, Dimensions, Alert,
+  ScrollView, Linking, Dimensions, Alert, TextInput,
 } from 'react-native'
 import { router } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { ethers } from 'ethers'
 import { useWalletStore } from '../store/walletStore'
+import { loadPrivateKey } from '../store/keyStore'
+import { getProvider } from '../utils/chains'
 
 const { width: SCREEN_W } = Dimensions.get('window')
 const CARD_W = (SCREEN_W - 48) / 2   // 2-column grid with 16px padding + 16px gap
 
-const ALCHEMY_KEY = 'HJfOuVkHmg_PM66WyXNjT'  // ← replace - free at alchemy.com
+const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 'HJfOuVkHmg_PM66WyXNjT'
 
 const ALCHEMY_BASE: Record<number, string> = {
   1:     `https://eth-mainnet.g.alchemy.com/nft/v3/${ALCHEMY_KEY}`,
@@ -106,7 +110,7 @@ function NFTDetail({
           <View style={d.handleRow}>
             <View style={d.handle} />
             <TouchableOpacity style={d.closeBtn} onPress={onClose}>
-              <Text style={d.closeBtnT}>✕</Text>
+              <Ionicons name="close" size={16} color="#64748B" />
             </TouchableOpacity>
           </View>
 
@@ -117,7 +121,7 @@ function NFTDetail({
                 <Image source={{ uri: nft.image }} style={d.img} resizeMode="cover" />
               ) : (
                 <View style={[d.img, d.imgPlaceholder]}>
-                  <Text style={{ fontSize: 48 }}>🖼</Text>
+                  <Ionicons name="image-outline" size={48} color="#CBD5E1" />
                 </View>
               )}
               <View style={[d.chainBadge, { backgroundColor: chainColor[nft.chainId] ?? '#6366F1' }]}>
@@ -182,7 +186,10 @@ function NFTDetail({
           {/* Actions */}
           <View style={d.actions}>
             <TouchableOpacity style={d.sendBtn} onPress={() => { onClose(); onSend(nft) }}>
-              <Text style={d.sendBtnT}>↑  Send NFT</Text>
+              <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
+                <Ionicons name="send-outline" size={16} color="#fff" />
+                <Text style={d.sendBtnT}>Send NFT</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -209,7 +216,7 @@ function NFTCard({ nft, onPress }: { nft: NFT; onPress: () => void }) {
           />
         ) : (
           <View style={[g.img, g.imgPlaceholder]}>
-            <Text style={{ fontSize: 36 }}>🖼</Text>
+            <Ionicons name="image-outline" size={36} color="#CBD5E1" />
           </View>
         )}
         <View style={[g.chainDot, { backgroundColor: chainColor[nft.chainId] ?? '#6366F1' }]} />
@@ -235,8 +242,6 @@ function SendNFTModal({
   const [sending,   setSending]   = useState(false)
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
-  const { loadPrivateKey } = require('../store/keyStore')
-  const { ethers }         = require('ethers')
 
   if (!nft) return null
 
@@ -286,23 +291,33 @@ function SendNFTModal({
           <Text style={sn.label}>Recipient Address</Text>
           <View style={sn.inputWrap}>
             <Text style={sn.inputHex}>0x</Text>
-            <Text style={sn.inputVal} numberOfLines={1}>
-              {toAddress.slice(2) || <Text style={{ color: '#CBD5E1' }}>wallet address...</Text>}
-            </Text>
+            <TextInput
+              style={sn.inputVal}
+              value={toAddress.startsWith('0x') ? toAddress.slice(2) : toAddress}
+              onChangeText={v => setToAddress('0x' + v.replace(/^0x/i, ''))}
+              placeholder="wallet address..."
+              placeholderTextColor="#CBD5E1"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
-          {/* In real app: use TextInput - simplified for illustration */}
-          <TouchableOpacity style={sn.addressInput} onPress={() => Alert.alert('Enter address', 'Add a TextInput here for production')}>
-            <Text style={sn.addressInputT}>Tap to enter address</Text>
-          </TouchableOpacity>
           <View style={sn.warnBox}>
-            <Text style={sn.warnT}>(!)  NFT transfers are irreversible. Double-check the address.</Text>
+            <View style={{ flexDirection:'row', gap:8 }}>
+              <Ionicons name="warning-outline" size={14} color="#92400E" style={{ marginTop:1 }} />
+              <Text style={[sn.warnT, { flex:1 }]}>NFT transfers are irreversible. Double-check the address.</Text>
+            </View>
           </View>
           <TouchableOpacity
             style={[sn.sendBtn, sending && { opacity: 0.7 }]}
             onPress={handleSend}
             disabled={sending}
           >
-            {sending ? <ActivityIndicator color="#fff" /> : <Text style={sn.sendBtnT}>Send NFT →</Text>}
+            {sending ? <ActivityIndicator color="#fff" /> : (
+              <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
+                <Ionicons name="send-outline" size={16} color="#fff" />
+                <Text style={sn.sendBtnT}>Send NFT</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -355,7 +370,7 @@ export default function NFTGallery() {
     <View style={s.c}>
       <View style={s.hdr}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backT}>←</Text>
+          <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>NFT Gallery</Text>
         <View style={s.countBadge}>
@@ -380,7 +395,7 @@ export default function NFTGallery() {
 
       {noAlchemy ? (
         <View style={s.center}>
-          <Text style={{ fontSize: 48, marginBottom: 16 }}>🔑</Text>
+          <Ionicons name="key-outline" size={48} color="#CBD5E1" style={{ marginBottom:16 }} />
           <Text style={s.centerTitle}>Alchemy API Key Required</Text>
           <Text style={s.centerSub}>NFT data is powered by Alchemy. Add your free API key to utils/nfts.ts to enable this feature.</Text>
           <TouchableOpacity style={s.alchemyBtn} onPress={() => Linking.openURL('https://alchemy.com')}>
@@ -394,7 +409,7 @@ export default function NFTGallery() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={s.center}>
-          <Text style={{ fontSize: 56, marginBottom: 16 }}>🖼</Text>
+          <Ionicons name="images-outline" size={56} color="#CBD5E1" style={{ marginBottom:16 }} />
           <Text style={s.centerTitle}>No NFTs found</Text>
           <Text style={s.centerSub}>NFTs you own on {CHAIN_NAMES[activeChain.id]} and Ethereum will appear here.</Text>
         </View>

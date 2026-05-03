@@ -64,6 +64,7 @@ const NAV_ITEMS = [
   { label: "Buy",           icon: "card-outline",          route: "/buy",           active: false },
   { label: "History",       icon: "time-outline",          route: "/history",       active: false },
   { label: "Portfolio",     icon: "pie-chart-outline",     route: "/portfolio",     active: false },
+  { label: "NFTs",           icon: "image-outline",          route: "/nfts",          active: false },
   { label: "Notifications", icon: "notifications-outline", route: "/notifications", active: false },
   { label: "Settings",      icon: "settings-outline",      route: "/settings",      active: false },
 ]
