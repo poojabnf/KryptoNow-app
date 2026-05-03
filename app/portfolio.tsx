@@ -1,15 +1,32 @@
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native'
 import { usePortfolio } from '../hooks/usePortfolio'
 import DonutChart from '../components/DonutChart'
-import { useWallet } from '../context/AuthContext'
-
-function useWalletTokens() {
-  const { tokens } = useWallet()
-  return tokens ?? []
-}
+import { useWalletStore } from '../store/walletStore'
+import { Ionicons } from '@expo/vector-icons'
+import { router } from 'expo-router'
 
 export default function PortfolioScreen() {
-  const rawTokens = useWalletTokens()
+  const activeChain = useWalletStore(s => s.activeChain)
+  const chainCache  = useWalletStore(s => s.chainCache)
+
+  // Build rawTokens from walletStore chainCache
+  const cached = chainCache[activeChain.id]
+  const rawTokens = cached ? [
+    {
+      symbol:     activeChain.symbol,
+      name:       activeChain.nativeName,
+      chain:      activeChain.name,
+      chainColor: activeChain.color,
+      balance:    parseFloat(cached.nativeBalance) || 0,
+    },
+    ...(cached.tokens ?? []).map((t: any) => ({
+      symbol:     t.symbol,
+      name:       t.name,
+      chain:      activeChain.name,
+      chainColor: t.color ?? activeChain.color,
+      balance:    parseFloat(t.balance) || 0,
+    })),
+  ] : []
   const { tokens, byChain, totalUSD, loading, error } = usePortfolio(rawTokens)
 
   const fmtUSD = (n: number) =>
@@ -33,6 +50,14 @@ export default function PortfolioScreen() {
   const donutSlices = byChain.map(c => ({ color: c.color, pct: c.pct, label: c.chain }))
 
   return (
+    <>
+    <View style={st.hdr}>
+      <TouchableOpacity style={st.back} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
+      </TouchableOpacity>
+      <Text style={st.hdrTitle}>Portfolio</Text>
+      <View style={{ width: 38 }} />
+    </View>
     <ScrollView style={st.scroll} contentContainerStyle={st.content} showsVerticalScrollIndicator={false}>
 
       <View style={st.totalCard}>
@@ -84,10 +109,14 @@ export default function PortfolioScreen() {
       </View>
 
     </ScrollView>
+    </>
   )
 }
 
 const st = StyleSheet.create({
+  hdr:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 12, backgroundColor: '#F8FAFF' },
+  back:         { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  hdrTitle:     { fontSize: 17, fontWeight: '700', color: '#1E1B4B' },
   scroll:       { flex: 1, backgroundColor: '#F8FAFF' },
   content:      { padding: 16, paddingBottom: 40 },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

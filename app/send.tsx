@@ -507,7 +507,7 @@ export default function Send() {
             {/* EIP-1559 base fee info */}
             {gasData.isEIP1559 && (
               <View style={s.baseFeeRow}>
-                <Text style={s.baseFeeLabel}>Base fee</Text>
+                <Text style={s.baseFeeLabel}>Base fee ({activeChain.name})</Text>
                 <Text style={s.baseFeeVal}>{gasData.baseFeeGwei.toFixed(2)} Gwei</Text>
                 <View style={s.liveIndicator}>
                   <View style={s.liveDot} />
@@ -571,7 +571,7 @@ export default function Send() {
                       : `${selectedTier.costETH} ${activeChain.symbol}`}
                   </Text>
                   <Text style={s.gasSummaryEth}>
-                    {selectedTier.costETH} {activeChain.symbol}
+                    {selectedTier.costETH} {activeChain.symbol}    {selectedTier.gwei} Gwei
                   </Text>
                 </View>
               </View>
