@@ -1,9 +1,10 @@
-import ApprovalModal from '../components/ApprovalModal'
+﻿import ApprovalModal from '../components/ApprovalModal'
 import { kryptoNowProvider } from '../utils/eip1193'
 import 'react-native-get-random-values';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
 import { useWalletStore } from '../store/walletStore';
+import { migrateFromWalletStore } from '../store/SecureKeyStore';
 import { Slot } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth } from '@clerk/expo';
@@ -58,6 +59,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     initFromStorage()
+    if (Platform.OS !== 'web') {
+      migrateFromWalletStore(0).then(r => {
+        if (!r.ok) console.warn('[KryptoNow] Enclave migration:', r.error)
+        else console.log('[KryptoNow] Enclave migration: OK')
+      })
+    }
   }, [])
 
   return (
@@ -70,3 +77,5 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 }
+
+
