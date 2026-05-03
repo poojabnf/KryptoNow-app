@@ -195,7 +195,7 @@ const ACTIONS = [
 ]
 
 export default function Dashboard() {
-  const { theme } = useTheme()
+  const { theme, mode } = useTheme()
   const addr           = useWalletStore(s => s.address)
   const activeChain    = useWalletStore(s => s.activeChain)
   const setActiveChain = useWalletStore(s => s.setActiveChain)
