@@ -89,7 +89,7 @@ class KryptoNowProvider {
             sessions.push({
               origin,
               name: document.title || origin,
-              icon: https://www.google.com/s2/favicons?domain=\&sz=64,
+              icon: `https://www.google.com/s2/favicons?domain=${origin}&sz=64`,
               connectedAt: Date.now(),
               chainId: this._chainId,
             })
