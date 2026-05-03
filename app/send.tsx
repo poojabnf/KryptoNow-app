@@ -1,10 +1,10 @@
+import { router } from 'expo-router'
 import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, KeyboardAvoidingView, Platform,
   ActivityIndicator, Linking,
 } from "react-native"
-import { router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
@@ -153,6 +153,7 @@ async function fetchGasData(
 type Step = "form" | "confirm" | "success"
 
 export default function Send() {
+  // Batch send shortcut rendered at top
   const addr        = useWalletStore(s => s.address)
   const activeChain = useWalletStore(s => s.activeChain)
 

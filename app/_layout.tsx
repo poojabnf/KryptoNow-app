@@ -14,13 +14,16 @@ import { Platform } from 'react-native';
 const tokenCache = Platform.OS === 'web'
   ? {
       async getToken(key: string) {
-        try { return localStorage.getItem(key); } catch { return null; }
+        try {
+    if (typeof localStorage !== 'undefined') return localStorage.getItem(key)
+    return null
+  } catch { return null }
       },
       async setToken(key: string, value: string) {
-        try { localStorage.setItem(key, value); } catch {}
+        try { if (typeof localStorage !== 'undefined') localStorage.setItem(key, value) } catch {}
       },
       async deleteToken(key: string) {
-        try { localStorage.removeItem(key); } catch {}
+        try { if (typeof localStorage !== 'undefined') localStorage.removeItem(key) } catch {}
       },
     }
   : {
@@ -49,6 +52,12 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const initFromStorage = useWalletStore(s => s.initFromStorage)
+
+  useEffect(() => {
+    initFromStorage()
+  }, [])
+
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <ThemeProvider>

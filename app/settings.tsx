@@ -49,7 +49,7 @@ export default function Settings() {
               // Clear Clerk session tokens only  keep wallet data
               if (Platform.OS === "web") {
                 // Remove only Clerk session keys, not wallet keys
-                Object.keys(localStorage).forEach(key => {
+                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
                   if (key.startsWith("__clerk") || key.startsWith("clerk")) {
                     localStorage.removeItem(key)
                   }
@@ -60,7 +60,7 @@ export default function Settings() {
             } catch (e: any) {
               // Force redirect even if signOut fails
               if (Platform.OS === "web") {
-                Object.keys(localStorage).forEach(key => {
+                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
                   if (key.startsWith("__clerk") || key.startsWith("clerk")) {
                     localStorage.removeItem(key)
                   }

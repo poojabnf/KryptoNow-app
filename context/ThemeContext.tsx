@@ -131,14 +131,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode
+      const saved = (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null) as ThemeMode
       if (saved && THEMES[saved]) setModeState(saved)
     } catch {}
   }, [])
 
   function setMode(m: ThemeMode) {
     setModeState(m)
-    try { localStorage.setItem(STORAGE_KEY, m) } catch {}
+    try { if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, m) } catch {}
   }
 
   return (

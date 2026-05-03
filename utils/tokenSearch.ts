@@ -5,6 +5,8 @@
  * to auto-fetch metadata via eth_call (name/symbol/decimals/balance)
  */
 import { ethers } from "ethers"
+import { Platform } from "react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Chain, getProvider } from "./chains"
 
 export type CustomToken = {
@@ -92,31 +94,49 @@ export const POPULAR_TOKENS: Record<number, Omit<CustomToken, "addedAt" | "verif
 // --- localStorage persistence ---
 export function loadCustomTokens(chainId: number): CustomToken[] {
   try {
+    if (Platform.OS !== 'web') return [] // use loadCustomTokensAsync on native
     const raw = localStorage.getItem(`${STORAGE_KEY}_${chainId}`)
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
 
+export async function loadCustomTokensAsync(chainId: number): Promise<CustomToken[]> {
+  try {
+    if (Platform.OS === 'web') return loadCustomTokens(chainId)
+    const raw = await AsyncStorage.getItem(`${STORAGE_KEY}_${chainId}`)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
 export function saveCustomToken(token: CustomToken): void {
+  if (Platform.OS !== 'web') { saveCustomTokenAsync(token); return }
   try {
     const existing = loadCustomTokens(token.chainId)
-    const filtered = existing.filter(t =>
-      t.address.toLowerCase() !== token.address.toLowerCase()
-    )
-    localStorage.setItem(
-      `${STORAGE_KEY}_${token.chainId}`,
-      JSON.stringify([token, ...filtered].slice(0, 50))
-    )
+    const filtered = existing.filter(t => t.address.toLowerCase() !== token.address.toLowerCase())
+    localStorage.setItem(`${STORAGE_KEY}_${token.chainId}`, JSON.stringify([token, ...filtered].slice(0, 50)))
+  } catch {}
+}
+
+export async function saveCustomTokenAsync(token: CustomToken): Promise<void> {
+  try {
+    const existing = await loadCustomTokensAsync(token.chainId)
+    const filtered = existing.filter(t => t.address.toLowerCase() !== token.address.toLowerCase())
+    await AsyncStorage.setItem(`${STORAGE_KEY}_${token.chainId}`, JSON.stringify([token, ...filtered].slice(0, 50)))
   } catch {}
 }
 
 export function removeCustomToken(address: string, chainId: number): void {
+  if (Platform.OS !== 'web') { removeCustomTokenAsync(address, chainId); return }
   try {
     const existing = loadCustomTokens(chainId)
-    localStorage.setItem(
-      `${STORAGE_KEY}_${chainId}`,
-      JSON.stringify(existing.filter(t => t.address.toLowerCase() !== address.toLowerCase()))
-    )
+    localStorage.setItem(`${STORAGE_KEY}_${chainId}`, JSON.stringify(existing.filter(t => t.address.toLowerCase() !== address.toLowerCase())))
+  } catch {}
+}
+
+export async function removeCustomTokenAsync(address: string, chainId: number): Promise<void> {
+  try {
+    const existing = await loadCustomTokensAsync(chainId)
+    await AsyncStorage.setItem(`${STORAGE_KEY}_${chainId}`, JSON.stringify(existing.filter(t => t.address.toLowerCase() !== address.toLowerCase())))
   } catch {}
 }
 

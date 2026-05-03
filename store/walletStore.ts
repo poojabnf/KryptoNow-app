@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { Platform } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export interface Chain {
   id:          number
@@ -36,6 +38,7 @@ interface WalletState {
   clearWallet:   () => void
   setChainCache: (chainId: number, data: ChainCache) => void
   getChainCache: (chainId: number) => ChainCache | null
+  initFromStorage: () => Promise<void>
 }
 
 const DEFAULT_CHAIN: Chain = {
@@ -52,40 +55,57 @@ const DEFAULT_CHAIN: Chain = {
 const STORAGE_KEY = 'kryptonow_wallet'
 const CHAIN_KEY   = 'kryptonow_chain'
 
-function loadWallet(): WalletData | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+// Sync load for web (initial state)
+function loadWalletSync(): WalletData | null {
+  if (Platform.OS !== 'web') return null
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null } catch { return null }
+}
+function loadChainSync(): Chain {
+  if (Platform.OS !== 'web') return DEFAULT_CHAIN
+  try { const r = localStorage.getItem(CHAIN_KEY); return r ? JSON.parse(r) : DEFAULT_CHAIN } catch { return DEFAULT_CHAIN }
 }
 
-function loadChain(): Chain {
-  try {
-    const raw = localStorage.getItem(CHAIN_KEY)
-    return raw ? JSON.parse(raw) : DEFAULT_CHAIN
-  } catch { return DEFAULT_CHAIN }
+async function saveWallet(w: WalletData | null) {
+  if (Platform.OS !== 'web') {
+    if (w) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(w))
+    else await AsyncStorage.removeItem(STORAGE_KEY)
+  } else {
+    try {
+      if (w) localStorage.setItem(STORAGE_KEY, JSON.stringify(w))
+      else localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+  }
 }
 
-function saveWallet(w: WalletData | null) {
-  try {
-    if (w) localStorage.setItem(STORAGE_KEY, JSON.stringify(w))
-    else localStorage.removeItem(STORAGE_KEY)
-  } catch {}
+async function saveChain(c: Chain) {
+  if (Platform.OS !== 'web') {
+    await AsyncStorage.setItem(CHAIN_KEY, JSON.stringify(c))
+  } else {
+    try { localStorage.setItem(CHAIN_KEY, JSON.stringify(c)) } catch {}
+  }
 }
-
-function saveChain(c: Chain) {
-  try { localStorage.setItem(CHAIN_KEY, JSON.stringify(c)) } catch {}
-}
-
-const savedWallet = loadWallet()
-const savedChain  = loadChain()
 
 export const useWalletStore = create<WalletState>((set, get) => ({
-  wallet:      savedWallet,
-  address:     savedWallet?.address ?? null,
-  isLoaded:    true,
-  activeChain: savedChain,
+  wallet:      loadWalletSync(),
+  address:     loadWalletSync()?.address ?? null,
+  isLoaded:    Platform.OS === 'web', // web loads sync, native needs initFromStorage
+  activeChain: loadChainSync(),
   chainCache:  {},
+
+  initFromStorage: async () => {
+    if (Platform.OS === 'web') return
+    try {
+      const [walletRaw, chainRaw] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY),
+        AsyncStorage.getItem(CHAIN_KEY),
+      ])
+      const wallet = walletRaw ? JSON.parse(walletRaw) : null
+      const chain  = chainRaw  ? JSON.parse(chainRaw)  : DEFAULT_CHAIN
+      set({ wallet, address: wallet?.address ?? null, activeChain: chain, isLoaded: true })
+    } catch {
+      set({ isLoaded: true })
+    }
+  },
 
   setWallet: (wallet) => {
     saveWallet(wallet)
@@ -101,7 +121,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   clearWallet: () => {
     saveWallet(null)
-    localStorage.removeItem(CHAIN_KEY)
+    if (Platform.OS !== 'web') AsyncStorage.removeItem(CHAIN_KEY)
+    else try { localStorage.removeItem(CHAIN_KEY) } catch {}
     set({ wallet: null, address: null, chainCache: {} })
   },
 
