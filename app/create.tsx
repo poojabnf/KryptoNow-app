@@ -3,12 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView
 import { router } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import { useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { ethers } from "ethers";
 import { useWalletStore } from '../store/walletStore';
-import { encryptPhrase } from "../security";
-import { saveWalletKeys } from "../store/keyStore";
+import { saveKeysToEnclave } from "../store/SecureKeyStore";
 
 const TEAL = "#0D2E2E";
 const ACCENT = "#00D4AA";
@@ -28,6 +26,7 @@ export default function Create() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [importError, setImportError] = useState("");
+  const [enclaveError, setEnclaveError] = useState("");
 
   const handleGenerate = () => {
     LOG("Generate", "Creating random wallet...");
@@ -51,27 +50,41 @@ export default function Create() {
   const handleSaveWallet = async (phrase: string) => {
     LOG("Save", "Saving wallet...");
     setLoading(true);
+    setEnclaveError("");
     try {
       const w = ethers.Wallet.fromPhrase(phrase);
       const address = w.address;
       const privKey = w.privateKey;
       LOG("Save", "Wallet derived", { address });
 
-      const vault = await encryptPhrase(phrase, address);
-      LOG("Save", "Phrase encrypted");
+      // Save to hardware enclave (biometric prompt fires here on device)
+      const result = await saveKeysToEnclave(privKey, phrase, {
+        address,
+        derivationPath: "m/44'/60'/0'/0/0",
+      });
 
-      try { localStorage.setItem('kryptonow_vault', vault); localStorage.setItem('kryptonow_address', address); localStorage.setItem('kryptonow_profile', JSON.stringify({ onboarded: true })); } catch {}
-      LOG("Save", "AsyncStorage written");
+      if (!result.ok) {
+        LOG("Save", "Enclave save failed", { error: result.error });
+        setEnclaveError(result.error ?? "Failed to secure wallet. Please enable biometrics or PIN in Settings.");
+        setLoading(false);
+        return;
+      }
+      LOG("Save", "Enclave keys saved");
 
-      await saveWalletKeys(privKey, phrase);
-      LOG("Save", "Secure store keys saved");
+      // Only address goes into Zustand + localStorage  never the phrase
+      try {
+        localStorage.setItem('kryptonow_vault', address); // vault reference only
+        localStorage.setItem('kryptonow_address', address);
+        localStorage.setItem('kryptonow_profile', JSON.stringify({ onboarded: true }));
+      } catch {}
 
-      useWalletStore.getState().setWallet({ address, phrase });
+      useWalletStore.getState().setWallet({ address });
       LOG("Save", "WalletStore updated, navigating to dashboard");
 
       router.replace('/dashboard');
     } catch (e: any) {
       LOG("Save", "Failed", { error: e?.message });
+      setEnclaveError(e?.message ?? "Unexpected error saving wallet.");
     } finally {
       setLoading(false);
     }
@@ -104,6 +117,7 @@ export default function Create() {
         <Text style={s.emoji}></Text>
         <Text style={s.title}>Your Web3 Wallet</Text>
         <Text style={s.sub}>Create a new wallet or import an existing one using your seed phrase.</Text>
+        {enclaveError ? <Text style={s.errorT}>{enclaveError}</Text> : null}
         <TouchableOpacity style={s.btn} onPress={handleGenerate} activeOpacity={0.85}>
           <Text style={s.btnT}>  Create New Wallet</Text>
         </TouchableOpacity>
@@ -138,6 +152,7 @@ export default function Create() {
             </View>
           ))}
         </View>
+        {enclaveError ? <Text style={s.errorT}>{enclaveError}</Text> : null}
         <TouchableOpacity style={s.copyBtn} onPress={handleCopyPhrase} activeOpacity={0.8}>
           <Text style={s.copyBtnT}>{copied ? "  Copied!" : "Copy Phrase"}</Text>
         </TouchableOpacity>
@@ -167,6 +182,7 @@ export default function Create() {
           autoCorrect={false}
         />
         {importError ? <Text style={s.errorT}>{importError}</Text> : null}
+        {enclaveError ? <Text style={s.errorT}>{enclaveError}</Text> : null}
         <TouchableOpacity style={s.btn} onPress={handleImportConfirm} activeOpacity={0.85}>
           <Text style={s.btnT}>Import Wallet</Text>
         </TouchableOpacity>
