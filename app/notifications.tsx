@@ -11,6 +11,9 @@ import {
   seedDemoNotifications, checkPriceAlerts,
   NotifPrefs, NotifRecord,
 } from "../utils/notifications"
+import {
+  requestPushPermission, getPushPermissionStatus, sendPushNotification,
+} from "../utils/pushService"
 
 // --- Helpers ---
 function relativeTime(ts: number): string {
@@ -104,7 +107,9 @@ export default function Notifications() {
   const [history,   setHistory]   = useState<NotifRecord[]>([])
   const [filter,    setFilter]    = useState<FilterKey>("all")
   const [unread,    setUnread]    = useState(0)
-  const [refreshing,setRefreshing]= useState(false)
+  const [refreshing,    setRefreshing]    = useState(false)
+  const [permStatus,    setPermStatus]    = useState<"granted"|"denied"|"default">("default")
+  const [permLoading,   setPermLoading]   = useState(false)
 
   const loadData = useCallback(() => {
     seedDemoNotifications()
@@ -115,7 +120,21 @@ export default function Notifications() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  function updatePref<K extends keyof NotifPrefs>(key: K, value: NotifPrefs[K]) {
+  async function updatePref<K extends keyof NotifPrefs>(key: K, value: NotifPrefs[K]) {
+    if (key === "pushEnabled" && value === true) {
+      setPermLoading(true)
+      const granted = await requestPushPermission()
+      setPermLoading(false)
+      if (!granted) {
+        Alert.alert(
+          "Permission Required",
+          "Please allow notifications in your browser or device settings to enable push alerts.",
+          [{ text: "OK" }]
+        )
+        return
+      }
+      setPermStatus("granted")
+    }
     const updated = { ...prefs, [key]: value }
     setPrefs(updated)
     saveNotifPrefs(updated)
@@ -372,17 +391,40 @@ export default function Notifications() {
             </View>
           </View>
 
+          {/* Permission status */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+            <View style={[
+              s.permBanner,
+              permStatus === "granted" ? s.permGranted : permStatus === "denied" ? s.permDenied : s.permDefault
+            ]}>
+              <Text style={s.permIcon}>
+                {permStatus === "granted" ? "[OK]" : permStatus === "denied" ? "[X]" : "[?]"}
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.permTitle}>
+                  {permStatus === "granted" ? "Notifications Enabled"
+                    : permStatus === "denied" ? "Notifications Blocked"
+                    : "Notifications Not Enabled"}
+                </Text>
+                <Text style={s.permSub}>
+                  {permStatus === "granted" ? "You will receive push alerts in your browser"
+                    : permStatus === "denied" ? "Enable in browser/device settings to receive alerts"
+                    : "Enable notifications above to get push alerts"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
           {/* Test button */}
           <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
             <TouchableOpacity
               style={s.testBtn}
-              onPress={() => {
-                const { addNotification } = require("../utils/notifications")
-                addNotification({
-                  title: "Test Notification",
-                  body:  "This is a test notification from Kryptonow!",
-                  type:  "news",
-                })
+              onPress={async () => {
+                await sendPushNotification(
+                  "Test Notification",
+                  "Push notifications are working on Kryptonow!",
+                  "news",
+                )
                 loadData()
                 setTab("notifications")
                 Alert.alert("Sent!", "Check your notifications inbox.")
