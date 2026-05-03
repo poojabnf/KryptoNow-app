@@ -7,6 +7,32 @@ import { ethers } from 'ethers'
 
 type Listener = (...args: any[]) => void
 
+export interface DAppSession {
+  origin: string
+  name: string
+  icon: string
+  connectedAt: number
+  chainId: number
+}
+
+function saveSessions(sessions: DAppSession[]) {
+  try { localStorage.setItem("kn_dapp_sessions", JSON.stringify(sessions)) } catch {}
+}
+
+function loadSessions(): DAppSession[] {
+  try {
+    const raw = localStorage.getItem("kn_dapp_sessions")
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function getConnectedDApps(): DAppSession[] { return loadSessions() }
+
+export function disconnectDApp(origin: string) {
+  const sessions = loadSessions().filter(s => s.origin !== origin)
+  saveSessions(sessions)
+}
+
 class KryptoNowProvider {
   isMetaMask = false
   isKryptoNow = true
@@ -55,6 +81,21 @@ class KryptoNowProvider {
       case 'eth_requestAccounts':
       case 'eth_accounts':
         if (!this.selectedAddress) throw this._error(4100, 'Unauthorized')
+        // Track dApp connection
+        if (typeof window !== 'undefined' && method === 'eth_requestAccounts') {
+          const origin = window.location?.origin ?? 'unknown'
+          const sessions = loadSessions()
+          if (!sessions.find(s => s.origin === origin)) {
+            sessions.push({
+              origin,
+              name: document.title || origin,
+              icon: https://www.google.com/s2/favicons?domain=\&sz=64,
+              connectedAt: Date.now(),
+              chainId: this._chainId,
+            })
+            saveSessions(sessions)
+          }
+        }
         return [this.selectedAddress]
 
       //  Chain 
