@@ -3,8 +3,8 @@
  *
  * Secure Enclave key storage for KryptoNow.
  *
- * iOS  → Secure Enclave (SEP) via expo-secure-store (kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly)
- * Android → Android Keystore (hardware-backed TEE) via expo-secure-store
+ * iOS  â†’ Secure Enclave (SEP) via expo-secure-store (kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly)
+ * Android â†’ Android Keystore (hardware-backed TEE) via expo-secure-store
  *
  * Private keys NEVER touch the JS heap in plaintext after being stored.
  * All reads are gated behind biometric / device PIN authentication.
@@ -13,17 +13,25 @@
  *   expo install expo-secure-store expo-local-authentication expo-crypto
  */
 
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import * as LocalAuthentication from 'expo-local-authentication';
 import * as Crypto from 'expo-crypto';
 
-// ─── Key name constants ───────────────────────────────────────────────────────
+// Web-safe LocalAuthentication stub
+const LocalAuthentication = Platform.OS === 'web' ? {
+  hasHardwareAsync: async () => false,
+  isEnrolledAsync: async () => false,
+  supportedAuthenticationTypesAsync: async () => [],
+  authenticateAsync: async () => ({ success: true }),
+} : require('expo-local-authentication');
+
+// â”€â”€â”€ Key name constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Use distinct store keys per account index so we never overwrite existing keys.
 const storeKey = (accountIndex: number) => `kn_privkey_${accountIndex}`;
 const metaKey = (accountIndex: number) => `kn_meta_${accountIndex}`;
 const ACCOUNTS_INDEX_KEY = 'kn_accounts_index'; // stores how many accounts exist
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export interface KeyMeta {
   accountIndex: number;
   address: string;       // checksummed Ethereum address (0x...)
@@ -38,7 +46,7 @@ export interface SecureStoreResult<T> {
   error?: string;
 }
 
-// ─── Internal helpers ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Internal helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * expo-secure-store options that map to hardware-backed storage:
@@ -49,13 +57,13 @@ export interface SecureStoreResult<T> {
  * automatically on read. We also do an explicit LocalAuthentication check before
  * reads so we can return a typed error rather than letting the OS throw.
  */
-const SECURE_OPTIONS: SecureStore.SecureStoreOptions = {
+const SECURE_OPTIONS: SecureStore.SecureStoreOptions = Platform.OS === 'web' ? {} : {
   keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
-  requireAuthentication: true,   // hardware-level biometric gate on read
+  requireAuthentication: true,
 };
 
 /** Options for non-sensitive metadata (address, derivation path, etc.) */
-const META_OPTIONS: SecureStore.SecureStoreOptions = {
+const META_OPTIONS: SecureStore.SecureStoreOptions = Platform.OS === 'web' ? {} : {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
   requireAuthentication: false,
 };
@@ -77,12 +85,12 @@ async function authenticate(reason: string): Promise<boolean> {
   return result.success;
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Store a private key in the hardware-backed secure enclave.
  * Call this ONCE at wallet creation / import. The raw key is wiped from the
- * variable you pass in — zero it out after calling this.
+ * variable you pass in â€” zero it out after calling this.
  *
  * @param privateKeyHex  Raw private key as hex string (64 chars, no 0x prefix)
  * @param meta           Address + derivation path metadata
