@@ -1,3 +1,4 @@
+import { kryptoNowProvider } from '../utils/eip1193'
 import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useState, useCallback, useRef } from "react"
 import {
@@ -230,6 +231,19 @@ export default function Dashboard() {
   }
 
   const { txns: recentTxns, loading: txLoading, refresh: refreshTxns } = useTransactions(addr)
+
+  // Init EIP-1193 provider
+  useEffect(() => {
+    if (addr && activeChain) {
+      const wallet = useWalletStore.getState().wallet
+      if (wallet?.phrase) {
+        try {
+          const ethWallet = new ethers.Wallet(wallet.phrase)
+          kryptoNowProvider.init(addr, ethWallet.privateKey, activeChain.id, activeChain.rpc)
+        } catch {}
+      }
+    }
+  }, [addr, activeChain])
 
   const fetchBalances = useCallback(async (force = false) => {
     if (!addr) return
