@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, ScrollView } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import { ethers } from 'ethers'
+import { getProvider } from '../utils/chains'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, ScrollView, TextInput } from 'react-native'
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
 import { loadPrivateKey } from '../store/keyStore'
@@ -12,6 +15,80 @@ const SUPPORTED_EVENTS  = ['chainChanged','accountsChanged']
 type WCSession = { topic: string; name: string; url: string }
 type WCRequest  = { id: number; topic: string; method: string; params: any; origin: string }
 let walletkit: any = null
+
+
+// --- Web-compatible scan/paste tab -------------------------------------------
+function WCScanTab({ onScan, onStartScan, connecting }: {
+  onScan: (uri: string) => void
+  onStartScan: () => void
+  connecting: boolean
+}) {
+  const [uri, setUri] = useState('')
+  const isWeb = Platform.OS === 'web'
+
+  return (
+    <View style={{ flex: 1, padding: 24 }}>
+      <View style={{ alignItems: 'center', marginBottom: 32 }}>
+        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <Ionicons name="qr-code-outline" size={40} color="#6366F1" />
+        </View>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: '#1E1B4B', marginBottom: 8, textAlign: 'center' }}>Connect to a dApp</Text>
+        <Text style={{ fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 22 }}>
+          {isWeb
+            ? 'Paste a WalletConnect URI from any dApp'
+            : 'Scan a WalletConnect QR code from any dApp'}
+        </Text>
+      </View>
+
+      {!isWeb && (
+        <TouchableOpacity
+          style={{ backgroundColor: '#6366F1', paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 16 }}
+          onPress={onStartScan}
+          disabled={connecting}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="scan-outline" size={20} color="#fff" />
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Scan QR Code</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, borderWidth: 1.5, borderColor: '#E2E8F0', padding: 16, marginBottom: 12 }}>
+        <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {isWeb ? 'Paste URI' : 'Or paste URI'}
+        </Text>
+        <TextInput
+          style={{ fontSize: 13, color: '#1E1B4B', minHeight: 60, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}
+          value={uri}
+          onChangeText={setUri}
+          placeholder="wc:..."
+          placeholderTextColor="#CBD5E1"
+          multiline
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </View>
+
+      <TouchableOpacity
+        style={[{ backgroundColor: '#6366F1', paddingVertical: 16, borderRadius: 16, alignItems: 'center' }, (!uri.trim().startsWith('wc:') || connecting) && { opacity: 0.4 }]}
+        onPress={() => { if (uri.trim().startsWith('wc:')) { onScan(uri.trim()); setUri('') } }}
+        disabled={!uri.trim().startsWith('wc:') || connecting}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="link-outline" size={18} color="#fff" />
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Connect</Text>
+        </View>
+      </TouchableOpacity>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20, padding: 14, backgroundColor: '#FFFBEB', borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A' }}>
+        <Ionicons name="information-circle-outline" size={18} color="#92400E" />
+        <Text style={{ flex: 1, fontSize: 12, color: '#92400E', lineHeight: 18 }}>
+          Only connect to dApps you trust. KryptoNow will never ask for your seed phrase.
+        </Text>
+      </View>
+    </View>
+  )
+}
 
 export default function WalletConnectScreen() {
   const addr        = useWalletStore(s => s.address)
@@ -77,7 +154,6 @@ export default function WalletConnectScreen() {
     if (!pendingReq) return
     setSigning(true)
     try {
-      const { ethers } = await import('ethers')
       const pk = await loadPrivateKey()
       if (!pk) throw new Error('No key')
       const w = new ethers.Wallet(pk, getProvider(activeChain))
@@ -109,7 +185,7 @@ export default function WalletConnectScreen() {
     refreshSessions()
   }
 
-  if (connecting) return <View style={s.center}><ActivityIndicator size="large" color="#6366F1" /><Text style={s.sub}>Connecting...</Text></View>
+  if (connecting) return <View style={s.c}><View style={s.center}><ActivityIndicator size="large" color="#6366F1" /><Text style={s.sub}>Connecting to dApp...</Text></View></View>
 
   if (scanning) {
     const CameraView = require('expo-camera').CameraView
@@ -118,7 +194,7 @@ export default function WalletConnectScreen() {
 
   if (pendingReq) return (
     <View style={s.c}>
-      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>setPendingReq(null)}><Text style={s.backT}></Text></TouchableOpacity><Text style={s.title}>Sign Request</Text><View style={{width:38}}/></View>
+      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>setPendingReq(null)}><Ionicons name="arrow-back" size={22} color="#6366F1" /></TouchableOpacity><Text style={s.title}>Sign Request</Text><View style={{width:38}}/></View>
       <ScrollView style={{flex:1,padding:20}}><View style={s.card}><Text style={{color:'#6366F1',fontWeight:'700',marginBottom:4}}>{pendingReq.origin}</Text><Text style={{color:'#1E1B4B',fontSize:16,fontWeight:'600',marginBottom:12}}>{pendingReq.method}</Text><Text style={{color:'#64748B',fontSize:12,fontFamily:Platform.OS==='ios'?'Courier':'monospace'}}>{JSON.stringify(pendingReq.params,null,2)}</Text></View></ScrollView>
       <View style={s.row}><TouchableOpacity style={s.rejectBtn} onPress={rejectRequest}><Text style={s.rejectT}>Reject</Text></TouchableOpacity><TouchableOpacity style={s.approveBtn} onPress={approveRequest} disabled={signing}>{signing?<ActivityIndicator color="#fff"/>:<Text style={s.approveT}>Approve</Text>}</TouchableOpacity></View>
     </View>
@@ -126,14 +202,14 @@ export default function WalletConnectScreen() {
 
   return (
     <View style={s.c}>
-      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>router.back()}><Text style={s.backT}></Text></TouchableOpacity><Text style={s.title}>WalletConnect</Text><View style={{width:38}}/></View>
+      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>router.back()}><Ionicons name="arrow-back" size={22} color="#6366F1" /></TouchableOpacity><Text style={s.title}>WalletConnect</Text><View style={{width:38}}/></View>
       {initError ? <View style={s.center}><Text style={{color:'#EF4444',textAlign:'center'}}>{initError}</Text></View>
        : !wcReady ? <View style={s.center}><ActivityIndicator color="#6366F1"/><Text style={s.sub}>Initializing...</Text></View>
        : <>
-          <View style={s.tabs}>{(['scan','sessions'] as const).map(t=><TouchableOpacity key={t} style={[s.tab,tab===t&&s.tabOn]} onPress={()=>setTab(t)}><Text style={[s.tabT,tab===t&&s.tabTOn]}>{t==='scan'?' Scan':` Sessions (${sessions.length})`}</Text></TouchableOpacity>)}</View>
+          <View style={s.tabs}>{(['scan','sessions'] as const).map(t=><TouchableOpacity key={t} style={[s.tab,tab===t&&s.tabOn]} onPress={()=>setTab(t)}><Text style={[s.tabT,tab===t&&s.tabTOn]}>{t==='scan'?'Scan QR':`Sessions (${sessions.length})`}</Text></TouchableOpacity>)}</View>
           {tab==='scan'
-            ? <View style={s.center}><Text style={s.h2}>Connect to a dApp</Text><Text style={s.sub}>Scan a WalletConnect QR code</Text><TouchableOpacity style={s.scanBtn} onPress={startScan}><Text style={s.scanBtnT}>  Scan QR Code</Text></TouchableOpacity></View>
-            : <ScrollView style={{flex:1,padding:16}}>{sessions.length===0?<View style={s.center}><Text style={s.sub}>No active sessions</Text></View>:sessions.map(sess=><View key={sess.topic} style={s.sessRow}><View style={{flex:1}}><Text style={{color:'#1E1B4B',fontWeight:'600'}}>{sess.name}</Text><Text style={{color:'#94A3B8',fontSize:12}}>{sess.url}</Text></View><TouchableOpacity style={s.discBtn} onPress={()=>disconnectSession(sess.topic)}><Text style={s.discT}>Disconnect</Text></TouchableOpacity></View>)}</ScrollView>
+            ? <WCScanTab onScan={handleQRScan} onStartScan={startScan} connecting={connecting} />
+            : <ScrollView style={{flex:1,padding:16}}>{sessions.length===0?<View style={s.center}><Ionicons name="link-outline" size={48} color="#CBD5E1" /><Text style={[s.sub,{marginTop:12}]}>No active sessions</Text></View>:sessions.map(sess=><View key={sess.topic} style={s.sessRow}><View style={{flex:1}}><Text style={{color:'#1E1B4B',fontWeight:'600'}}>{sess.name}</Text><Text style={{color:'#94A3B8',fontSize:12}}>{sess.url}</Text></View><TouchableOpacity style={s.discBtn} onPress={()=>disconnectSession(sess.topic)}><Ionicons name="close-circle-outline" size={14} color="#EF4444" style={{marginRight:4}} /><Text style={s.discT}>Disconnect</Text></TouchableOpacity></View>)}</ScrollView>
           }
         </>
       }
