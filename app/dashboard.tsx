@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useState, useCallback, useRef } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  RefreshControl, ActivityIndicator, Modal, Animated, Platform,
+  RefreshControl, ActivityIndicator, Modal, Animated, Platform, useWindowDimensions,
 } from "react-native"
 import { router } from "expo-router"
 import { ethers } from "ethers"
@@ -206,6 +206,8 @@ export default function Dashboard() {
 
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
   const isWeb = Platform.OS === "web"
+  const { width: screenWidth } = useWindowDimensions()
+  const isLargeScreen = isWeb && screenWidth >= 768
 
   const [tokens,      setTokens]      = useState<TokenRow[]>([])
   const [totalUSD,    setTotalUSD]    = useState(0)
@@ -477,7 +479,7 @@ export default function Dashboard() {
   return (
     <View style={[s.c, { backgroundColor: theme.bgApp }]}>
       {/* WEB LAYOUT: sidebar + content */}
-      {isWeb ? (
+      {isLargeScreen ? (
         <View style={s.webLayout}>
           <Sidebar
             activeChain={activeChain}
@@ -646,6 +648,7 @@ const sb = StyleSheet.create({
 const s = StyleSheet.create({
   c:               { flex: 1, backgroundColor: "#F0F4FF" },
   webLayout:       { flex: 1, flexDirection: "row" },
+  webLayoutMobile: { flex: 1, flexDirection: "column" },
   webMain:         { flex: 1, backgroundColor: "#F0F4FF", overflow: "hidden" },
   webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
@@ -688,7 +691,7 @@ const s = StyleSheet.create({
   emptyIcon:       { fontSize: 36, marginBottom: 10 },
   emptyTitle:      { color: "#1E1B4B", fontSize: 15, fontWeight: "700", marginBottom: 4 },
   emptySub:        { color: "#94A3B8", fontSize: 13, textAlign: "center" },
-  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 18, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: "#F1F5F9" },
+  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 18, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: "#F1F5F9" },
   assetIcon:       { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 14 },
   assetIconText:   { fontSize: 16, fontWeight: "800" },
   assetMid:        { flex: 1 },

@@ -1,22 +1,70 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  Linking, Alert, SafeAreaView,
+  Linking, Alert, SafeAreaView, TextInput,
 } from "react-native"
 import { router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 
-const TOKENS = [
-  { symbol: "ETH",  name: "Ethereum",  icon: "E",  color: "#6366F1" },
-  { symbol: "BNB",  name: "BNB",       icon: "B",  color: "#F0B90B" },
-  { symbol: "MATIC",name: "Polygon",   icon: "P",  color: "#8247E5" },
-  { symbol: "USDC", name: "USD Coin",  icon: "$",  color: "#2775CA" },
-  { symbol: "USDT", name: "Tether",    icon: "T",  color: "#26A17B" },
-  { symbol: "BTC",  name: "Bitcoin",   icon: "BT", color: "#F7931A" },
+// Static top-30 fallback (shown instantly, replaced by live data)
+const STATIC_TOKENS = [
+  { symbol: "BTC",   name: "Bitcoin",          icon: "BT", color: "#F7931A" },
+  { symbol: "ETH",   name: "Ethereum",          icon: "E",  color: "#627EEA" },
+  { symbol: "USDT",  name: "Tether",            icon: "T",  color: "#26A17B" },
+  { symbol: "BNB",   name: "BNB",               icon: "B",  color: "#F0B90B" },
+  { symbol: "SOL",   name: "Solana",            icon: "S",  color: "#9945FF" },
+  { symbol: "USDC",  name: "USD Coin",          icon: "$",  color: "#2775CA" },
+  { symbol: "XRP",   name: "XRP",               icon: "X",  color: "#00AAE4" },
+  { symbol: "DOGE",  name: "Dogecoin",          icon: "D",  color: "#C2A633" },
+  { symbol: "TON",   name: "Toncoin",           icon: "TO", color: "#0088CC" },
+  { symbol: "ADA",   name: "Cardano",           icon: "A",  color: "#0033AD" },
+  { symbol: "AVAX",  name: "Avalanche",         icon: "AV", color: "#E84142" },
+  { symbol: "SHIB",  name: "Shiba Inu",         icon: "SH", color: "#E8A420" },
+  { symbol: "TRX",   name: "TRON",              icon: "TR", color: "#EF0027" },
+  { symbol: "DOT",   name: "Polkadot",          icon: "DO", color: "#E6007A" },
+  { symbol: "LINK",  name: "Chainlink",         icon: "LI", color: "#375BD2" },
+  { symbol: "MATIC", name: "Polygon",           icon: "P",  color: "#8247E5" },
+  { symbol: "WBTC",  name: "Wrapped Bitcoin",   icon: "WB", color: "#F7931A" },
+  { symbol: "LTC",   name: "Litecoin",          icon: "LT", color: "#BFBBBB" },
+  { symbol: "UNI",   name: "Uniswap",           icon: "U",  color: "#FF007A" },
+  { symbol: "ATOM",  name: "Cosmos",            icon: "AT", color: "#2E3148" },
+  { symbol: "XLM",   name: "Stellar",           icon: "XL", color: "#14B6E7" },
+  { symbol: "BCH",   name: "Bitcoin Cash",      icon: "BC", color: "#4CC947" },
+  { symbol: "ETC",   name: "Ethereum Classic",  icon: "EC", color: "#328332" },
+  { symbol: "ALGO",  name: "Algorand",          icon: "AL", color: "#000000" },
+  { symbol: "APT",   name: "Aptos",             icon: "AP", color: "#24C7FF" },
+  { symbol: "FIL",   name: "Filecoin",          icon: "FI", color: "#0090FF" },
+  { symbol: "ARB",   name: "Arbitrum",          icon: "AR", color: "#2D374B" },
+  { symbol: "OP",    name: "Optimism",          icon: "OP", color: "#FF0420" },
+  { symbol: "NEAR",  name: "NEAR Protocol",     icon: "NR", color: "#00C08B" },
+  { symbol: "AAVE",  name: "Aave",              icon: "AA", color: "#B6509E" },
+  { symbol: "MKR",   name: "Maker",             icon: "MK", color: "#1AAB9B" },
+  { symbol: "GRT",   name: "The Graph",         icon: "GR", color: "#6F4CFF" },
+  { symbol: "SNX",   name: "Synthetix",         icon: "SN", color: "#5FCDF9" },
+  { symbol: "COMP",  name: "Compound",          icon: "CO", color: "#00D395" },
+  { symbol: "CRV",   name: "Curve DAO",         icon: "CR", color: "#D1523F" },
+  { symbol: "LDO",   name: "Lido DAO",          icon: "LD", color: "#00A3FF" },
+  { symbol: "IMX",   name: "Immutable X",       icon: "IM", color: "#17B5CB" },
+  { symbol: "INJ",   name: "Injective",         icon: "IN", color: "#00B2FF" },
+  { symbol: "FET",   name: "Fetch.ai",          icon: "FE", color: "#1A1F6B" },
+  { symbol: "SAND",  name: "The Sandbox",       icon: "SA", color: "#04ADEF" },
+  { symbol: "MANA",  name: "Decentraland",      icon: "MA", color: "#FF2D55" },
+  { symbol: "AXS",   name: "Axie Infinity",     icon: "AX", color: "#0055D5" },
+  { symbol: "THETA", name: "Theta Network",     icon: "TH", color: "#2AB8E6" },
+  { symbol: "VET",   name: "VeChain",           icon: "VE", color: "#15BDFF" },
+  { symbol: "EGLD",  name: "MultiversX",        icon: "EG", color: "#23F7DD" },
+  { symbol: "FLOW",  name: "Flow",              icon: "FL", color: "#00EF8B" },
+  { symbol: "XTZ",   name: "Tezos",             icon: "XZ", color: "#2C7DF7" },
+  { symbol: "EOS",   name: "EOS",               icon: "EO", color: "#000000" },
+  { symbol: "KAVA",  name: "Kava",              icon: "KA", color: "#FF564F" },
+  { symbol: "ZEC",   name: "Zcash",             icon: "ZC", color: "#ECB244" },
 ]
 
+type Token = { symbol: string; name: string; icon: string; color: string; price?: number; change24h?: number }
+
 const AMOUNTS = ["50", "100", "250", "500"]
+const TOKENS = STATIC_TOKENS
 
 const PROVIDERS = [
   {
@@ -85,6 +133,14 @@ export default function BuyScreen() {
   const [selToken,    setSelToken]    = useState("ETH")
   const [selProvider, setSelProvider] = useState<string | null>(null)
   const [showTokens,  setShowTokens]  = useState(false)
+  const [tokenSearch,  setTokenSearch]  = useState('')
+
+  const filteredTokens = tokenSearch.trim()
+    ? TOKENS.filter(t =>
+        t.symbol.toLowerCase().includes(tokenSearch.toLowerCase()) ||
+        t.name.toLowerCase().includes(tokenSearch.toLowerCase())
+      )
+    : TOKENS
 
   const token = TOKENS.find(t => t.symbol === selToken) ?? TOKENS[0]
 
@@ -150,7 +206,29 @@ export default function BuyScreen() {
 
           {showTokens && (
             <View style={s.tokenDropdown}>
-              {TOKENS.map(t => (
+              <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:'#F8FAFF', borderRadius:12, borderWidth:1, borderColor:'#E2E8F0', marginHorizontal:16, marginBottom:8, paddingHorizontal:12, gap:8 }}>
+                <Ionicons name="search-outline" size={16} color="#94A3B8" />
+                <TextInput
+                  style={{ flex:1, paddingVertical:10, fontSize:14, color:'#1E1B4B' }}
+                  placeholder="Search 50+ coins..."
+                  placeholderTextColor="#CBD5E1"
+                  value={tokenSearch}
+                  onChangeText={setTokenSearch}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {tokenSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setTokenSearch('')}>
+                    <Ionicons name="close-circle" size={18} color="#CBD5E1" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              {filteredTokens.length === 0 && (
+                <View style={{ alignItems:'center', padding:20 }}>
+                  <Text style={{ color:'#94A3B8', fontSize:14 }}>No coins found for "{tokenSearch}"</Text>
+                </View>
+              )}
+              {filteredTokens.map(t => (
                 <TouchableOpacity
                   key={t.symbol}
                   style={[s.tokenItem, selToken === t.symbol && { backgroundColor: activeChain.color + "12" }]}
