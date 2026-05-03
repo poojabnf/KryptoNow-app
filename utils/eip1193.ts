@@ -268,3 +268,46 @@ if (typeof window !== 'undefined') {
   window.dispatchEvent(new Event('ethereum#initialized'))
   console.log('[KryptoNow] EIP-1193 provider injected ')
 }
+//  EIP-6963 Multi-Wallet Discovery 
+// Allows dApps (Uniswap, OpenSea etc.) to detect KryptoNow alongside MetaMask
+// without window.ethereum conflicts. Standard since 2023.
+
+export interface EIP6963ProviderInfo {
+  uuid: string
+  name: string
+  icon: string
+  rdns: string
+}
+
+export interface EIP6963ProviderDetail {
+  info: EIP6963ProviderInfo
+  provider: KryptoNowProvider
+}
+
+const EIP6963_INFO: EIP6963ProviderInfo = {
+  uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  name: 'KryptoNow',
+  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236366F1"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="bold" fill="white" font-family="Arial">K</text></svg>',
+  rdns: 'io.kryptonow',
+}
+
+function announceProvider() {
+  if (typeof window === 'undefined') return
+  const detail: EIP6963ProviderDetail = {
+    info: EIP6963_INFO,
+    provider: kryptoNowProvider,
+  }
+  window.dispatchEvent(
+    new CustomEvent('eip6963:announceProvider', {
+      detail: Object.freeze(detail),
+    })
+  )
+}
+
+// Announce immediately on load
+announceProvider()
+
+// Re-announce whenever a dApp requests it (e.g. loaded after our script)
+if (typeof window !== 'undefined') {
+  window.addEventListener('eip6963:requestProvider', announceProvider)
+}
