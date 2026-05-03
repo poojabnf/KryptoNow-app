@@ -2,6 +2,8 @@ import ApprovalModal from '../components/ApprovalModal'
 import { kryptoNowProvider } from '../utils/eip1193'
 import 'react-native-get-random-values';
 import { ActivityIndicator, View } from 'react-native';
+import { useEffect } from 'react';
+import { useWalletStore } from '../store/walletStore';
 import { Slot } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth } from '@clerk/expo';

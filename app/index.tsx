@@ -25,7 +25,16 @@ export default function Index() {
 
     // Only check wallet if signed in
     ;(async () => {
-      const address = await getItem("kryptonow_address")
+      // Try kryptonow_wallet (new format) then fallback to kryptonow_address (legacy)
+      const walletRaw = await getItem("kryptonow_wallet")
+      const legacyAddr = await getItem("kryptonow_address")
+
+      let address: string | null = null
+      if (walletRaw) {
+        try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
+      }
+      if (!address) address = legacyAddr
+
       console.log("[KryptoNow] wallet address:", address ? "EXISTS" : "NULL")
 
       if (!address) {
@@ -34,7 +43,10 @@ export default function Index() {
       }
 
       const { useWalletStore } = require("../store/walletStore")
-      useWalletStore.getState().setWallet({ address, phrase: "" })
+      const store = useWalletStore.getState()
+      if (!store.address) {
+        store.setWallet({ address, phrase: "" })
+      }
 
       const profileRaw = await getItem("kryptonow_profile")
       const profile = profileRaw ? JSON.parse(profileRaw) : null
