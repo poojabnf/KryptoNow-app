@@ -1,4 +1,4 @@
-import { router } from 'expo-router'
+﻿import { router } from 'expo-router'
 import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
+import { simulateTransaction, SimulationResult } from "../utils/tenderly"
 import { isValidAddress } from "../utils/crypto"
 import { getTxUrl, getProvider, Chain } from "../utils/chains"
 import TokenSearchModal from "../components/TokenSearchModal"
@@ -180,6 +181,8 @@ export default function Send() {
   const [sending,       setSending]       = useState(false)
   const [step,          setStep]          = useState<Step>("form")
   const [txHash,        setTxHash]        = useState("")
+  const [simResult,     setSimResult]     = useState<SimulationResult | null>(null)
+  const [simLoading,    setSimLoading]    = useState(false)
 
   // Gas estimator state
   const [gasData,       setGasData]       = useState<GasData | null>(null)
@@ -249,6 +252,42 @@ export default function Send() {
   }, [refreshGas])
 
   async function handleSend() {
+    // Tenderly pre-sign simulation
+    setSimLoading(true)
+    try {
+      const gasLimit = gasData?.gasLimit ?? (selectedToken.contract ? 65000n : 21000n)
+      const simData  = selectedToken.contract
+        ? new ethers.Interface(ERC20_ABI).encodeFunctionData('transfer', [
+            toAddress, ethers.parseUnits(amount, selectedToken.decimals)
+          ])
+        : ''
+      const simValue = selectedToken.contract
+        ? '0x0'
+        : ('0x' + ethers.parseEther(amount).toString(16))
+      const sim = await simulateTransaction(
+        activeChain.id, addr ?? '',
+        selectedToken.contract ?? toAddress,
+        simData, simValue, gasLimit
+      )
+      setSimResult(sim)
+      if (sim.status === 'reverted') {
+        Alert.alert(
+          'Transaction Will Fail',
+          sim.errorReason ?? 'This transaction will revert on-chain.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Send Anyway', style: 'destructive', onPress: () => executeSend() }
+          ]
+        )
+        setSimLoading(false)
+        return
+      }
+    } catch { /* fail open */ }
+    finally { setSimLoading(false) }
+    executeSend()
+  }
+
+  async function executeSend() {
     setSending(true)
     try {
       const privateKey = await loadPrivateKey()
@@ -697,3 +736,4 @@ const s = StyleSheet.create({
   searchTokenBtn:     { backgroundColor:"#EEF2FF", paddingVertical:6, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:"#C7D2FE" },
   searchTokenBtnT:    { color:"#6366F1", fontSize:12, fontWeight:"700" },
 })
+
