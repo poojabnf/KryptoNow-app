@@ -15,17 +15,11 @@
  * Ethers v6 used only for key retrieval  all AA ops use viem internally
  */
 
-import { createPublicClient, createWalletClient, http, type Chain as ViemChain } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
-import { mainnet, polygon, arbitrum, optimism, base } from 'viem/chains'
-import {
-  createSmartAccountClient,
-  walletClientToSmartAccountSigner,
-  ENTRYPOINT_ADDRESS_V06,
-} from 'permissionless'
-import { signerToLightSmartAccount } from 'permissionless/accounts'
-import { createPimlicoPaymasterClient, createPimlicoBundlerClient } from 'permissionless/clients/pimlico'
+import { Platform } from 'react-native'
 import { BUNDLER_URLS } from './chains'
+
+// AA libs loaded dynamically  Metro stubs these on web (platform: web returns empty module)
+// All AA functions guard with chainSupportsAA() + Platform.OS check before importing
 
 //  Viem chain map 
 
@@ -251,5 +245,7 @@ export function encodeERC20Transfer(to: string, amount: bigint): string {
 //  Check if chain supports AA 
 
 export function chainSupportsAA(chainId: number): boolean {
-  return chainId in VIEM_CHAINS
+  if (Platform.OS === 'web') return false
+  return [1, 137, 42161, 10, 8453].includes(chainId)
 }
+
