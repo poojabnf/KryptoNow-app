@@ -12,6 +12,7 @@ import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
 import { CHAINS, Chain, getProvider } from "../utils/chains"
 import { fetchChainTokenBalances } from "../utils/tokens"
 import { getUnreadCount } from "../utils/notifications"
+import { startTxWatcher, requestPushPermission } from "../utils/pushService"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "@clerk/expo"
 
@@ -240,8 +241,9 @@ export default function Dashboard() {
       const wallet = useWalletStore.getState().wallet
       if (wallet?.phrase) {
         try {
-          const ethWallet = new ethers.Wallet(wallet.phrase)
-          kryptoNowProvider.init(addr, ethWallet.privateKey, activeChain.id, activeChain.rpc)
+          const ETH_PATH = "m/44'/60'/0'/0/0"
+          const hdNode   = ethers.HDNodeWallet.fromPhrase(wallet.phrase.trim(), undefined, ETH_PATH)
+          kryptoNowProvider.init(addr, hdNode.privateKey, activeChain.id, activeChain.rpc)
         } catch {}
       }
     }
@@ -343,6 +345,19 @@ export default function Dashboard() {
     const interval = setInterval(() => setUnreadCount(getUnreadCount()), 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Wire push notification watcher
+  useEffect(() => {
+    if (!addr || Platform.OS === 'web') return
+    requestPushPermission()
+    const stop = startTxWatcher(
+      addr,
+      activeChain.id,
+      activeChain.symbol,
+      (count) => setUnreadCount(prev => prev + count)
+    )
+    return () => stop()
+  }, [addr, activeChain.id])
 
   const onRefresh = () => { setRefreshing(true); fetchBalances(true); refreshTxns() }
 

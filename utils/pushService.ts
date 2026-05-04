@@ -114,7 +114,7 @@ export async function sendPushNotification(
   body:  string,
   type:  "tx" | "price" | "security" | "news",
 ): Promise<void> {
-  const prefs = loadNotifPrefs()
+  const prefs = await loadNotifPrefs()
   if (!prefs.pushEnabled) return
 
   // Check type preference
@@ -145,9 +145,12 @@ export function startTxWatcher(
   onNewTx:     (count: number) => void,
 ): () => void {
   const LAST_KEY = `kryptonow_last_tx_${chainId}_${address.slice(-6)}`
-  const prefs    = loadNotifPrefs()
 
-  if (!prefs.txAlerts || !prefs.pushEnabled) return () => {}
+  // async prefs check  return early if disabled
+  let txEnabled = true
+  loadNotifPrefs().then(p => { txEnabled = p.txAlerts && p.pushEnabled })
+
+  if (!txEnabled) return () => {}
 
   const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"
   const ALCHEMY_RPC: Record<number, string> = {
@@ -242,8 +245,11 @@ export function startPriceWatcher(): () => void {
   if (!prefs.priceAlerts || !prefs.pushEnabled) return () => {}
 
   const LAST_KEY = "kryptonow_last_prices_watch"
+  let priceEnabled = true
+  loadNotifPrefs().then(p => { priceEnabled = p.priceAlerts && p.pushEnabled })
 
   async function checkPrices() {
+    if (!priceEnabled) return
     try {
       const res  = await fetch(
         "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,binancecoin,matic-network,bitcoin&vs_currencies=usd"
