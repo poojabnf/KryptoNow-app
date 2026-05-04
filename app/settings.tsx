@@ -146,6 +146,7 @@ export default function Settings() {
         { icon: "2", iconBg: "#EEF2FF", label: "Two-Factor Auth",     sublabel: "Authenticator, SMS, Backup codes", type: "nav",    onPress: () => router.push("/mfa" as any) },
         { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
         { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
+        { icon: "SR", iconBg: "#D1FAE5", label: "Social Recovery", sublabel: "Manage guardians", type: "nav", onPress: () => router.push("/recovery" as any) },
         { icon: "AA", iconBg: "#EEF2FF", label: "Smart Account",
           sublabel: aaLoading ? "Loading..." : aaInfo ? aaInfo.address.slice(0,10) + "..." + aaInfo.address.slice(-8) : Platform.OS === "web" ? "Native only" : !chainSupportsAA(activeChain.id) ? "Not supported on " + activeChain.name : "Tap to load",
           type: "action", onPress: aaInfo ? copyAAAddress : undefined },
