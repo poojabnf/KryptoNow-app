@@ -183,31 +183,127 @@ export default function MFASetup() {
   )
 
   //  SMS Setup Screen 
-  if (step === "sms_setup") return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => setStep("overview")} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
+  if (step === "sms_setup") {
+    const filtered = COUNTRY_CODES.filter(c =>
+      c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+      c.dial.includes(countrySearch)
+    )
+    return (
+      <ScrollView style={s.container} contentContainerStyle={s.content}>
+        <Modal visible={showPicker} animationType="slide" onRequestClose={() => setShowPicker(false)}>
+          <View style={s.pickerModal}>
+            <View style={s.pickerHeader}>
+              <Text style={s.pickerTitle}>Select Country</Text>
+              <TouchableOpacity onPress={() => setShowPicker(false)}>
+                <Ionicons name="close" size={24} color="#1E1B4B" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={s.pickerSearch}
+              placeholder="Search country or code..."
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              autoFocus
+            />
+            <FlatList
+              data={filtered}
+              keyExtractor={i => i.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={s.pickerItem}
+                  onPress={() => { setCountryCode(item); setShowPicker(false); setCountrySearch("") }}
+                >
+                  <Text style={s.pickerFlag}>{item.flag}</Text>
+                  <Text style={s.pickerName}>{item.name}</Text>
+                  <Text style={s.pickerDial}>{item.dial}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Modal>
+
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => setStep("overview")} style={s.backBtn}>
+            <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
+          </TouchableOpacity>
+          <View>
+            <Text style={s.title}>Phone Verification</Text>
+            <Text style={s.subtitle}>SMS or Voice call</Text>
+          </View>
+        </View>
+
+        {/* Voice/SMS toggle */}
+        <View style={s.toggleRow}>
+          <TouchableOpacity
+            style={[s.toggleBtn, !voiceMode && { backgroundColor: activeChain.color }]}
+            onPress={() => setVoiceMode(false)}
+          >
+            <Ionicons name="chatbubble-outline" size={16} color={!voiceMode ? "#fff" : "#64748B"} />
+            <Text style={[s.toggleText, !voiceMode && { color: "#fff" }]}>SMS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.toggleBtn, voiceMode && { backgroundColor: activeChain.color }]}
+            onPress={() => setVoiceMode(true)}
+          >
+            <Ionicons name="call-outline" size={16} color={voiceMode ? "#fff" : "#64748B"} />
+            <Text style={[s.toggleText, voiceMode && { color: "#fff" }]}>Voice Call</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={s.sub}>
+          {voiceMode
+            ? "You will receive an automated voice call reading your 6-digit code."
+            : "Enter your phone number to receive a verification code via SMS."}
+        </Text>
+
+        {/* Phone input with country picker */}
+        <View style={s.phoneRow}>
+          <TouchableOpacity style={s.countryBtn} onPress={() => setShowPicker(true)}>
+            <Text style={s.countryFlag}>{countryCode.flag}</Text>
+            <Text style={s.countryDial}>{countryCode.dial}</Text>
+            <Ionicons name="chevron-down" size={14} color="#64748B" />
+          </TouchableOpacity>
+          <TextInput
+            style={s.phoneInput}
+            placeholder="Phone number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        {/* Info banner */}
+        <View style={[s.infoBanner, { borderColor: activeChain.color + "33", backgroundColor: activeChain.color + "08" }]}>
+          <Ionicons name={voiceMode ? "call-outline" : "chatbubble-outline"} size={16} color={activeChain.color} />
+          <Text style={[s.infoBannerText, { color: activeChain.color }]}>
+            {voiceMode
+              ? "A robot will call and say your code twice. Answer within 60 seconds."
+              : "Standard SMS rates may apply depending on your carrier."}
+          </Text>
+        </View>
+
+        {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+        <TouchableOpacity
+          onPress={startSMS}
+          disabled={loading}
+          style={[s.primaryBtn, { backgroundColor: activeChain.color }]}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : (
+              <View style={s.btnRow}>
+                <Ionicons name={voiceMode ? "call-outline" : "send-outline"} size={18} color="#fff" />
+                <Text style={s.primaryBtnText}>
+                  {voiceMode ? "Call Me Now" : "Send SMS Code"}
+                </Text>
+              </View>
+            )
+          }
         </TouchableOpacity>
-        <Text style={s.title}>SMS Authentication</Text>
-      </View>
-      <Text style={s.sub}>Enter your phone number including country code (e.g. +1 for USA).</Text>
-
-      <TextInput
-        style={s.input}
-        placeholder="+1 555 000 0000"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        autoComplete="tel"
-      />
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-
-      <TouchableOpacity onPress={startSMS} disabled={loading} style={[s.primaryBtn, { backgroundColor: activeChain.color }]}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Send Verification Code</Text>}
-      </TouchableOpacity>
-    </ScrollView>
-  )
+      </ScrollView>
+    )
+  }
 
   //  SMS Verify Screen 
   if (step === "sms_verify") return (
@@ -216,9 +312,20 @@ export default function MFASetup() {
         <TouchableOpacity onPress={() => setStep("sms_setup")} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
-        <Text style={s.title}>Verify Phone</Text>
+        <Text style={s.title}>Enter Code</Text>
       </View>
-      <Text style={s.sub}>Enter the code sent to {phone}</Text>
+
+      <View style={s.verifyInfo}>
+        <Ionicons name={voiceMode ? "call-outline" : "chatbubble-outline"} size={32} color={activeChain.color} />
+        <Text style={s.verifyTitle}>
+          {voiceMode ? "Check Your Phone" : "Check Your Messages"}
+        </Text>
+        <Text style={s.verifySub}>
+          {voiceMode
+            ? `We called ${countryCode.dial} ${phone} with your 6-digit code`
+            : `We sent a code to ${countryCode.dial} ${phone}`}
+        </Text>
+      </View>
 
       <TextInput
         style={s.codeInput}
@@ -235,9 +342,29 @@ export default function MFASetup() {
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Verify & Enable</Text>}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={startSMS} style={s.secondaryBtn}>
-        <Text style={s.secondaryBtnText}>Resend Code</Text>
-      </TouchableOpacity>
+      {/* Resend options */}
+      <View style={s.resendBox}>
+        <Text style={s.resendTitle}>Did not receive the code?</Text>
+        <View style={s.resendRow}>
+          <TouchableOpacity
+            style={[s.resendBtn, { borderColor: activeChain.color }]}
+            onPress={() => { setVoiceMode(false); startSMS() }}
+          >
+            <Ionicons name="chatbubble-outline" size={16} color={activeChain.color} />
+            <Text style={[s.resendBtnText, { color: activeChain.color }]}>Resend SMS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.resendBtn, { borderColor: "#10B981" }]}
+            onPress={() => { setVoiceMode(true); startSMS() }}
+          >
+            <Ionicons name="call-outline" size={16} color="#10B981" />
+            <Text style={[s.resendBtnText, { color: "#10B981" }]}>Call Instead</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => setStep("sms_setup")} style={s.changePhone}>
+          <Text style={s.changePhoneText}>Change phone number</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   )
 
