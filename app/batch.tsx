@@ -10,6 +10,7 @@ import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
 import { isValidAddress } from "../utils/crypto"
 import { getProvider, getTxUrl } from "../utils/chains"
+import { sendBatchUserOp, chainSupportsAA, encodeERC20Transfer } from "../utils/aa"
 
 //  Types 
 interface BatchItem {
@@ -105,7 +106,7 @@ export default function BatchSend() {
 
     Alert.alert(
       "Confirm Batch",
-      `Send ${items.length} transactions on ${activeChain.name}?\n\nThis will execute them one by one.`,
+      `Send ${items.length} transactions on ${activeChain.name}?\n\n${chainSupportsAA(activeChain.id) ? "Atomic: all succeed or all revert in one UserOp." : "Sequential: each tx is independent."}`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Send All", style: "destructive", onPress: executeBatch },
@@ -121,41 +122,66 @@ export default function BatchSend() {
       const privateKey = await loadPrivateKey()
       if (!privateKey) throw new Error("Could not load private key")
 
-      const provider = getProvider(activeChain)
-      const wallet   = new ethers.Wallet(privateKey, provider)
-      let nonce      = await provider.getTransactionCount(wallet.address, "latest")
-      const feeData  = await provider.getFeeData()
+      //  ERC-4337 atomic batch (all chains except BSC) 
+      if (chainSupportsAA(activeChain.id)) {
+        // Mark all as sending
+        setItems(prev => prev.map(it => ({ ...it, status: "sending" })))
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
+        const calls = items.map(item => ({
+          to:    item.to.trim(),
+          value: ethers.parseEther(item.amount),
+          data:  "0x",
+        }))
 
-        // Update status to sending
-        setItems(prev => prev.map(it =>
-          it.id === item.id ? { ...it, status: "sending" } : it
-        ))
+        const result = await sendBatchUserOp(privateKey, activeChain.id, calls)
 
-        try {
-          const tx = await wallet.sendTransaction({
-            to:       item.to.trim(),
-            value:    ethers.parseEther(item.amount),
-            nonce:    nonce++,
-            maxFeePerGas:         feeData.maxFeePerGas         ?? undefined,
-            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
-          })
+        if (result.ok) {
+          // All succeeded  one txHash for the whole batch
+          setItems(prev => prev.map(it => ({ ...it, status: "success", txHash: result.txHash })))
+          items.forEach(item => batchResults.push({
+            to: item.to, amount: item.amount,
+            txHash: result.txHash, status: "success",
+          }))
+        } else {
+          // Atomic revert  all failed together
+          setItems(prev => prev.map(it => ({ ...it, status: "failed", error: result.error })))
+          items.forEach(item => batchResults.push({
+            to: item.to, amount: item.amount,
+            error: result.error, status: "failed",
+          }))
+          Alert.alert("Batch Reverted", result.error ?? "All transactions reverted atomically.")
+        }
 
-          // Update status to success
+      //  Legacy sequential fallback (BSC) 
+      } else {
+        const provider = getProvider(activeChain)
+        const wallet   = new ethers.Wallet(privateKey, provider)
+        let nonce      = await provider.getTransactionCount(wallet.address, "latest")
+        const feeData  = await provider.getFeeData()
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
           setItems(prev => prev.map(it =>
-            it.id === item.id ? { ...it, status: "success", txHash: tx.hash } : it
+            it.id === item.id ? { ...it, status: "sending" } : it
           ))
-
-          batchResults.push({ to: item.to, amount: item.amount, txHash: tx.hash, status: "success" })
-        } catch (e: any) {
-          // Update status to failed
-          setItems(prev => prev.map(it =>
-            it.id === item.id ? { ...it, status: "failed", error: e.message } : it
-          ))
-
-          batchResults.push({ to: item.to, amount: item.amount, error: e.message, status: "failed" })
+          try {
+            const tx = await wallet.sendTransaction({
+              to:                   item.to.trim(),
+              value:                ethers.parseEther(item.amount),
+              nonce:                nonce++,
+              maxFeePerGas:         feeData.maxFeePerGas         ?? undefined,
+              maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? undefined,
+            })
+            setItems(prev => prev.map(it =>
+              it.id === item.id ? { ...it, status: "success", txHash: tx.hash } : it
+            ))
+            batchResults.push({ to: item.to, amount: item.amount, txHash: tx.hash, status: "success" })
+          } catch (e: any) {
+            setItems(prev => prev.map(it =>
+              it.id === item.id ? { ...it, status: "failed", error: e.message } : it
+            ))
+            batchResults.push({ to: item.to, amount: item.amount, error: e.message, status: "failed" })
+          }
         }
       }
     } catch (e: any) {
@@ -254,7 +280,9 @@ export default function BatchSend() {
       <View style={[s.banner, { backgroundColor: activeChain.color + "15", borderColor: activeChain.color + "33" }]}>
         <Ionicons name="information-circle-outline" size={18} color={activeChain.color} />
         <Text style={[s.bannerText, { color: activeChain.color }]}>
-          Transactions execute sequentially. Each uses a separate nonce for reliability.
+          {chainSupportsAA(activeChain.id)
+            ? "Atomic batch  all transactions execute in one UserOp. All succeed or all revert."
+            : "Transactions execute sequentially. BSC uses legacy mode (no ERC-4337 bundler)."}
         </Text>
       </View>
 

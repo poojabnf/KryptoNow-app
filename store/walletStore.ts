@@ -27,18 +27,20 @@ interface ChainCache {
 }
 
 interface WalletState {
-  wallet:        WalletData | null
-  address:       string | null
-  isLoaded:      boolean
-  activeChain:   Chain
-  chainCache:    Record<number, ChainCache>
-  setWallet:     (w: WalletData | null) => void
-  setLoaded:     (v: boolean) => void
-  setActiveChain:(chain: Chain) => void
-  clearWallet:   () => void
-  setChainCache: (chainId: number, data: ChainCache) => void
-  getChainCache: (chainId: number) => ChainCache | null
-  initFromStorage: () => Promise<void>
+  wallet:               WalletData | null
+  address:              string | null
+  smartAccountAddress:  string | null   // ERC-4337 LightAccount address
+  isLoaded:             boolean
+  activeChain:          Chain
+  chainCache:           Record<number, ChainCache>
+  setWallet:            (w: WalletData | null) => void
+  setLoaded:            (v: boolean) => void
+  setActiveChain:       (chain: Chain) => void
+  setSmartAccountAddress: (addr: string | null) => void
+  clearWallet:          () => void
+  setChainCache:        (chainId: number, data: ChainCache) => void
+  getChainCache:        (chainId: number) => ChainCache | null
+  initFromStorage:      () => Promise<void>
 }
 
 const DEFAULT_CHAIN: Chain = {
@@ -86,9 +88,10 @@ async function saveChain(c: Chain) {
 }
 
 export const useWalletStore = create<WalletState>((set, get) => ({
-  wallet:      loadWalletSync(),
-  address:     loadWalletSync()?.address ?? null,
-  isLoaded:    Platform.OS === 'web', // web loads sync, native needs initFromStorage
+  wallet:               loadWalletSync(),
+  address:              loadWalletSync()?.address ?? null,
+  smartAccountAddress:  null,
+  isLoaded:             Platform.OS === 'web', // web loads sync, native needs initFromStorage
   activeChain: loadChainSync(),
   chainCache:  {},
 
@@ -113,6 +116,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
 
   setLoaded: (isLoaded) => set({ isLoaded }),
+  setSmartAccountAddress: (smartAccountAddress) => set({ smartAccountAddress }),
 
   setActiveChain: (activeChain) => {
     saveChain(activeChain)
