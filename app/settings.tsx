@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Switch, Alert, Platform,
@@ -7,6 +7,8 @@ import { router } from "expo-router"
 import { useTheme, ThemeMode } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
+import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
+import { retrievePrivateKey } from "../store/SecureKeyStore"
 import { CHAINS } from "../utils/chains"
 import { useAuth } from "@clerk/expo"
 import * as Clipboard from "expo-clipboard"
@@ -23,6 +25,9 @@ export default function Settings() {
   const [hideBalance,   setHideBalance]   = useState(false)
   const [testnet,       setTestnet]       = useState(false)
   const [copied,        setCopied]        = useState(false)
+  const [aaInfo,        setAaInfo]        = useState<SmartAccountInfo | null>(null)
+  const [aaLoading,     setAaLoading]     = useState(false)
+  const [aaCopied,      setAaCopied]      = useState(false)
 
   const short = addr ? addr.slice(0, 10) + "..." + addr.slice(-8) : ""
 
@@ -31,6 +36,28 @@ export default function Settings() {
       await Clipboard.setStringAsync(addr)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // Load smart account info on mount (native only)
+  useEffect(() => {
+    if (Platform.OS === 'web' || !addr || !chainSupportsAA(activeChain.id)) return
+    setAaLoading(true)
+    retrievePrivateKey(0, 'Authenticate to load smart account info')
+      .then(async res => {
+        if (!res.ok || !res.data) return
+        const info = await getSmartAccountAddress(res.data, activeChain.id)
+        setAaInfo(info)
+      })
+      .catch(() => {})
+      .finally(() => setAaLoading(false))
+  }, [addr, activeChain.id])
+
+  const copyAAAddress = async () => {
+    if (aaInfo?.address) {
+      await Clipboard.setStringAsync(aaInfo.address)
+      setAaCopied(true)
+      setTimeout(() => setAaCopied(false), 2000)
     }
   }
 
@@ -118,6 +145,16 @@ export default function Settings() {
         { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
         { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
         { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
+        { icon: "AA", iconBg: "#EEF2FF", label: "Smart Account",
+          sublabel: aaLoading ? "Loading..." : aaInfo ? aaInfo.address.slice(0,10) + "..." + aaInfo.address.slice(-8) : Platform.OS === "web" ? "Native only" : !chainSupportsAA(activeChain.id) ? "Not supported on " + activeChain.name : "Tap to load",
+          type: "action", onPress: aaInfo ? copyAAAddress : undefined },
+        { icon: aaInfo?.isDeployed ? "" : "", iconBg: aaInfo?.isDeployed ? "#ECFDF5" : "#F8FAFF",
+          label: "Account Status",
+          sublabel: aaLoading ? "Checking..." : aaInfo?.isDeployed ? "Deployed on-chain" : aaInfo ? "Not yet deployed (deploys on first tx)" : "",
+          type: "info" },
+        { icon: "", iconBg: "#FFFBEB", label: "Gas Sponsorship",
+          sublabel: aaInfo?.gasless ? "Gasless  Pimlico sponsors gas" : "Standard gas (add Pimlico key for gasless)",
+          type: "info" },
       ],
     },
     {
