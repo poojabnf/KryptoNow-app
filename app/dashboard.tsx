@@ -684,7 +684,7 @@ export default function Dashboard() {
 
 // --- Sidebar Styles ---
 const sb = StyleSheet.create({
-  sidebar:       { width: 240, backgroundColor: "#fff", borderRightWidth: 1, borderRightColor: "#F1F5F9", paddingTop: 24, paddingBottom: 16, flexDirection: "column" },
+  sidebar:       { width: 240, backgroundColor: "#fff", borderRightWidth: 1, borderRightColor: "#F1F5F9", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflow: "hidden" },
   logoWrap:      { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
   logoIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   logoIconT:     { color: "#fff", fontSize: 14, fontWeight: "800" },
@@ -697,7 +697,7 @@ const sb = StyleSheet.create({
   chainBadge:    { flexDirection: "row", alignItems: "center", gap: 4 },
   chainDot:      { width: 6, height: 6, borderRadius: 3 },
   chainName:     { fontSize: 11, fontWeight: "600" },
-  navScroll:     { flex: 1, paddingHorizontal: 12 },
+  navScroll:     { flex: 1, paddingHorizontal: 12, overflowY: "auto" as any },
   navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 12, marginBottom: 4, position: "relative" },
   navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
   navIconT:      { fontSize: 13, fontWeight: "700", color: "#64748B" },
@@ -714,12 +714,12 @@ const sb = StyleSheet.create({
 // --- Main Styles ---
 const s = StyleSheet.create({
   c:               { flex: 1, backgroundColor: "#F0F4FF" },
-  webLayout:       { flex: 1, flexDirection: "row" },
+  webLayout:       { flex: 1, flexDirection: "row", height: "100vh" as any, overflow: "hidden" },
   webLayoutMobile: { flex: 1, flexDirection: "column" },
   hamburger:       { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 4 },
   drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: "#fff", shadowColor: "#000", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 20 },
   drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.45)", zIndex: 99 },
-  webMain:         { flex: 1, backgroundColor: "#F0F4FF", overflow: "hidden" },
+  webMain:         { flex: 1, backgroundColor: "#F0F4FF", overflowY: "auto" as any, height: "100vh" as any },
   webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   chainPill:       { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#fff", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: "#E2E8F0" },
