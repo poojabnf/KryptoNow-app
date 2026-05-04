@@ -230,6 +230,16 @@ async function fetchEtherscanTransfers(
 }
 
 // --- Smart fetcher: Alchemy for 5 chains, Etherscan for BNB ---
+// Exported so useSmartTransactions can call it directly for BNB Chain
+export async function fetchTxnsForChain(
+  address:     string,
+  chainId:     number,
+  chainSymbol: string,
+  chainName:   string,
+): Promise<Tx[]> {
+  return fetchTxns(address, chainId, chainSymbol, chainName)
+}
+
 async function fetchTxns(
   address:     string,
   chainId:     number,
