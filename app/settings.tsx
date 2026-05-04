@@ -143,6 +143,7 @@ export default function Settings() {
       items: [
         { icon: "#", iconBg: "#EEF2FF", label: "Wallet Address",     sublabel: short,                          type: "action", onPress: copyAddress },
         { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
+        { icon: "2", iconBg: "#EEF2FF", label: "Two-Factor Auth",     sublabel: "Authenticator, SMS, Backup codes", type: "nav",    onPress: () => router.push("/mfa" as any) },
         { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
         { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
         { icon: "AA", iconBg: "#EEF2FF", label: "Smart Account",

@@ -20,7 +20,7 @@ const LOG = (tag: string, msg: string, data?: any) => {
   else console.log(`[KryptoNow][${tag}] ${msg}`);
 };
 
-// ── OAuth helper ──────────────────────────────────────────────────
+// â”€â”€ OAuth helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
 
@@ -45,15 +45,15 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
 
     // Case 1: session ready
     if (createdSessionId && setActive) {
-      LOG("OAuth", "✅ Case 1: direct session, activating...");
+      LOG("OAuth", "âœ… Case 1: direct session, activating...");
       await setActive({ session: createdSessionId });
       await onSuccess();
       return;
     }
 
-    // Case 2: transfer signIn → signUp
+    // Case 2: transfer signIn â†’ signUp
     if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-      LOG("OAuth", "🔄 Case 2: transferable, creating signUp from signIn...");
+      LOG("OAuth", "ðŸ”„ Case 2: transferable, creating signUp from signIn...");
       await signUp.create({ transfer: true });
       await signUp.reload();
       LOG("OAuth", "After transfer", { status: signUp.status, sessionId: signUp.createdSessionId });
@@ -63,7 +63,7 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
         return;
       }
       if (signUp.status === "missing_requirements") {
-        LOG("OAuth", "❌ missing_requirements", signUp.missingFields);
+        LOG("OAuth", "âŒ missing_requirements", signUp.missingFields);
         Alert.alert("Missing info", `Required fields: ${JSON.stringify(signUp.missingFields)}`);
         return;
       }
@@ -71,16 +71,16 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
 
     // Case 3: signUp incomplete
     if (signUp?.status === "missing_requirements") {
-      LOG("OAuth", "❌ Case 3: signUp missing_requirements", signUp.missingFields);
+      LOG("OAuth", "âŒ Case 3: signUp missing_requirements", signUp.missingFields);
       Alert.alert("Incomplete signup", `Missing: ${JSON.stringify(signUp.missingFields)}`);
       return;
     }
 
-    LOG("OAuth", "⚠️ WARNING: No case matched — flow ended without session");
+    LOG("OAuth", "âš ï¸ WARNING: No case matched â€” flow ended without session");
   }, [startSSOFlow, strategy]);
 }
 
-// ── Main component ────────────────────────────────────────────────
+// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function SignIn() {
   const startGoogle  = useOAuthFlow("oauth_google");
   const startDiscord = useOAuthFlow("oauth_discord");
@@ -94,6 +94,9 @@ export default function SignIn() {
   const [flow,    setFlow   ] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [error,   setError  ] = useState("");
+  const [mfaStep,  setMfaStep ] = useState<"none"|"totp"|"sms"|"backup">("none");
+  const [mfaCode,  setMfaCode ] = useState("");
+  const [mfaSignIn, setMfaSignIn] = useState<any>(null);
 
   useEffect(() => {
     LOG("Mount", "SignIn screen mounted", { platform: Platform.OS, siLoaded, suLoaded });
@@ -128,58 +131,58 @@ export default function SignIn() {
   };
 
   const handleGoogle = async () => {
-    LOG("Google", "▶ Button pressed");
+    LOG("Google", "â–¶ Button pressed");
     setLoading(true); setError("");
     try {
       await startGoogle(onSuccess);
     } catch (e: any) {
       const msg = e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? e?.message ?? "Google sign-in failed";
-      LOG("Google", "❌ Error", { msg, errors: e?.errors });
+      LOG("Google", "âŒ Error", { msg, errors: e?.errors });
       setError(msg);
     } finally {
       setLoading(false);
-      LOG("Google", "■ Done");
+      LOG("Google", "â–  Done");
     }
   };
 
   const handleDiscord = async () => {
-    LOG("Discord", "▶ Button pressed");
+    LOG("Discord", "â–¶ Button pressed");
     setLoading(true); setError("");
     try {
       await startDiscord(onSuccess);
     } catch (e: any) {
       const msg = e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? e?.message ?? "Discord sign-in failed";
-      LOG("Discord", "❌ Error", { msg, errors: e?.errors });
+      LOG("Discord", "âŒ Error", { msg, errors: e?.errors });
       setError(msg);
     } finally {
       setLoading(false);
-      LOG("Discord", "■ Done");
+      LOG("Discord", "â–  Done");
     }
   };
 
   const handleEmailContinue = async () => {
     const trimmed = email.trim();
-    LOG("Email", "▶ Continue pressed", { email: trimmed, siLoaded, suLoaded });
+    LOG("Email", "â–¶ Continue pressed", { email: trimmed, siLoaded, suLoaded });
     if (!trimmed || !siLoaded || !suLoaded) {
-      LOG("Email", "⚠️ Aborting — empty or not ready");
+      LOG("Email", "âš ï¸ Aborting â€” empty or not ready");
       return;
     }
     setLoading(true); setError("");
     try {
       LOG("Email", "Trying signIn with email_code...");
       await signIn!.create({ identifier: trimmed, strategy: "email_code" });
-      LOG("Email", "✅ signIn OTP sent → signin flow");
+      LOG("Email", "âœ… signIn OTP sent â†’ signin flow");
       setFlow("signin"); setStep("otp");
     } catch (e1: any) {
       LOG("Email", "signIn failed, trying signUp", { error: e1?.errors?.[0]?.message });
       try {
         await signUp!.create({ emailAddress: trimmed });
         await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
-        LOG("Email", "✅ signUp OTP sent → signup flow");
+        LOG("Email", "âœ… signUp OTP sent â†’ signup flow");
         setFlow("signup"); setStep("otp");
       } catch (e2: any) {
         const msg = e2?.errors?.[0]?.message ?? "Failed to send code.";
-        LOG("Email", "❌ signUp also failed", { msg, errors: e2?.errors });
+        LOG("Email", "âŒ signUp also failed", { msg, errors: e2?.errors });
         setError(msg);
       }
     } finally {
@@ -188,7 +191,7 @@ export default function SignIn() {
   };
 
   const handleVerifyOTP = async () => {
-    LOG("OTP", "▶ Verify pressed", { flow, codeLength: code.length });
+    LOG("OTP", "â–¶ Verify pressed", { flow, codeLength: code.length });
     if (!siLoaded || !suLoaded) return;
     setLoading(true); setError("");
     try {
@@ -211,7 +214,7 @@ export default function SignIn() {
       }
     } catch (e: any) {
       const msg = e?.errors?.[0]?.message ?? "Invalid code.";
-      LOG("OTP", "❌ Error", { msg, errors: e?.errors });
+      LOG("OTP", "âŒ Error", { msg, errors: e?.errors });
       setError(msg);
     } finally {
       setLoading(false);
@@ -219,7 +222,7 @@ export default function SignIn() {
   };
 
   const goBack = () => {
-    LOG("Nav", "← Back pressed, resetting state");
+    LOG("Nav", "â† Back pressed, resetting state");
     setStep("email"); setCode(""); setError(""); setFlow("signin");
   };
 
@@ -236,7 +239,7 @@ export default function SignIn() {
           <Text style={s.title}>{step === "email" ? "Welcome to KryptoNow" : "Check your email"}</Text>
           <Text style={s.sub}>{step === "email" ? "Sign in or create your account" : `We sent a code to ${email}`}</Text>
 
-          {!!error && <View style={s.errBox}><Text style={s.errT}>⚠  {error}</Text></View>}
+          {!!error && <View style={s.errBox}><Text style={s.errT}>âš   {error}</Text></View>}
 
           {step === "email" ? (
             <>
@@ -265,7 +268,7 @@ export default function SignIn() {
               </TouchableOpacity>
 
               <TouchableOpacity style={s.backBtn} onPress={goBack}>
-                <Text style={s.backBtnT}>← Back</Text>
+                <Text style={s.backBtnT}>â† Back</Text>
               </TouchableOpacity>
             </>
           )}
