@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { saveEncryptedWallet, loadEncryptedWallet, deleteEncryptedWallet } from '../utils/webVault'
 
 export interface Chain {
   id:          number
@@ -73,8 +74,8 @@ async function saveWallet(w: WalletData | null) {
     else await AsyncStorage.removeItem(STORAGE_KEY)
   } else {
     try {
-      if (w) localStorage.setItem(STORAGE_KEY, JSON.stringify(w))
-      else localStorage.removeItem(STORAGE_KEY)
+      if (w) await saveEncryptedWallet({ address: w.address, phrase: w.phrase ?? '', name: w.name })
+      else deleteEncryptedWallet()
     } catch {}
   }
 }
@@ -96,8 +97,18 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   chainCache:  {},
 
   initFromStorage: async () => {
-    if (Platform.OS === 'web') return
     try {
+      if (Platform.OS === 'web') {
+        // Web: decrypt vault + load chain
+        const [wallet, chainRaw] = await Promise.all([
+          loadEncryptedWallet(),
+          Promise.resolve(localStorage.getItem(CHAIN_KEY)),
+        ])
+        const chain = chainRaw ? JSON.parse(chainRaw) : DEFAULT_CHAIN
+        set({ wallet, address: wallet?.address ?? null, activeChain: chain, isLoaded: true })
+        return
+      }
+      // Native: AsyncStorage
       const [walletRaw, chainRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
         AsyncStorage.getItem(CHAIN_KEY),
