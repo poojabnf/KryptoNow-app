@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+﻿import { ethers } from 'ethers'
 
 export type Chain = {
   id:          number
@@ -24,11 +24,11 @@ export const BUNDLER_URLS: Record<number, string> = {
 
 // Pimlico paymaster (gasless)  get free key at dashboard.pimlico.io
 export const PAYMASTER_URLS: Record<number, string> = {
-  1:     'https://api.pimlico.io/v2/1/rpc?apikey=YOUR_PIMLICO_KEY',
-  137:   'https://api.pimlico.io/v2/137/rpc?apikey=YOUR_PIMLICO_KEY',
-  42161: 'https://api.pimlico.io/v2/42161/rpc?apikey=YOUR_PIMLICO_KEY',
-  10:    'https://api.pimlico.io/v2/10/rpc?apikey=YOUR_PIMLICO_KEY',
-  8453:  'https://api.pimlico.io/v2/8453/rpc?apikey=YOUR_PIMLICO_KEY',
+  1:     'https://api.pimlico.io/v2/1/rpc?apikey=pim_2Qz8gZei8Nu6XX726oNCK6',
+  137:   'https://api.pimlico.io/v2/137/rpc?apikey=pim_2Qz8gZei8Nu6XX726oNCK6',
+  42161: 'https://api.pimlico.io/v2/42161/rpc?apikey=pim_2Qz8gZei8Nu6XX726oNCK6',
+  10:    'https://api.pimlico.io/v2/10/rpc?apikey=pim_2Qz8gZei8Nu6XX726oNCK6',
+  8453:  'https://api.pimlico.io/v2/8453/rpc?apikey=pim_2Qz8gZei8Nu6XX726oNCK6',
 }
 
 export const CHAINS: Chain[] = [
