@@ -166,9 +166,12 @@ export default function SignIn() {
   const handleOTP = async () => {
     if (!code || code.length < 6) return setError("Enter the 6-digit code");
     setLoading(true); setError("");
+    console.log("[OTP] Attempting verification", { flow, code, step });
     try {
       if (flow === "signin") {
+        console.log("[OTP] SignIn flow - attemptFirstFactor");
         const result = await signIn!.attemptFirstFactor({ strategy: "email_code", code });
+        console.log("[OTP] SignIn result", { status: result.status });
         if (result.status === "needs_second_factor") {
           setMfaSignIn(signIn); setMfaStep("totp"); setStep("otp");
           return;
@@ -178,14 +181,17 @@ export default function SignIn() {
           await onSuccess();
         }
       } else {
+        console.log("[OTP] SignUp flow - attemptEmailAddressVerification");
         const result = await signUp!.attemptEmailAddressVerification({ code });
+        console.log("[OTP] SignUp result", { status: result.status });
         if (result.status === "complete") {
           await setSignUpActive!({ session: result.createdSessionId! });
           await onSuccess();
         }
       }
     } catch (e: any) {
-      setError(e?.errors?.[0]?.message ?? "Invalid code.");
+      console.log("[OTP] Error", JSON.stringify(e?.errors ?? e));
+      setError(e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? "Invalid code.");
     } finally { setLoading(false); }
   };
 
