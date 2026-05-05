@@ -10,6 +10,7 @@ import * as SecureStore from 'expo-secure-store';
 import { ClerkProvider, useAuth } from '@clerk/expo';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import { LockProvider } from '../context/LockContext';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
@@ -70,9 +71,11 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <ThemeProvider>
-        <AuthProvider>
-          <RootLayoutNav />
-        </AuthProvider>
+        <LockProvider>
+          <AuthProvider>
+            <RootLayoutNav />
+          </AuthProvider>
+        </LockProvider>
       </ThemeProvider>
     </ClerkProvider>
   );

@@ -5,6 +5,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useTheme, ThemeMode } from "../context/ThemeContext"
+import { useLockContext } from "../context/LockContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
@@ -19,6 +20,7 @@ export default function Settings() {
   const clearWallet = useWalletStore(s => s.clearWallet)
   const { signOut } = useAuth()
   const { theme, mode, setMode } = useTheme()
+  const { hasPin, lockState, lock, clearPin } = useLockContext()
 
   const [biometrics,    setBiometrics]    = useState(false)
   const [notifications, setNotifications] = useState(true)
