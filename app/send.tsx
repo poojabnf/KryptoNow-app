@@ -156,6 +156,7 @@ type Step = "form" | "confirm" | "success"
 export default function Send() {
   // Batch send shortcut rendered at top
   const addr        = useWalletStore(s => s.address)
+  const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
 
   const [customTokens,    setCustomTokens]    = useState<CustomToken[]>(

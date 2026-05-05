@@ -4,6 +4,7 @@ import {
   Linking, Alert, SafeAreaView, TextInput,
 } from "react-native"
 import { router } from "expo-router"
+import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 
@@ -127,6 +128,7 @@ const PROVIDERS = [
 
 export default function BuyScreen() {
   const addr        = useWalletStore(s => s.address)
+  const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
 
   const [amount,      setAmount]      = useState("100")
@@ -331,43 +333,43 @@ export default function BuyScreen() {
 }
 
 const s = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: "#F8FAFF" },
+  safe:           { flex: 1, backgroundColor: theme.bgApp },
   header:         { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  back:           { width: 38, height: 38, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#E2E8F0", alignItems: "center", justifyContent: "center" },
-  backT:          { fontSize: 18, color: "#1E1B4B", fontWeight: "700" },
-  title:          { color: "#1E1B4B", fontSize: 18, fontWeight: "700" },
+  back:           { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.bgCard, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center" },
+  backT:          { fontSize: 18, color: theme.textPrimary, fontWeight: "700" },
+  title:          { color: theme.textPrimary, fontSize: 18, fontWeight: "700" },
   section:        { paddingHorizontal: 16, marginBottom: 20 },
-  label:          { color: "#64748B", fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  label:          { color: theme.textSecondary, fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
   row4:           { flexDirection: "row", gap: 8 },
-  pill:           { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center", backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#E2E8F0" },
-  pillActive:     { backgroundColor: "#F8FAFF" },
-  pillT:          { color: "#64748B", fontSize: 14, fontWeight: "600" },
-  tokenPicker:    { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1.5, gap: 12 },
+  pill:           { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center", backgroundColor: theme.bgCard, borderWidth: 1.5, borderColor: theme.border },
+  pillActive:     { backgroundColor: theme.bgApp },
+  pillT:          { color: theme.textSecondary, fontSize: 14, fontWeight: "600" },
+  tokenPicker:    { flexDirection: "row", alignItems: "center", backgroundColor: theme.bgCard, borderRadius: 14, padding: 14, borderWidth: 1.5, gap: 12 },
   tokenIconWrap:  { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   tokenIcon:      { fontSize: 16, fontWeight: "700" },
-  tokenName:      { color: "#1E1B4B", fontSize: 15, fontWeight: "600" },
-  tokenSymbol:    { color: "#94A3B8", fontSize: 12, marginTop: 2 },
-  tokenDropdown:  { backgroundColor: "#fff", borderRadius: 14, borderWidth: 1, borderColor: "#E2E8F0", marginTop: 8, overflow: "hidden" },
-  tokenItem:      { flexDirection: "row", alignItems: "center", padding: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
-  tokenItemName:  { flex: 1, color: "#1E1B4B", fontSize: 14, fontWeight: "500" },
-  tokenItemSym:   { color: "#94A3B8", fontSize: 12 },
+  tokenName:      { color: theme.textPrimary, fontSize: 15, fontWeight: "600" },
+  tokenSymbol:    { color: theme.textMuted, fontSize: 12, marginTop: 2 },
+  tokenDropdown:  { backgroundColor: theme.bgCard, borderRadius: 14, borderWidth: 1, borderColor: theme.border, marginTop: 8, overflow: "hidden" },
+  tokenItem:      { flexDirection: "row", alignItems: "center", padding: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
+  tokenItemName:  { flex: 1, color: theme.textPrimary, fontSize: 14, fontWeight: "500" },
+  tokenItemSym:   { color: theme.textMuted, fontSize: 12 },
   walletBox:      { marginHorizontal: 16, marginBottom: 20, flexDirection: "row", alignItems: "center", gap: 10, padding: 13, borderRadius: 14, borderWidth: 1 },
   walletDot:      { width: 8, height: 8, borderRadius: 4 },
-  walletAddr:     { flex: 1, color: "#1E1B4B", fontSize: 13, fontWeight: "500" },
+  walletAddr:     { flex: 1, color: theme.textPrimary, fontSize: 13, fontWeight: "500" },
   walletChain:    { fontSize: 12, fontWeight: "600" },
-  provCard:       { backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#E2E8F0" },
+  provCard:       { backgroundColor: theme.bgCard, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border },
   provIcon:       { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   provIconT:      { fontSize: 18, fontWeight: "800" },
-  provName:       { color: "#1E1B4B", fontSize: 15, fontWeight: "700" },
-  provDesc:       { color: "#64748B", fontSize: 12, marginTop: 2 },
+  provName:       { color: theme.textPrimary, fontSize: 15, fontWeight: "700" },
+  provDesc:       { color: theme.textSecondary, fontSize: 12, marginTop: 2 },
   provRating:     { color: "#F59E0B", fontSize: 13, fontWeight: "700" },
-  provFees:       { color: "#64748B", fontSize: 12, marginTop: 2 },
+  provFees:       { color: theme.textSecondary, fontSize: 12, marginTop: 2 },
   methodRow:      { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   methodPill:     { backgroundColor: "#F1F5F9", borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10 },
-  methodT:        { color: "#64748B", fontSize: 11, fontWeight: "500" },
+  methodT:        { color: theme.textSecondary, fontSize: 11, fontWeight: "500" },
   selectedBanner: { marginTop: 12, borderRadius: 10, padding: 10, borderWidth: 1 },
   selectedBannerT:{ fontSize: 12, fontWeight: "600", textAlign: "center" },
-  cta:            { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 10, backgroundColor: "#F8FAFF" },
+  cta:            { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 10, backgroundColor: theme.bgApp },
   buyBtn:         { borderRadius: 16, paddingVertical: 16, alignItems: "center" },
   buyBtnT:        { color: "#fff", fontSize: 16, fontWeight: "700" },
 })

@@ -5,6 +5,7 @@ import {
   FlatList, Platform, Linking,
 } from "react-native"
 import { router } from "expo-router"
+import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
@@ -164,6 +165,7 @@ type SwapStep = "form" | "confirm" | "approving" | "swapping" | "success"
 
 export default function Swap() {
   const addr        = useWalletStore(s => s.address)
+  const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
   const defaults    = TOP_TOKENS[activeChain.id] ?? TOP_TOKENS[1]
 

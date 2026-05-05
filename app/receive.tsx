@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Platform } from "react-native"
 import { router } from "expo-router"
+import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import * as Clipboard from "expo-clipboard"
@@ -14,6 +15,7 @@ const NETWORKS = [
 
 export default function Receive() {
   const addr = useWalletStore(s => s.address)
+  const { theme, mode } = useTheme()
   const [selectedNet, setSelectedNet] = useState(NETWORKS[0])
   const [copied, setCopied]           = useState(false)
 
@@ -68,7 +70,7 @@ export default function Receive() {
               <Image source={{ uri: qrUrl }} style={s.qr} resizeMode="contain" />
             ) : (
               <View style={s.qrPlaceholder}>
-                <Text style={{ color: "#CBD5E1", fontSize: 13 }}>No address</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 13 }}>No address</Text>
               </View>
             )}
           </View>
