@@ -123,10 +123,16 @@ export default function SignIn() {
       const address = await AsyncStorage.getItem("kryptonow_address");
       const profileRaw = await AsyncStorage.getItem("kryptonow_profile");
       const profile = profileRaw ? JSON.parse(profileRaw) : null;
-      if (!address) router.replace("/create");
-      else if (!profile?.onboarded) router.replace("/onboarding");
-      else router.replace("/dashboard");
-    } catch { router.replace("/create"); }
+      const dest = !address ? "/create" : !JSON.parse(profileRaw ?? "{}").onboarded ? "/onboarding" : "/dashboard";
+      if (Platform.OS === "web") {
+        window.location.href = dest;
+      } else {
+        router.replace(dest as any);
+      }
+    } catch {
+      if (Platform.OS === "web") window.location.href = "/create";
+      else router.replace("/create");
+    }
   };
 
   const handleGoogle = async () => {
