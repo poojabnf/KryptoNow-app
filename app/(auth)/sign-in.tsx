@@ -30,21 +30,29 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
     const redirectUrl = Platform.OS === "web"
       ? `${window.location.origin}/`
       : "kryptonow://";
-    LOG("OAuth", `Starting ${strategy}`, { redirectUrl, platform: Platform.OS });
-    const result = await startSSOFlow({ strategy, redirectUrl });
-    const { createdSessionId, setActive, signIn, signUp } = result;
-    if (createdSessionId && setActive) {
-      await setActive({ session: createdSessionId });
-      await onSuccess();
-      return;
-    }
-    if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-      await signUp.create({ transfer: true });
-      await signUp.reload();
-      if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-        await setActive({ session: signUp.createdSessionId });
+    LOG("OAuth", "Starting " + strategy, { redirectUrl, platform: Platform.OS });
+    try {
+      const result = await startSSOFlow({
+        strategy,
+        redirectUrl,
+      });
+      const { createdSessionId, setActive, signIn, signUp } = result;
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
         await onSuccess();
+        return;
       }
+      if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
+        await signUp.create({ transfer: true });
+        await signUp.reload();
+        if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
+          await setActive({ session: signUp.createdSessionId });
+          await onSuccess();
+        }
+      }
+    } catch (e: any) {
+      // On web, OAuth redirects away and back - this is expected
+      LOG("OAuth", "Flow ended (may be redirect)", { error: e?.message });
     }
   }, [startSSOFlow, strategy]);
 }
@@ -120,13 +128,26 @@ export default function SignIn() {
 
   const onSuccess = async () => {
     try {
-      const address = await AsyncStorage.getItem("kryptonow_address");
-      const profileRaw = await AsyncStorage.getItem("kryptonow_profile");
-      const profile = profileRaw ? JSON.parse(profileRaw) : null;
-      if (!address) router.replace("/create");
-      else if (!profile?.onboarded) router.replace("/onboarding");
-      else router.replace("/dashboard");
-    } catch { router.replace("/create"); }
+      // Use localStorage on web, AsyncStorage on native
+      let address: string | null = null
+      let profile: any = null
+      if (Platform.OS === "web") {
+        const walletRaw = localStorage.getItem("kryptonow_wallet")
+        if (walletRaw) {
+          try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
+        }
+        if (!address) address = localStorage.getItem("kryptonow_address")
+        const profileRaw = localStorage.getItem("kryptonow_profile")
+        profile = profileRaw ? JSON.parse(profileRaw) : null
+      } else {
+        address = await AsyncStorage.getItem("kryptonow_address")
+        const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
+        profile = profileRaw ? JSON.parse(profileRaw) : null
+      }
+      if (!address) router.replace("/create")
+      else if (!profile?.onboarded) router.replace("/onboarding")
+      else router.replace("/dashboard")
+    } catch { router.replace("/create") }
   };
 
   const handleGoogle = async () => {
