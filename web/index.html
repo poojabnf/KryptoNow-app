@@ -4,56 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>KryptoNow</title>
+  
+  
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { 
-      width: 100%; height: 100%; margin: 0; padding: 0;
-      background: #E8ECF4;
-      display: flex; justify-content: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    #root {
-      width: 100%; 
-      max-width: 480px;
-      height: 100%;
-      background: #F8FAFF;
-      box-shadow: 0 0 60px rgba(0,0,0,0.15);
-      overflow: hidden;
-      position: relative;
-    }
-    @media (max-width: 480px) {
-      body { background: #F8FAFF; }
-      #root { max-width: 100%; box-shadow: none; }
-    }
-  </style>
-  <style>
-    /* Sidebar scrollbar - thin and styled */
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: #C7D2FE transparent;
-    }
-    *::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    *::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    *::-webkit-scrollbar-thumb {
-      background-color: #C7D2FE;
-      border-radius: 10px;
-    }
-    *::-webkit-scrollbar-thumb:hover {
-      background-color: #6366F1;
-    }
-    /* Hide scrollbar on balance card area, show only in sidebar nav */
-    .sidebar-nav::-webkit-scrollbar {
-      width: 4px;
-    }
-    /* Smooth scrolling everywhere */
-    * {
-      scroll-behavior: smooth;
-    }
+    /* Global thin scrollbars */
+    * { box-sizing: border-box; }
+
+    /* Firefox */
+    * { scrollbar-width: thin; scrollbar-color: #6366F1 #EEF2FF; }
+
+    /* Chrome, Safari, Edge */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #F0F4FF; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #A5B4FC; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6366F1; }
+
+    /* Force sidebar nav to scroll */
+    div[data-sidebar-nav] { overflow-y: scroll !important; }
+
+    html, body { height: 100%; overflow: hidden; }
+    #root { height: 100%; }
   </style>
 </head>
 <body>
