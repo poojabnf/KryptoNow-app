@@ -26,41 +26,32 @@ const LOG = (tag: string, msg: string, data?: any) => {
 //  OAuth helper 
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
-  const { signIn: clerkSignIn } = useSignIn();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     try {
-      if (Platform.OS === "web") {
-        // Web: full page redirect - no popup, stays in same tab
-        LOG("OAuth", `Starting ${strategy} via full page redirect`)
-        await clerkSignIn?.authenticateWithRedirect({
-          strategy,
-          redirectUrl: `${window.location.origin}/sign-in`,
-          redirectUrlComplete: `${window.location.origin}/`,
-        })
-        // Page will redirect - no code runs after this
-      } else {
-        // Mobile: deep link
-        const result = await startSSOFlow({ strategy, redirectUrl: "kryptonow://" })
-        const { createdSessionId, setActive, signIn, signUp } = result
-        if (createdSessionId && setActive) {
-          await setActive({ session: createdSessionId })
+      const redirectUrl = Platform.OS === "web"
+        ? `${window.location.origin}/`
+        : "kryptonow://"
+      LOG("OAuth", `Starting ${strategy}`, { redirectUrl })
+      const result = await startSSOFlow({ strategy, redirectUrl })
+      const { createdSessionId, setActive, signIn, signUp } = result
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId })
+        await onSuccess()
+        return
+      }
+      if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
+        await signUp.create({ transfer: true })
+        await signUp.reload()
+        if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
+          await setActive({ session: signUp.createdSessionId })
           await onSuccess()
-          return
-        }
-        if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-          await signUp.create({ transfer: true })
-          await signUp.reload()
-          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-            await setActive({ session: signUp.createdSessionId })
-            await onSuccess()
-          }
         }
       }
     } catch (e: any) {
       LOG("OAuth", "Error", { error: e?.message })
       throw e
     }
-  }, [startSSOFlow, clerkSignIn, strategy])
+  }, [startSSOFlow, strategy])
 }
 
 //  Floating particle component 
