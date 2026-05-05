@@ -1,90 +1,86 @@
 import { useSSO } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Platform,
-  TextInput, ActivityIndicator, KeyboardAvoidingView,
-  ScrollView, Alert,
+  TextInput, ActivityIndicator, Animated, Dimensions,
+  KeyboardAvoidingView, ScrollView,
 } from "react-native";
 import { router } from "expo-router";
 import { useSignIn, useSignUp } from "@clerk/expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const TEAL   = "#0D2E2E";
-const ACCENT = "#00D4AA";
+const { width, height } = Dimensions.get("window")
+const TEAL   = "#0D2E2E"
+const ACCENT = "#00D4AA"
+const ACCENT2 = "#00B8FF"
 
 const LOG = (tag: string, msg: string, data?: any) => {
   if (data !== undefined) console.log(`[KryptoNow][${tag}] ${msg}`, JSON.stringify(data, null, 2));
   else console.log(`[KryptoNow][${tag}] ${msg}`);
 };
 
-// â”€â”€ OAuth helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  OAuth helper 
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
-
   return useCallback(async (onSuccess: () => Promise<void>) => {
     const redirectUrl = Platform.OS === "web"
       ? `${window.location.origin}/`
       : "kryptonow://";
-
     LOG("OAuth", `Starting ${strategy}`, { redirectUrl, platform: Platform.OS });
-
     const result = await startSSOFlow({ strategy, redirectUrl });
     const { createdSessionId, setActive, signIn, signUp } = result;
-
-    LOG("OAuth", "SSO result", {
-      createdSessionId: createdSessionId ?? "none",
-      hasSetActive: !!setActive,
-      signInStatus: signIn?.status ?? "none",
-      signInFirstFactor: signIn?.firstFactorVerification?.status ?? "none",
-      signUpStatus: signUp?.status ?? "none",
-      signUpMissingFields: signUp?.missingFields ?? [],
-    });
-
-    // Case 1: session ready
     if (createdSessionId && setActive) {
-      LOG("OAuth", "âœ… Case 1: direct session, activating...");
       await setActive({ session: createdSessionId });
       await onSuccess();
       return;
     }
-
-    // Case 2: transfer signIn â†’ signUp
     if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-      LOG("OAuth", "ðŸ”„ Case 2: transferable, creating signUp from signIn...");
       await signUp.create({ transfer: true });
       await signUp.reload();
-      LOG("OAuth", "After transfer", { status: signUp.status, sessionId: signUp.createdSessionId });
       if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
         await setActive({ session: signUp.createdSessionId });
         await onSuccess();
-        return;
-      }
-      if (signUp.status === "missing_requirements") {
-        LOG("OAuth", "âŒ missing_requirements", signUp.missingFields);
-        Alert.alert("Missing info", `Required fields: ${JSON.stringify(signUp.missingFields)}`);
-        return;
       }
     }
-
-    // Case 3: signUp incomplete
-    if (signUp?.status === "missing_requirements") {
-      LOG("OAuth", "âŒ Case 3: signUp missing_requirements", signUp.missingFields);
-      Alert.alert("Incomplete signup", `Missing: ${JSON.stringify(signUp.missingFields)}`);
-      return;
-    }
-
-    LOG("OAuth", "âš ï¸ WARNING: No case matched â€” flow ended without session");
   }, [startSSOFlow, strategy]);
 }
 
-// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  Floating particle component 
+function Particle({ delay, x }: { delay: number; x: number }) {
+  const anim = useRef(new Animated.Value(0)).current
+  const opacity = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.parallel([
+          Animated.timing(anim, { toValue: -300, duration: 4000, useNativeDriver: true }),
+          Animated.sequence([
+            Animated.timing(opacity, { toValue: 0.6, duration: 500, useNativeDriver: true }),
+            Animated.timing(opacity, { toValue: 0, duration: 3500, useNativeDriver: true }),
+          ]),
+        ]),
+        Animated.timing(anim, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [])
+
+  return (
+    <Animated.View style={[p.particle, { left: x, transform: [{ translateY: anim }], opacity }]} />
+  )
+}
+
+//  Main component 
 export default function SignIn() {
   const startGoogle  = useOAuthFlow("oauth_google");
   const startDiscord = useOAuthFlow("oauth_discord");
-
   const { signIn, setActive: setSignInActive, isLoaded: siLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: suLoaded } = useSignUp();
 
@@ -94,220 +90,405 @@ export default function SignIn() {
   const [flow,    setFlow   ] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [error,   setError  ] = useState("");
-  const [mfaStep,  setMfaStep ] = useState<"none"|"totp"|"sms"|"backup">("none");
-  const [mfaCode,  setMfaCode ] = useState("");
+  const [mfaStep,  setMfaStep]  = useState<"none"|"totp"|"sms"|"backup">("none");
+  const [mfaCode,  setMfaCode]  = useState("");
   const [mfaSignIn, setMfaSignIn] = useState<any>(null);
 
+  // Animations
+  const cardAnim   = useRef(new Animated.Value(60)).current
+  const cardOpacity= useRef(new Animated.Value(0)).current
+  const logoScale  = useRef(new Animated.Value(0.5)).current
+  const logoOpacity= useRef(new Animated.Value(0)).current
+
   useEffect(() => {
-    LOG("Mount", "SignIn screen mounted", { platform: Platform.OS, siLoaded, suLoaded });
+    Animated.parallel([
+      Animated.spring(logoScale,   { toValue: 1, tension: 50, friction: 8, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.delay(300),
+        Animated.parallel([
+          Animated.spring(cardAnim,   { toValue: 0, tension: 60, friction: 10, useNativeDriver: true }),
+          Animated.timing(cardOpacity,{ toValue: 1, duration: 500, useNativeDriver: true }),
+        ]),
+      ]),
+    ]).start()
     if (Platform.OS !== "web") {
       void WebBrowser.warmUpAsync();
       return () => { WebBrowser.coolDownAsync(); };
     }
   }, []);
 
-  useEffect(() => {
-    LOG("Clerk", "Load state", { siLoaded, suLoaded });
-  }, [siLoaded, suLoaded]);
-
   const onSuccess = async () => {
-    LOG("onSuccess", "Auth complete, checking wallet...");
     try {
       const address = await AsyncStorage.getItem("kryptonow_address");
       const profileRaw = await AsyncStorage.getItem("kryptonow_profile");
       const profile = profileRaw ? JSON.parse(profileRaw) : null;
-      LOG("onSuccess", "State check", { hasAddress: !!address, onboarded: profile?.onboarded });
-      if (!address) {
-        router.replace("/create");
-      } else if (!profile?.onboarded) {
-        router.replace("/onboarding");
-      } else {
-        router.replace("/dashboard");
-      }
-    } catch (e: any) {
-      LOG("onSuccess", "Error reading storage", { error: e?.message });
-      router.replace("/create");
-    }
+      if (!address) router.replace("/create");
+      else if (!profile?.onboarded) router.replace("/onboarding");
+      else router.replace("/dashboard");
+    } catch { router.replace("/create"); }
   };
 
   const handleGoogle = async () => {
-    LOG("Google", "â–¶ Button pressed");
     setLoading(true); setError("");
-    try {
-      await startGoogle(onSuccess);
-    } catch (e: any) {
-      const msg = e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? e?.message ?? "Google sign-in failed";
-      LOG("Google", "âŒ Error", { msg, errors: e?.errors });
-      setError(msg);
-    } finally {
-      setLoading(false);
-      LOG("Google", "â–  Done");
-    }
+    try { await startGoogle(onSuccess); }
+    catch (e: any) {
+      setError(e?.errors?.[0]?.message ?? "Google sign-in failed");
+    } finally { setLoading(false); }
   };
 
   const handleDiscord = async () => {
-    LOG("Discord", "â–¶ Button pressed");
     setLoading(true); setError("");
-    try {
-      await startDiscord(onSuccess);
-    } catch (e: any) {
-      const msg = e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? e?.message ?? "Discord sign-in failed";
-      LOG("Discord", "âŒ Error", { msg, errors: e?.errors });
-      setError(msg);
-    } finally {
-      setLoading(false);
-      LOG("Discord", "â–  Done");
-    }
+    try { await startDiscord(onSuccess); }
+    catch (e: any) {
+      setError(e?.errors?.[0]?.message ?? "Discord sign-in failed");
+    } finally { setLoading(false); }
   };
 
-  const handleEmailContinue = async () => {
-    const trimmed = email.trim();
-    LOG("Email", "â–¶ Continue pressed", { email: trimmed, siLoaded, suLoaded });
-    if (!trimmed || !siLoaded || !suLoaded) {
-      LOG("Email", "âš ï¸ Aborting â€” empty or not ready");
-      return;
-    }
+  const handleEmail = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes("@")) return setError("Enter a valid email address");
     setLoading(true); setError("");
     try {
-      LOG("Email", "Trying signIn with email_code...");
       await signIn!.create({ identifier: trimmed, strategy: "email_code" });
-      LOG("Email", "âœ… signIn OTP sent â†’ signin flow");
       setFlow("signin"); setStep("otp");
-    } catch (e1: any) {
-      LOG("Email", "signIn failed, trying signUp", { error: e1?.errors?.[0]?.message });
+    } catch {
       try {
         await signUp!.create({ emailAddress: trimmed });
         await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
-        LOG("Email", "âœ… signUp OTP sent â†’ signup flow");
         setFlow("signup"); setStep("otp");
       } catch (e2: any) {
-        const msg = e2?.errors?.[0]?.message ?? "Failed to send code.";
-        LOG("Email", "âŒ signUp also failed", { msg, errors: e2?.errors });
-        setError(msg);
+        setError(e2?.errors?.[0]?.message ?? "Failed to send code.");
       }
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const handleVerifyOTP = async () => {
-    LOG("OTP", "â–¶ Verify pressed", { flow, codeLength: code.length });
-    if (!siLoaded || !suLoaded) return;
+  const handleOTP = async () => {
+    if (!code || code.length < 6) return setError("Enter the 6-digit code");
     setLoading(true); setError("");
     try {
       if (flow === "signin") {
-        LOG("OTP", "Attempting signIn.attemptFirstFactor...");
         const result = await signIn!.attemptFirstFactor({ strategy: "email_code", code });
-        LOG("OTP", "Result", { status: result.status, sessionId: result.createdSessionId });
-        if (result.status === "complete" && result.createdSessionId) {
-          await setSignInActive!({ session: result.createdSessionId });
+        if (result.status === "needs_second_factor") {
+          setMfaSignIn(signIn); setMfaStep("totp"); setStep("otp");
+          return;
+        }
+        if (result.status === "complete") {
+          await setSignInActive!({ session: result.createdSessionId! });
           await onSuccess();
         }
       } else {
-        LOG("OTP", "Attempting signUp.attemptEmailAddressVerification...");
         const result = await signUp!.attemptEmailAddressVerification({ code });
-        LOG("OTP", "Result", { status: result.status, sessionId: result.createdSessionId });
-        if (result.status === "complete" && result.createdSessionId) {
-          await setSignUpActive!({ session: result.createdSessionId });
+        if (result.status === "complete") {
+          await setSignUpActive!({ session: result.createdSessionId! });
           await onSuccess();
         }
       }
     } catch (e: any) {
-      const msg = e?.errors?.[0]?.message ?? "Invalid code.";
-      LOG("OTP", "âŒ Error", { msg, errors: e?.errors });
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+      setError(e?.errors?.[0]?.message ?? "Invalid code.");
+    } finally { setLoading(false); }
   };
 
-  const goBack = () => {
-    LOG("Nav", "â† Back pressed, resetting state");
-    setStep("email"); setCode(""); setError(""); setFlow("signin");
+  const handleMFA = async () => {
+    if (!mfaCode) return setError("Enter your verification code");
+    setLoading(true); setError("");
+    try {
+      const strategy = mfaStep === "totp" ? "totp"
+        : mfaStep === "sms" ? "phone_code" : "backup_code";
+      const result = await mfaSignIn.attemptSecondFactor({ strategy, code: mfaCode });
+      if (result.status === "complete") {
+        await setSignInActive!({ session: result.createdSessionId! });
+        await onSuccess();
+      }
+    } catch (e: any) {
+      setError(e?.errors?.[0]?.message ?? "Invalid MFA code");
+    } finally { setLoading(false); }
   };
 
+  //  MFA Screen 
+  if (mfaStep !== "none") return (
+    <View style={s.bg}>
+      <View style={s.bgCircle1} />
+      <View style={s.bgCircle2} />
+      <KeyboardAvoidingView behavior="padding" style={s.center}>
+        <Animated.View style={[s.card, { transform: [{ translateY: cardAnim }], opacity: cardOpacity }]}>
+          <View style={s.mfaIcon}>
+            <Ionicons name="shield-checkmark" size={32} color={ACCENT} />
+          </View>
+          <Text style={s.mfaTitle}>Two-Factor Auth</Text>
+          <Text style={s.mfaSub}>
+            {mfaStep === "totp"   ? "Enter the 6-digit code from your authenticator app"
+            : mfaStep === "sms"   ? "Enter the code sent to your phone"
+            : "Enter one of your emergency backup codes"}
+          </Text>
+
+          <TextInput
+            style={s.otpInput}
+            placeholder=""
+            placeholderTextColor="#94A3B8"
+            value={mfaCode}
+            onChangeText={setMfaCode}
+            keyboardType="number-pad"
+            maxLength={mfaStep === "backup" ? 12 : 6}
+            textAlign="center"
+            autoFocus
+          />
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+          <TouchableOpacity style={s.accentBtn} onPress={handleMFA} disabled={loading}>
+            {loading ? <ActivityIndicator color="#000" />
+              : <Text style={s.accentBtnText}>Verify </Text>}
+          </TouchableOpacity>
+
+          {/* Fallback options */}
+          <View style={s.fallbackRow}>
+            {mfaStep !== "totp" && (
+              <TouchableOpacity onPress={() => { setMfaStep("totp"); setMfaCode(""); setError(""); }}>
+                <Text style={s.fallbackLink}>Use Authenticator</Text>
+              </TouchableOpacity>
+            )}
+            {mfaStep !== "sms" && (
+              <TouchableOpacity onPress={() => { setMfaStep("sms"); setMfaCode(""); setError(""); }}>
+                <Text style={s.fallbackLink}>Use SMS</Text>
+              </TouchableOpacity>
+            )}
+            {mfaStep !== "backup" && (
+              <TouchableOpacity onPress={() => { setMfaStep("backup"); setMfaCode(""); setError(""); }}>
+                <Text style={s.fallbackLink}>Backup Code</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
+  )
+
+  //  OTP Screen 
+  if (step === "otp") return (
+    <View style={s.bg}>
+      <View style={s.bgCircle1} />
+      <View style={s.bgCircle2} />
+      {[100, 200, 300, 150, 250].map((x, i) => <Particle key={i} delay={i * 800} x={x} />)}
+      <KeyboardAvoidingView behavior="padding" style={s.center}>
+        <Animated.View style={[s.card, { transform: [{ translateY: cardAnim }], opacity: cardOpacity }]}>
+          <View style={s.otpIconWrap}>
+            <Ionicons name="mail" size={28} color={ACCENT} />
+          </View>
+          <Text style={s.cardTitle}>Check your email</Text>
+          <Text style={s.cardSub}>We sent a 6-digit code to{"\n"}<Text style={s.emailHighlight}>{email}</Text></Text>
+
+          <TextInput
+            style={s.otpInput}
+            placeholder="000000"
+            placeholderTextColor="#94A3B8"
+            value={code}
+            onChangeText={setCode}
+            keyboardType="number-pad"
+            maxLength={6}
+            textAlign="center"
+            autoFocus
+          />
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+          <TouchableOpacity style={s.accentBtn} onPress={handleOTP} disabled={loading}>
+            {loading ? <ActivityIndicator color="#000" />
+              : <Text style={s.accentBtnText}>Verify Code </Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.backLink} onPress={() => { setStep("email"); setCode(""); setError(""); }}>
+            <Ionicons name="arrow-back" size={14} color="#94A3B8" />
+            <Text style={s.backLinkText}>Use different email</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
+  )
+
+  //  Main Login Screen 
   return (
-    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={s.brand}>
-          <View style={s.logoBox}><Text style={s.logoText}>K</Text></View>
-          <Text style={s.appName}>KryptoNow</Text>
-          <Text style={s.tagline}>Your keys. Your crypto.</Text>
-        </View>
+    <View style={s.bg}>
+      {/* Background circles */}
+      <View style={s.bgCircle1} />
+      <View style={s.bgCircle2} />
+      <View style={s.bgCircle3} />
 
-        <View style={s.panel}>
-          <Text style={s.title}>{step === "email" ? "Welcome to KryptoNow" : "Check your email"}</Text>
-          <Text style={s.sub}>{step === "email" ? "Sign in or create your account" : `We sent a code to ${email}`}</Text>
+      {/* Floating particles */}
+      {[80, 160, 240, 320, 120, 200, 280].map((x, i) => (
+        <Particle key={i} delay={i * 600} x={x} />
+      ))}
 
-          {!!error && <View style={s.errBox}><Text style={s.errT}>âš   {error}</Text></View>}
+      <ScrollView contentContainerStyle={s.center} keyboardShouldPersistTaps="handled">
+        {/* Logo */}
+        <Animated.View style={[s.logoWrap, { transform: [{ scale: logoScale }], opacity: logoOpacity }]}>
+          <View style={s.logoIcon}>
+            <Text style={s.logoIconText}>K</Text>
+          </View>
+          <Text style={s.logoTitle}>KryptoNow</Text>
+          <Text style={s.logoTagline}>Your keys. Your crypto.</Text>
+        </Animated.View>
 
-          {step === "email" ? (
-            <>
-              <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading} activeOpacity={0.75}>
-                {loading ? <ActivityIndicator color="#4285F4" size="small" /> : <><Text style={s.googleG}>G</Text><Text style={s.googleT}>Continue with Google</Text></>}
-              </TouchableOpacity>
+        {/* Card */}
+        <Animated.View style={[s.card, { transform: [{ translateY: cardAnim }], opacity: cardOpacity }]}>
+          <Text style={s.cardTitle}>Welcome back</Text>
+          <Text style={s.cardSub}>Sign in or create your account</Text>
 
-              <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading} activeOpacity={0.75}>
-                {loading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={s.discordIcon}>D</Text><Text style={s.discordT}>Continue with Discord</Text></>}
-              </TouchableOpacity>
+          {/* Google button */}
+          <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading} activeOpacity={0.85}>
+            <View style={s.googleIconWrap}>
+              <Text style={s.googleIconG}>G</Text>
+            </View>
+            <Text style={s.googleBtnText}>Continue with Google</Text>
+            {loading ? <ActivityIndicator size="small" color="#64748B" /> : <View style={{ width: 20 }} />}
+          </TouchableOpacity>
 
-              <View style={s.divRow}><View style={s.divLine} /><Text style={s.divT}>or continue with email</Text><View style={s.divLine} /></View>
+          {/* Discord button */}
+          <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading} activeOpacity={0.85}>
+            <Ionicons name="logo-discord" size={20} color="#fff" />
+            <Text style={s.discordBtnText}>Continue with Discord</Text>
+            {loading ? <ActivityIndicator size="small" color="#fff" /> : <View style={{ width: 20 }} />}
+          </TouchableOpacity>
 
-              <TextInput style={s.input} value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#94A3B8" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="go" onSubmitEditing={handleEmailContinue} />
+          {/* Divider */}
+          <View style={s.divider}>
+            <View style={s.dividerLine} />
+            <Text style={s.dividerText}>or continue with email</Text>
+            <View style={s.dividerLine} />
+          </View>
 
-              <TouchableOpacity style={[s.btn, (!email.trim() || loading) && s.btnOff]} onPress={handleEmailContinue} disabled={!email.trim() || loading}>
-                {loading ? <ActivityIndicator color={TEAL} /> : <Text style={s.btnT}>Continue with Email</Text>}
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TextInput style={[s.input, s.otpBox]} value={code} onChangeText={setCode} placeholder="000000" placeholderTextColor="#CBD5E1" keyboardType="number-pad" maxLength={6} textAlign="center" autoFocus />
+          {/* Email input */}
+          <View style={s.inputWrap}>
+            <Ionicons name="mail-outline" size={18} color="#94A3B8" style={s.inputIcon} />
+            <TextInput
+              style={s.input}
+              placeholder="your@email.com"
+              placeholderTextColor="#94A3B8"
+              value={email}
+              onChangeText={t => { setEmail(t); setError(""); }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+          </View>
 
-              <TouchableOpacity style={[s.btn, (code.length < 6 || loading) && s.btnOff]} onPress={handleVerifyOTP} disabled={code.length < 6 || loading}>
-                {loading ? <ActivityIndicator color={TEAL} /> : <Text style={s.btnT}>Verify & Enter</Text>}
-              </TouchableOpacity>
+          {error ? (
+            <View style={s.errorBox}>
+              <Ionicons name="alert-circle-outline" size={14} color="#EF4444" />
+              <Text style={s.errorText}>{error}</Text>
+            </View>
+          ) : null}
 
-              <TouchableOpacity style={s.backBtn} onPress={goBack}>
-                <Text style={s.backBtnT}>â† Back</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+          <TouchableOpacity style={s.accentBtn} onPress={handleEmail} disabled={loading} activeOpacity={0.85}>
+            {loading
+              ? <ActivityIndicator color="#000" />
+              : <Text style={s.accentBtnText}>Continue with Email </Text>
+            }
+          </TouchableOpacity>
 
-        <Text style={s.legal}>By continuing you agree to KryptoNow&apos;s Terms of Service and Privacy Policy.</Text>
+          {/* Security badges */}
+          <View style={s.badgeRow}>
+            <View style={s.badge}>
+              <Ionicons name="shield-checkmark-outline" size={12} color={ACCENT} />
+              <Text style={s.badgeText}>Non-custodial</Text>
+            </View>
+            <View style={s.badge}>
+              <Ionicons name="lock-closed-outline" size={12} color={ACCENT} />
+              <Text style={s.badgeText}>E2E Encrypted</Text>
+            </View>
+            <View style={s.badge}>
+              <Ionicons name="eye-off-outline" size={12} color={ACCENT} />
+              <Text style={s.badgeText}>Privacy first</Text>
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Footer */}
+        <Text style={s.footer}>
+          By continuing you agree to our{" "}
+          <Text style={s.footerLink}>Terms</Text> &{" "}
+          <Text style={s.footerLink}>Privacy Policy</Text>
+        </Text>
       </ScrollView>
-    </KeyboardAvoidingView>
-  );
+    </View>
+  )
 }
 
+//  Particle styles 
+const p = StyleSheet.create({
+  particle: {
+    position: "absolute", bottom: -10,
+    width: 6, height: 6, borderRadius: 3,
+    backgroundColor: "#00D4AA",
+  },
+})
+
+//  Main styles 
 const s = StyleSheet.create({
-  root:        { flex: 1, backgroundColor: TEAL },
-  scroll:      { flexGrow: 1, justifyContent: "center", padding: 24, paddingTop: 60 },
-  brand:       { alignItems: "center", marginBottom: 32 },
-  logoBox:     { width: 72, height: 72, borderRadius: 22, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", marginBottom: 12, shadowColor: ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
-  logoText:    { color: TEAL, fontSize: 36, fontWeight: "800" },
-  appName:     { color: "#FFFFFF", fontSize: 30, fontWeight: "800", letterSpacing: -0.5 },
-  tagline:     { color: ACCENT, fontSize: 14, marginTop: 4, opacity: 0.9 },
-  panel:       { backgroundColor: "#FFFFFF", borderRadius: 24, padding: 24, marginBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
-  title:       { color: "#1E1B4B", fontSize: 20, fontWeight: "700", marginBottom: 6, textAlign: "center" },
-  sub:         { color: "#64748B", fontSize: 14, textAlign: "center", marginBottom: 20, lineHeight: 20 },
-  errBox:      { backgroundColor: "#FEF2F2", borderRadius: 10, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: "#FECACA" },
-  errT:        { color: "#DC2626", fontSize: 13, lineHeight: 18 },
-  googleBtn:   { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 14, paddingVertical: 14, marginBottom: 10, minHeight: 52 },
-  googleG:     { fontSize: 18, fontWeight: "800", color: "#4285F4" },
-  googleT:     { color: "#1E1B4B", fontSize: 15, fontWeight: "600" },
-  discordBtn:  { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#5865F2", borderRadius: 14, paddingVertical: 14, marginBottom: 16, minHeight: 52 },
-  discordIcon: { fontSize: 16, fontWeight: "800", color: "#FFFFFF" },
-  discordT:    { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
-  divRow:      { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
-  divLine:     { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
-  divT:        { color: "#94A3B8", fontSize: 12 },
-  input:       { backgroundColor: "#F8FAFF", borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: "#1E1B4B", marginBottom: 12 },
-  otpBox:      { fontSize: 28, fontWeight: "700", letterSpacing: 10, textAlign: "center" },
-  btn:         { backgroundColor: ACCENT, borderRadius: 14, paddingVertical: 16, alignItems: "center", marginBottom: 10, minHeight: 52 },
-  btnOff:      { opacity: 0.4 },
-  btnT:        { color: TEAL, fontSize: 16, fontWeight: "700" },
-  backBtn:     { alignItems: "center", paddingVertical: 12 },
-  backBtnT:    { color: "#6366F1", fontSize: 14, fontWeight: "600" },
-  legal:       { color: "rgba(255,255,255,0.35)", fontSize: 11, textAlign: "center", lineHeight: 18, paddingHorizontal: 16 },
-});
+  bg:           { flex: 1, backgroundColor: "#0D2E2E" },
+  bgCircle1:    { position: "absolute", top: -120, right: -80, width: 350, height: 350, borderRadius: 175, backgroundColor: "#00D4AA", opacity: 0.08 },
+  bgCircle2:    { position: "absolute", bottom: -100, left: -60, width: 280, height: 280, borderRadius: 140, backgroundColor: "#00B8FF", opacity: 0.06 },
+  bgCircle3:    { position: "absolute", top: "40%", left: "30%", width: 200, height: 200, borderRadius: 100, backgroundColor: "#00D4AA", opacity: 0.04 },
+  center:       { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 40, paddingHorizontal: 20 },
+
+  // Logo
+  logoWrap:     { alignItems: "center", marginBottom: 32, gap: 8 },
+  logoIcon:     { width: 72, height: 72, borderRadius: 20, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", shadowColor: ACCENT, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 12 },
+  logoIconText: { fontSize: 36, fontWeight: "900", color: "#0D2E2E" },
+  logoTitle:    { fontSize: 28, fontWeight: "900", color: "#fff", letterSpacing: -0.5 },
+  logoTagline:  { fontSize: 14, color: ACCENT, fontWeight: "500", letterSpacing: 0.5 },
+
+  // Card
+  card:         { width: "100%", maxWidth: 420, backgroundColor: "rgba(255,255,255,0.97)", borderRadius: 28, padding: 28, shadowColor: "#000", shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.3, shadowRadius: 40, elevation: 20 },
+  cardTitle:    { fontSize: 24, fontWeight: "800", color: "#1E1B4B", textAlign: "center", marginBottom: 6 },
+  cardSub:      { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 24, lineHeight: 20 },
+
+  // Google button
+  googleBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  googleIconWrap:{ width: 24, height: 24, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  googleIconG:  { fontSize: 16, fontWeight: "900", color: "#4285F4" },
+  googleBtnText:{ fontSize: 15, fontWeight: "700", color: "#1E1B4B", flex: 1, textAlign: "center" },
+
+  // Discord button
+  discordBtn:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#5865F2", borderRadius: 14, padding: 14, marginBottom: 20, shadowColor: "#5865F2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4 },
+  discordBtnText:{ fontSize: 15, fontWeight: "700", color: "#fff", flex: 1, textAlign: "center" },
+
+  // Divider
+  divider:      { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 },
+  dividerLine:  { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
+  dividerText:  { fontSize: 12, color: "#94A3B8", fontWeight: "500" },
+
+  // Input
+  inputWrap:    { flexDirection: "row", alignItems: "center", backgroundColor: "#F8FAFC", borderRadius: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 12, paddingHorizontal: 14 },
+  inputIcon:    { marginRight: 10 },
+  input:        { flex: 1, fontSize: 15, color: "#1E1B4B", paddingVertical: 14 },
+
+  // Error
+  errorBox:     { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  errorText:    { color: "#EF4444", fontSize: 13, fontWeight: "500", flex: 1 },
+
+  // Accent button
+  accentBtn:    { backgroundColor: ACCENT, borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 16, shadowColor: ACCENT, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6 },
+  accentBtnText:{ fontSize: 16, fontWeight: "800", color: "#0D2E2E" },
+
+  // Badges
+  badgeRow:     { flexDirection: "row", justifyContent: "center", gap: 8, flexWrap: "wrap" },
+  badge:        { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#F0FDF9", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#A7F3D0" },
+  badgeText:    { fontSize: 11, color: "#065F46", fontWeight: "600" },
+
+  // OTP screen
+  otpIconWrap:  { width: 64, height: 64, borderRadius: 20, backgroundColor: "#F0FDF9", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16, borderWidth: 1, borderColor: "#A7F3D0" },
+  emailHighlight:{ color: ACCENT, fontWeight: "700" },
+  otpInput:     { fontSize: 36, fontWeight: "800", color: "#1E1B4B", letterSpacing: 12, paddingVertical: 16, borderBottomWidth: 2, borderBottomColor: ACCENT, marginBottom: 20, textAlign: "center" },
+  backLink:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 },
+  backLinkText: { fontSize: 13, color: "#94A3B8", fontWeight: "500" },
+
+  // MFA screen
+  mfaIcon:      { width: 64, height: 64, borderRadius: 20, backgroundColor: "#F0FDF9", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16, borderWidth: 1, borderColor: "#A7F3D0" },
+  mfaTitle:     { fontSize: 22, fontWeight: "800", color: "#1E1B4B", textAlign: "center", marginBottom: 8 },
+  mfaSub:       { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 24, lineHeight: 20 },
+  fallbackRow:  { flexDirection: "row", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 8 },
+  fallbackLink: { fontSize: 13, color: ACCENT, fontWeight: "600" },
+
+  // Footer
+  footer:       { marginTop: 24, fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" },
+  footerLink:   { color: "rgba(255,255,255,0.7)", fontWeight: "600" },
+})
