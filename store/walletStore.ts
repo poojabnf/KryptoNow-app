@@ -51,7 +51,7 @@ const DEFAULT_CHAIN: Chain = {
   symbol:     'ETH',
   icon:       'E',
   color:      '#627EEA',
-  rpc:        'https://eth-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
+  rpc:        "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
   explorer:   'https://etherscan.io',
 }
 

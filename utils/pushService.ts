@@ -152,7 +152,7 @@ export function startTxWatcher(
 
   if (!txEnabled) return () => {}
 
-  const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"
+  const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? ""
   const ALCHEMY_RPC: Record<number, string> = {
     1:     `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
     137:   `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,

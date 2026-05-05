@@ -41,7 +41,7 @@ class KryptoNowProvider {
 
   private _listeners: Record<string, Listener[]> = {}
   private _privateKey: string | null = null
-  private _rpc: string = 'https://eth-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3'
+  private _rpc: string = "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3")
   private _chainId: number = 1
   private _connected: boolean = false
   private _pendingRequests: Map<string, { resolve: Function; reject: Function }> = new Map()
@@ -175,12 +175,14 @@ class KryptoNowProvider {
       case 'wallet_switchEthereumChain': {
         const newChainId = parseInt(params[0].chainId, 16)
         const knownChains: Record<number, string> = {
-          1:     'https://eth-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
-          137:   'https://polygon-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
-          56:    'https://bsc-dataseed1.binance.org/',
-          42161: 'https://arb-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
-          10:    'https://opt-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
-          8453:  'https://base-mainnet.g.alchemy.com/v2/t7T7fcsMA4rqQYH70YRV3',
+          ...((_ak) => ({
+            1:     "https://eth-mainnet.g.alchemy.com/v2/" + _ak,
+            137:   "https://polygon-mainnet.g.alchemy.com/v2/" + _ak,
+            56:    'https://bsc-dataseed1.binance.org/',
+            42161: "https://arb-mainnet.g.alchemy.com/v2/" + _ak,
+            10:    "https://opt-mainnet.g.alchemy.com/v2/" + _ak,
+            8453:  "https://base-mainnet.g.alchemy.com/v2/" + _ak,
+          }))(process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
         }
         if (!knownChains[newChainId]) throw this._error(4902, 'Unrecognized chain')
         this.updateChain(newChainId, knownChains[newChainId])
