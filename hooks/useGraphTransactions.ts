@@ -15,7 +15,7 @@ import { useWalletStore } from '../store/walletStore'
 import { graphQuery, GRAPH_ENDPOINTS, USEROP_ENDPOINTS } from '../utils/graphClient'
 import { Tx, TxType } from './useTransactions'
 
-//  GraphQL queries 
+// ── GraphQL queries ──────────────────────────────────────────────────────────
 
 const NATIVE_TX_QUERY = `
   query NativeTxs($address: String!, $first: Int!, $skip: Int!) {
@@ -93,7 +93,7 @@ const USEROP_QUERY = `
   }
 `
 
-//  Normalise helpers 
+// ── Normalise helpers ────────────────────────────────────────────────────────
 
 function fromWei(value: string, decimals = 18): string {
   try {
@@ -173,7 +173,7 @@ function normUserOp(raw: any): Tx {
   }
 }
 
-//  Fetchers 
+// ── Fetchers ─────────────────────────────────────────────────────────────────
 
 async function fetchGraphTxns(
   address:     string,
@@ -238,7 +238,7 @@ async function fetchUserOps(
   }
 }
 
-//  Dedup + sort 
+// ── Dedup + sort ─────────────────────────────────────────────────────────────
 
 function dedup(txns: Tx[]): Tx[] {
   const seen = new Set<string>()
@@ -250,7 +250,7 @@ function dedup(txns: Tx[]): Tx[] {
   }).sort((a, b) => b.timestamp - a.timestamp)
 }
 
-//  Hook 
+// ── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useGraphTransactions(address: string | null) {
   const activeChain = useWalletStore(s => s.activeChain)

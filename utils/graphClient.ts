@@ -2,7 +2,7 @@
  * utils/graphClient.ts
  * --------------------
  * Thin GraphQL-over-fetch client for The Graph hosted subgraphs.
- * No Apollo, no urql  just fetch + typed queries.
+ * No Apollo, no urql — just fetch + typed queries.
  *
  * Public endpoints used (no API key needed for reasonable usage):
  *   Ethereum:  https://api.thegraph.com/subgraphs/name/messari/ethereum-mainnet
@@ -17,7 +17,7 @@
 
 export type GraphResponse<T> = { data: T; errors?: { message: string }[] }
 
-// Chain  subgraph endpoint
+// Chain → subgraph endpoint
 export const GRAPH_ENDPOINTS: Record<number, string> = {
   1:     'https://api.thegraph.com/subgraphs/name/messari/ethereum-mainnet',
   137:   'https://api.thegraph.com/subgraphs/name/messari/polygon-mainnet',
@@ -54,7 +54,7 @@ export async function graphQuery<T>(
   return json.data
 }
 
-//  Shared fragments 
+// ── Shared fragments ──────────────────────────────────────────────────────────
 
 export const TX_FIELDS = `
   id

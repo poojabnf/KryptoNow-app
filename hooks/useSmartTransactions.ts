@@ -2,8 +2,8 @@
  * hooks/useSmartTransactions.ts
  * ------------------------------
  * Unified hook that picks the best data source per chain:
- *   - Chains with Graph subgraphs  useGraphTransactions
- *   - BNB Chain (no subgraph)  useTransactions (Alchemy/Etherscan)
+ *   - Chains with Graph subgraphs → useGraphTransactions
+ *   - BNB Chain (no subgraph) → useTransactions (Alchemy/Etherscan)
  *   - Falls back to Alchemy if Graph returns empty
  *
  * Drop-in replacement for useTransactions in history.tsx
@@ -25,7 +25,7 @@ export function useSmartTransactions(address: string | null) {
   // Graph path
   const graph = useGraphTransactions(useGraph ? address : null)
 
-  // Fallback path (Alchemy/Etherscan)  lazy import to avoid circular
+  // Fallback path (Alchemy/Etherscan) — lazy import to avoid circular
   const [fallbackTxns,    setFallbackTxns]    = useState<Tx[]>([])
   const [fallbackLoading, setFallbackLoading] = useState(false)
   const [fallbackError,   setFallbackError]   = useState<string | null>(null)
@@ -38,7 +38,7 @@ export function useSmartTransactions(address: string | null) {
     setFallbackLoading(true)
     try {
       const { useTransactions: _useTransactions } = await import('./useTransactions')
-      // Can't call hook dynamically  use the fetch fn directly
+      // Can't call hook dynamically — use the fetch fn directly
       const { fetchTxnsForChain } = await import('./useTransactions') as any
       if (fetchTxnsForChain) {
         const data = await fetchTxnsForChain(address, activeChain.id, activeChain.symbol, activeChain.name)
