@@ -313,3 +313,61 @@ announceProvider()
 if (typeof window !== 'undefined') {
   window.addEventListener('eip6963:requestProvider', announceProvider)
 }
+
+//  EIP-6963 Multi-Wallet Discovery 
+// Announces KryptoNow to dApps that support multi-wallet detection
+// dApps listen for "eip6963:announceProvider" and display all detected wallets
+
+interface EIP6963ProviderInfo {
+  uuid:        string
+  name:        string
+  icon:        string
+  rdns:        string
+}
+
+interface EIP6963ProviderDetail {
+  info:     EIP6963ProviderInfo
+  provider: any
+}
+
+interface EIP6963AnnounceProviderEvent extends CustomEvent {
+  type:   "eip6963:announceProvider"
+  detail: EIP6963ProviderDetail
+}
+
+// KryptoNow wallet metadata
+const KRYPTONOW_INFO: EIP6963ProviderInfo = {
+  uuid: "f4b8b7e2-1a3c-4d5e-9f0a-2b6c8d4e1f3a", // stable UUID for KryptoNow
+  name: "KryptoNow",
+  icon: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzBEMkUyRSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjcyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiMwMEQ0QUEiPks8L3RleHQ+PC9zdmc+",
+  rdns: "xyz.kryptonow", // reverse domain notation
+}
+
+function announceEIP6963Provider() {
+  if (typeof window === "undefined") return
+
+  const announceEvent = new CustomEvent("eip6963:announceProvider", {
+    detail: Object.freeze({
+      info:     KRYPTONOW_INFO,
+      provider: kryptoNowProvider,
+    }),
+  }) as EIP6963AnnounceProviderEvent
+
+  // Announce immediately
+  window.dispatchEvent(announceEvent)
+
+  // Re-announce when dApps request it
+  window.addEventListener("eip6963:requestProvider", () => {
+    window.dispatchEvent(announceEvent)
+  })
+
+  console.log("[KryptoNow] EIP-6963 multi-wallet announced ")
+}
+
+// Auto-announce when provider is initialized
+if (typeof window !== "undefined") {
+  // Announce after a short delay to ensure dApps are ready
+  setTimeout(announceEIP6963Provider, 100)
+}
+
+export { announceEIP6963Provider, KRYPTONOW_INFO }
