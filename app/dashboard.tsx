@@ -72,6 +72,7 @@ const NAV_ITEMS = [
   { label: "NFTs",           icon: "image-outline",          route: "/nfts",          active: false },
   { label: "WalletConnect",  icon: "link-outline",           route: "/walletconnect", active: false },
   { label: "Recovery",       icon: "shield-checkmark-outline", route: "/recovery",      active: false },
+  { label: "Price Alerts",  icon: "trending-up-outline",  route: "/pricealerts",   active: false },
   { label: "Notifications", icon: "notifications-outline", route: "/notifications", active: false },
   { label: "Settings",      icon: "settings-outline",      route: "/settings",      active: false },
 ]
