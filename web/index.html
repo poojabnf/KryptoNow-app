@@ -26,6 +26,35 @@
       #root { max-width: 100%; box-shadow: none; }
     }
   </style>
+  <style>
+    /* Sidebar scrollbar - thin and styled */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #C7D2FE transparent;
+    }
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background-color: #C7D2FE;
+      border-radius: 10px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: #6366F1;
+    }
+    /* Hide scrollbar on balance card area, show only in sidebar nav */
+    .sidebar-nav::-webkit-scrollbar {
+      width: 4px;
+    }
+    /* Smooth scrolling everywhere */
+    * {
+      scroll-behavior: smooth;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>

@@ -699,7 +699,7 @@ const sb = StyleSheet.create({
   chainBadge:    { flexDirection: "row", alignItems: "center", gap: 4 },
   chainDot:      { width: 6, height: 6, borderRadius: 3 },
   chainName:     { fontSize: 11, fontWeight: "600" },
-  navScroll:     { flex: 1, paddingHorizontal: 12, overflowY: "auto" as any },
+  navScroll:     { flex: 1, paddingHorizontal: 12, overflowY: "scroll" as any, scrollbarWidth: "thin" as any, scrollbarColor: "#C7D2FE #F0F4FF" as any },
   navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, position: "relative" },
   navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
   navIconT:      { fontSize: 13, fontWeight: "700", color: "#64748B" },
