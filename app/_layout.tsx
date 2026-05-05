@@ -1,4 +1,6 @@
-﻿import ApprovalModal from '../components/ApprovalModal'
+import * as WebBrowser from 'expo-web-browser'
+if (typeof window !== 'undefined') WebBrowser.maybeCompleteAuthSession()
+import ApprovalModal from '../components/ApprovalModal'
 import { kryptoNowProvider } from '../utils/eip1193'
 import 'react-native-get-random-values';
 import { ActivityIndicator, View } from 'react-native';

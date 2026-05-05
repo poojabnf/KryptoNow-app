@@ -27,26 +27,50 @@ const LOG = (tag: string, msg: string, data?: any) => {
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
-    const redirectUrl = Platform.OS === "web"
-      ? `${window.location.origin}/`
-      : "kryptonow://";
-    LOG("OAuth", `Starting ${strategy}`, { redirectUrl, platform: Platform.OS });
-    const result = await startSSOFlow({ strategy, redirectUrl });
-    const { createdSessionId, setActive, signIn, signUp } = result;
-    if (createdSessionId && setActive) {
-      await setActive({ session: createdSessionId });
-      await onSuccess();
-      return;
-    }
-    if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-      await signUp.create({ transfer: true });
-      await signUp.reload();
-      if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-        await setActive({ session: signUp.createdSessionId });
-        await onSuccess();
+    try {
+      if (Platform.OS === "web") {
+        // On web use redirect flow - stays in same window
+        const redirectUrl = `${window.location.origin}/`
+        LOG("OAuth", `Starting ${strategy} via redirect`, { redirectUrl })
+        const result = await startSSOFlow({ strategy, redirectUrl })
+        const { createdSessionId, setActive, signIn, signUp } = result
+        if (createdSessionId && setActive) {
+          await setActive({ session: createdSessionId })
+          await onSuccess()
+          return
+        }
+        if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
+          await signUp.create({ transfer: true })
+          await signUp.reload()
+          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
+            await setActive({ session: signUp.createdSessionId })
+            await onSuccess()
+          }
+        }
+      } else {
+        // Mobile uses deep link
+        const redirectUrl = "kryptonow://"
+        const result = await startSSOFlow({ strategy, redirectUrl })
+        const { createdSessionId, setActive, signIn, signUp } = result
+        if (createdSessionId && setActive) {
+          await setActive({ session: createdSessionId })
+          await onSuccess()
+          return
+        }
+        if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
+          await signUp.create({ transfer: true })
+          await signUp.reload()
+          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
+            await setActive({ session: signUp.createdSessionId })
+            await onSuccess()
+          }
+        }
       }
+    } catch (e: any) {
+      LOG("OAuth", "Error", { error: e?.message })
+      throw e
     }
-  }, [startSSOFlow, strategy]);
+  }, [startSSOFlow, strategy])
 }
 
 //  Floating particle component 
