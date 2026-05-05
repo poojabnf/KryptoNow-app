@@ -1,4 +1,5 @@
-﻿import { router } from 'expo-router'
+import { router } from 'expo-router'
+import { useTheme } from '../context/ThemeContext'
 import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
