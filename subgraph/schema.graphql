@@ -1,0 +1,51 @@
+type GuardianAdded @entity(immutable: true) {
+  id:           Bytes!
+  smartAccount: Bytes!
+  guardian:     Bytes!
+  nickname:     String!
+  threshold:    Int!
+  timestamp:    BigInt!
+  blockNumber:  BigInt!
+  txHash:       Bytes!
+}
+type GuardianRemoved @entity(immutable: true) {
+  id:           Bytes!
+  smartAccount: Bytes!
+  guardian:     Bytes!
+  timestamp:    BigInt!
+  blockNumber:  BigInt!
+  txHash:       Bytes!
+}
+type RecoveryInitiated @entity(immutable: true) {
+  id:           Bytes!
+  smartAccount: Bytes!
+  newOwner:     Bytes!
+  requestId:    Bytes!
+  deadline:     BigInt!
+  timestamp:    BigInt!
+  blockNumber:  BigInt!
+  txHash:       Bytes!
+}
+type RecoverySigned @entity(immutable: true) {
+  id:           Bytes!
+  requestId:    Bytes!
+  guardian:     Bytes!
+  timestamp:    BigInt!
+  blockNumber:  BigInt!
+  txHash:       Bytes!
+}
+type RecoveryExecuted @entity(immutable: true) {
+  id:           Bytes!
+  requestId:    Bytes!
+  smartAccount: Bytes!
+  newOwner:     Bytes!
+  timestamp:    BigInt!
+  blockNumber:  BigInt!
+  txHash:       Bytes!
+}
+type SmartAccountConfig @entity {
+  id:        Bytes!
+  guardians: [Bytes!]!
+  threshold: Int!
+  updatedAt: BigInt!
+}

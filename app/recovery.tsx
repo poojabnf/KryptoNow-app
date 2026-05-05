@@ -14,6 +14,8 @@ import {
   createGuardian, validateGuardianSetup,
   signRecoveryRequest, verifyGuardianSig,
 } from '../utils/socialRecovery'
+import { notifyRecoveryInitiated } from '../utils/recoveryNotification'
+import { shareRecoveryLink, buildRecoveryLink } from '../utils/recoveryDeepLink'
 
 type Tab = 'guardians' | 'recover'
 

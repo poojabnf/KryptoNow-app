@@ -1,0 +1,37 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: GuardianRegistry
+    network: mainnet
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: GuardianRegistry
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - GuardianAdded
+        - GuardianRemoved
+        - RecoveryInitiated
+        - RecoverySigned
+        - RecoveryExecuted
+        - SmartAccountConfig
+      abis:
+        - name: GuardianRegistry
+          file: ./abis/GuardianRegistry.json
+      eventHandlers:
+        - event: GuardianAdded(indexed address,indexed address,string,uint256,uint256)
+          handler: handleGuardianAdded
+        - event: GuardianRemoved(indexed address,indexed address,uint256)
+          handler: handleGuardianRemoved
+        - event: RecoveryInitiated(indexed address,indexed address,indexed bytes32,uint256,uint256)
+          handler: handleRecoveryInitiated
+        - event: RecoverySigned(indexed bytes32,indexed address,uint256)
+          handler: handleRecoverySigned
+        - event: RecoveryExecuted(indexed bytes32,indexed address,indexed address,uint256)
+          handler: handleRecoveryExecuted
+      file: ./src/mapping.ts
