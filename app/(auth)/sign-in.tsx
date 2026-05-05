@@ -26,31 +26,21 @@ const LOG = (tag: string, msg: string, data?: any) => {
 //  OAuth helper 
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
+  const { signIn: clerkSignIn } = useSignIn();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     try {
       if (Platform.OS === "web") {
-        // On web use redirect flow - stays in same window
-        const redirectUrl = `${window.location.origin}/`
-        LOG("OAuth", `Starting ${strategy} via redirect`, { redirectUrl })
-        const result = await startSSOFlow({ strategy, redirectUrl })
-        const { createdSessionId, setActive, signIn, signUp } = result
-        if (createdSessionId && setActive) {
-          await setActive({ session: createdSessionId })
-          await onSuccess()
-          return
-        }
-        if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-          await signUp.create({ transfer: true })
-          await signUp.reload()
-          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-            await setActive({ session: signUp.createdSessionId })
-            await onSuccess()
-          }
-        }
+        // Web: full page redirect - no popup, stays in same tab
+        LOG("OAuth", `Starting ${strategy} via full page redirect`)
+        await clerkSignIn?.authenticateWithRedirect({
+          strategy,
+          redirectUrl: `${window.location.origin}/sign-in`,
+          redirectUrlComplete: `${window.location.origin}/`,
+        })
+        // Page will redirect - no code runs after this
       } else {
-        // Mobile uses deep link
-        const redirectUrl = "kryptonow://"
-        const result = await startSSOFlow({ strategy, redirectUrl })
+        // Mobile: deep link
+        const result = await startSSOFlow({ strategy, redirectUrl: "kryptonow://" })
         const { createdSessionId, setActive, signIn, signUp } = result
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId })
@@ -70,7 +60,7 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
       LOG("OAuth", "Error", { error: e?.message })
       throw e
     }
-  }, [startSSOFlow, strategy])
+  }, [startSSOFlow, clerkSignIn, strategy])
 }
 
 //  Floating particle component 
