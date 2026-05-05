@@ -56,6 +56,43 @@ function TxRow({ tx, onPress }: { tx: Tx; onPress: () => void }) {
   const meta   = TYPE_META[tx.type]
   const isSend = tx.type === "send" || tx.type === "token_send"
 
+
+const s = StyleSheet.create({
+  c:                { flex: 1, backgroundColor: theme.bgApp },
+  hdr:              { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
+  back:             { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.bgCard, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center" },
+  backT:            { color: "#6366F1", fontSize: 18, fontWeight: "700" },
+  hdrTitle:         { color: theme.textPrimary, fontSize: 17, fontWeight: "700" },
+  refreshBtn:       { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.bgPill, alignItems: "center", justifyContent: "center" },
+  refreshBtnT:      { color: "#6366F1", fontSize: 14, fontWeight: "700" },
+  chainScroll:      { maxHeight: 56, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
+  chainRow:         { paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: "row" },
+  chainTab:         { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, backgroundColor: theme.bgCard, borderWidth: 1.5, borderColor: theme.border },
+  chainDot:         { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  chainDotT:        { fontSize: 10, fontWeight: "800" },
+  chainTabT:        { color: theme.textSecondary, fontSize: 12, fontWeight: "600" },
+  filterWrap:       { maxHeight: 52, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
+  filters:          { paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" },
+  filterTab:        { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: theme.bgCard, borderWidth: 1.5, borderColor: theme.border },
+  filterTabActive:  { backgroundColor: "#6366F1", borderColor: "#6366F1" },
+  filterTabT:       { color: theme.textSecondary, fontSize: 13, fontWeight: "600" },
+  filterTabTActive: { color: "#fff" },
+  filterBadge:      { backgroundColor: "rgba(255,255,255,0.3)", width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  filterBadgeT:     { color: "#fff", fontSize: 10, fontWeight: "700" },
+  list:             { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40 },
+  sectionHdr:       { color: theme.textMuted, fontSize: 12, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase", marginTop: 16, marginBottom: 8, marginLeft: 4 },
+  center:           { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },
+  loadT:            { color: theme.textMuted, fontSize: 14, marginTop: 12 },
+  errIcon:          { fontSize: 40, marginBottom: 12, color: theme.textMuted },
+  errTitle:         { color: theme.textPrimary, fontSize: 18, fontWeight: "700", marginBottom: 6, textAlign: "center" },
+  errSub:           { color: theme.textMuted, fontSize: 14, textAlign: "center", lineHeight: 20 },
+  retryBtn:         { marginTop: 20, backgroundColor: "#6366F1", paddingVertical: 12, paddingHorizontal: 28, borderRadius: 12 },
+  retryBtnT:        { color: "#fff", fontSize: 14, fontWeight: "600" },
+  loadMoreWrap:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 20 },
+  loadMoreT:        { color: theme.textMuted, fontSize: 13 },
+  endT:             { color: theme.textMuted, fontSize: 12, textAlign: "center", paddingVertical: 20 },
+})
+
   return (
     <TouchableOpacity style={r.row} onPress={onPress} activeOpacity={0.7}>
       <View style={[r.iconWrap, { backgroundColor: meta.bgColor }]}>
@@ -375,41 +412,6 @@ export default function History() {
 }
 
 // --- Styles ---
-const s = StyleSheet.create({
-  c:                { flex: 1, backgroundColor: theme.bgApp },
-  hdr:              { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  back:             { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.bgCard, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center" },
-  backT:            { color: "#6366F1", fontSize: 18, fontWeight: "700" },
-  hdrTitle:         { color: theme.textPrimary, fontSize: 17, fontWeight: "700" },
-  refreshBtn:       { width: 38, height: 38, borderRadius: 12, backgroundColor: theme.bgPill, alignItems: "center", justifyContent: "center" },
-  refreshBtnT:      { color: "#6366F1", fontSize: 14, fontWeight: "700" },
-  chainScroll:      { maxHeight: 56, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
-  chainRow:         { paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: "row" },
-  chainTab:         { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, backgroundColor: theme.bgCard, borderWidth: 1.5, borderColor: theme.border },
-  chainDot:         { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  chainDotT:        { fontSize: 10, fontWeight: "800" },
-  chainTabT:        { color: theme.textSecondary, fontSize: 12, fontWeight: "600" },
-  filterWrap:       { maxHeight: 52, borderBottomWidth: 1, borderBottomColor: theme.borderLight },
-  filters:          { paddingHorizontal: 16, paddingVertical: 10, gap: 8, flexDirection: "row" },
-  filterTab:        { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: theme.bgCard, borderWidth: 1.5, borderColor: theme.border },
-  filterTabActive:  { backgroundColor: "#6366F1", borderColor: "#6366F1" },
-  filterTabT:       { color: theme.textSecondary, fontSize: 13, fontWeight: "600" },
-  filterTabTActive: { color: "#fff" },
-  filterBadge:      { backgroundColor: "rgba(255,255,255,0.3)", width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  filterBadgeT:     { color: "#fff", fontSize: 10, fontWeight: "700" },
-  list:             { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40 },
-  sectionHdr:       { color: theme.textMuted, fontSize: 12, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase", marginTop: 16, marginBottom: 8, marginLeft: 4 },
-  center:           { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },
-  loadT:            { color: theme.textMuted, fontSize: 14, marginTop: 12 },
-  errIcon:          { fontSize: 40, marginBottom: 12, color: theme.textMuted },
-  errTitle:         { color: theme.textPrimary, fontSize: 18, fontWeight: "700", marginBottom: 6, textAlign: "center" },
-  errSub:           { color: theme.textMuted, fontSize: 14, textAlign: "center", lineHeight: 20 },
-  retryBtn:         { marginTop: 20, backgroundColor: "#6366F1", paddingVertical: 12, paddingHorizontal: 28, borderRadius: 12 },
-  retryBtnT:        { color: "#fff", fontSize: 14, fontWeight: "600" },
-  loadMoreWrap:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 20 },
-  loadMoreT:        { color: theme.textMuted, fontSize: 13 },
-  endT:             { color: theme.textMuted, fontSize: 12, textAlign: "center", paddingVertical: 20 },
-})
 
 const r = StyleSheet.create({
   row:          { flexDirection: "row", alignItems: "center", backgroundColor: theme.bgCard, borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.borderLight, shadowColor: "#64748B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
