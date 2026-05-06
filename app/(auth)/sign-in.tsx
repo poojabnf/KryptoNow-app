@@ -1,4 +1,4 @@
-﻿import { useSSO } from "@clerk/expo";
+import { useSSO } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
@@ -27,52 +27,69 @@ const LOG = (tag: string, msg: string, data?: any) => {
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
-    if (Platform.OS === "web") {
-      // Let Clerk open its own popup - do NOT call window.open() manually first.
-      // Opening "about:blank" before startSSOFlow was causing the double-popup bug.
-      const redirectUrl = window.location.origin + "/"
-      try {
-        const result = await startSSOFlow({ strategy, redirectUrl })
-        const { createdSessionId, setActive } = result
-        if (createdSessionId && setActive) {
-          await setActive({ session: createdSessionId })
-          await onSuccess()
-        } else {
-          // Popup completed and closed - give Clerk 800ms to update session
-          await new Promise(r => setTimeout(r, 800))
-          await onSuccess()
-        }
-      } catch (e: any) {
-        // User closed popup or cancelled - not a hard error
-        if (
-          e?.code === 4001 ||
-          e?.message?.includes("cancelled") ||
-          e?.message?.includes("closed") ||
-          e?.message?.includes("popup")
-        ) {
-          return
-        }
-        throw e
-      }
-      return
-    }
-    // Mobile flow
     try {
-      const result = await startSSOFlow({ strategy, redirectUrl: "kryptonow://" })
-      const { createdSessionId, setActive, signIn, signUp } = result
+      const redirectUrl = Platform.OS === "web"
+        ? window.location.origin + "/"
+        : "kryptonow://";
+
+      const result = await startSSOFlow({ strategy, redirectUrl });
+      const { createdSessionId, setActive, signIn, signUp } = result;
+
+      // Case 1: Session created directly (existing user)
       if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId })
-        await onSuccess(); return
+        await setActive({ session: createdSessionId });
+        await onSuccess();
+        return;
       }
+
+      // Case 2: New user needs to complete sign-up via transfer
       if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-        await signUp.create({ transfer: true }); await signUp.reload()
+        await signUp.create({ transfer: true });
+        await signUp.reload();
         if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-          await setActive({ session: signUp.createdSessionId })
-          await onSuccess()
+          await setActive({ session: signUp.createdSessionId });
+          await onSuccess();
+          return;
+        }
+        // Sign up missing fields (e.g. username required)
+        if (signUp.status === "missing_requirements") {
+          // Try to complete with available data
+          await signUp.update({});
+          await signUp.reload();
+          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
+            await setActive({ session: signUp.createdSessionId });
+            await onSuccess();
+            return;
+          }
         }
       }
-    } catch(e: any) { throw e }
-  }, [startSSOFlow, strategy])
+
+      // Case 3: Sign-up needs verification (rare for OAuth)
+      if (signUp?.status === "complete" && setActive && signUp.createdSessionId) {
+        await setActive({ session: signUp.createdSessionId });
+        await onSuccess();
+        return;
+      }
+
+      // Case 4: Already has an active session
+      if (signIn?.status === "complete" && setActive && signIn.createdSessionId) {
+        await setActive({ session: signIn.createdSessionId });
+        await onSuccess();
+        return;
+      }
+
+      LOG("OAuth", "No session created - result: " + JSON.stringify({
+        createdSessionId,
+        signInStatus: signIn?.status,
+        signUpStatus: signUp?.status,
+        firstFactor: signIn?.firstFactorVerification?.status,
+      }));
+
+    } catch (e: any) {
+      LOG("OAuth", "Error: " + (e?.message ?? JSON.stringify(e)));
+      throw e;
+    }
+  }, [startSSOFlow, strategy]);
 }
 
 // Floating particle component
