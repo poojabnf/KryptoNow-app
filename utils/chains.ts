@@ -1,4 +1,4 @@
-import { ethers } from "ethers"
+﻿import { ethers } from "ethers"
 
 export type Chain = {
   id:          number
@@ -34,3 +34,16 @@ export function getChainById(id: number): Chain {
 export function getTxUrl(chain: Chain, hash: string): string {
   return `${chain.explorer}/tx/${hash}`
 }
+
+//  ERC-4337 Bundler URLs (Alchemy) 
+// BSC excluded  no ERC-4337 bundler support on BNB Chain mainnet
+export const BUNDLER_URLS: Record<number, string> = {
+  1:     `https://eth-mainnet.g.alchemy.com/v2/${AK}`,
+  137:   `https://polygon-mainnet.g.alchemy.com/v2/${AK}`,
+  42161: `https://arb-mainnet.g.alchemy.com/v2/${AK}`,
+  10:    `https://opt-mainnet.g.alchemy.com/v2/${AK}`,
+  8453:  `https://base-mainnet.g.alchemy.com/v2/${AK}`,
+}
+
+// Chains that support ERC-4337
+export const AA_SUPPORTED_CHAINS = [1, 137, 42161, 10, 8453]
