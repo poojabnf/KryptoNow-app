@@ -1,4 +1,4 @@
-import { useSSO } from "@clerk/expo";
+﻿import { useSSO } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
@@ -23,78 +23,38 @@ const LOG = (tag: string, msg: string, data?: any) => {
   else console.log(`[KryptoNow][${tag}] ${msg}`);
 };
 
-//  OAuth helper 
+// OAuth helper - FIXED: removed manual window.open("about:blank") that caused double popup
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     if (Platform.OS === "web") {
-      return new Promise<void>((resolve, reject) => {
-        const w = 500, h = 650
-        const left = Math.round(window.screenX + (window.outerWidth - w) / 2)
-        const top  = Math.round(window.screenY + (window.outerHeight - h) / 2)
-        const features = `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
-        
-        // Use startSSOFlow but intercept the browser opening
-        // Override by directly opening popup to Clerk OAuth
-        const redirectUrl = window.location.origin + "/"
-        const popup = window.open("about:blank", "KryptoNow Auth", features)
-        
-        if (!popup) {
-          // Popup blocked - use startSSOFlow as fallback
-          startSSOFlow({ strategy, redirectUrl })
-            .then(async (result) => {
-              const { createdSessionId, setActive, signIn, signUp } = result
-              if (createdSessionId && setActive) {
-                await setActive({ session: createdSessionId })
-                await onSuccess(); resolve()
-              }
-            }).catch(reject)
+      // Let Clerk open its own popup - do NOT call window.open() manually first.
+      // Opening "about:blank" before startSSOFlow was causing the double-popup bug.
+      const redirectUrl = window.location.origin + "/"
+      try {
+        const result = await startSSOFlow({ strategy, redirectUrl })
+        const { createdSessionId, setActive } = result
+        if (createdSessionId && setActive) {
+          await setActive({ session: createdSessionId })
+          await onSuccess()
+        } else {
+          // Popup completed and closed - give Clerk 800ms to update session
+          await new Promise(r => setTimeout(r, 800))
+          await onSuccess()
+        }
+      } catch (e: any) {
+        // User closed popup or cancelled - not a hard error
+        if (
+          e?.code === 4001 ||
+          e?.message?.includes("cancelled") ||
+          e?.message?.includes("closed") ||
+          e?.message?.includes("popup")
+        ) {
           return
         }
-
-        // Listen for auth completion via postMessage
-        const msgHandler = async (e: MessageEvent) => {
-          if (e.origin !== window.location.origin) return
-          if (e.data?.type === "KRYPTONOW_AUTH_SUCCESS") {
-            window.removeEventListener("message", msgHandler)
-            clearInterval(pollInterval)
-            popup.close()
-            window.location.href = e.data.dest ?? "/dashboard"
-            resolve()
-          }
-        }
-        window.addEventListener("message", msgHandler)
-
-        // Poll popup closed without auth
-        const pollInterval = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(pollInterval)
-            window.removeEventListener("message", msgHandler)
-            // Give Clerk a moment to process session
-            setTimeout(async () => {
-              try { await onSuccess(); resolve() }
-              catch { reject(new Error("Auth cancelled")) }
-            }, 500)
-          }
-        }, 300)
-
-        // Now trigger Clerk OAuth into the popup
-        startSSOFlow({ strategy, redirectUrl })
-          .then(async (result) => {
-            const { createdSessionId, setActive, signIn, signUp } = result
-            if (createdSessionId && setActive) {
-              clearInterval(pollInterval)
-              window.removeEventListener("message", msgHandler)
-              popup.close()
-              await setActive({ session: createdSessionId })
-              await onSuccess(); resolve()
-            }
-          }).catch((e) => {
-            clearInterval(pollInterval)
-            popup.close()
-            reject(e)
-          })
-      })
+        throw e
+      }
+      return
     }
     // Mobile flow
     try {
@@ -115,7 +75,7 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   }, [startSSOFlow, strategy])
 }
 
-//  Floating particle component 
+// Floating particle component
 function Particle({ delay, x }: { delay: number; x: number }) {
   const anim = useRef(new Animated.Value(0)).current
   const opacity = useRef(new Animated.Value(0)).current
@@ -143,7 +103,7 @@ function Particle({ delay, x }: { delay: number; x: number }) {
   )
 }
 
-//  Main component 
+// Main component
 export default function SignIn() {
   const startGoogle  = useOAuthFlow("oauth_google");
   const startDiscord = useOAuthFlow("oauth_discord");
@@ -160,7 +120,6 @@ export default function SignIn() {
   const [mfaCode,  setMfaCode]  = useState("");
   const [mfaSignIn, setMfaSignIn] = useState<any>(null);
 
-  // Animations
   const cardAnim   = useRef(new Animated.Value(60)).current
   const cardOpacity= useRef(new Animated.Value(0)).current
   const logoScale  = useRef(new Animated.Value(0.5)).current
@@ -186,7 +145,6 @@ export default function SignIn() {
 
   const onSuccess = async () => {
     try {
-      // Use localStorage on web, AsyncStorage on native
       let address: string | null = null
       let profile: any = null
       if (Platform.OS === "web") {
@@ -245,12 +203,9 @@ export default function SignIn() {
   const handleOTP = async () => {
     if (!code || code.length < 6) return setError("Enter the 6-digit code");
     setLoading(true); setError("");
-    console.log("[OTP] Attempting verification", { flow, code, step });
     try {
       if (flow === "signin") {
-        console.log("[OTP] SignIn flow - attemptFirstFactor");
         const result = await signIn!.attemptFirstFactor({ strategy: "email_code", code });
-        console.log("[OTP] SignIn result", { status: result.status });
         if (result.status === "needs_second_factor") {
           setMfaSignIn(signIn); setMfaStep("totp"); setStep("otp");
           return;
@@ -260,16 +215,13 @@ export default function SignIn() {
           await onSuccess();
         }
       } else {
-        console.log("[OTP] SignUp flow - attemptEmailAddressVerification");
         const result = await signUp!.attemptEmailAddressVerification({ code });
-        console.log("[OTP] SignUp result", { status: result.status });
         if (result.status === "complete") {
           await setSignUpActive!({ session: result.createdSessionId! });
           await onSuccess();
         }
       }
     } catch (e: any) {
-      console.log("[OTP] Error", JSON.stringify(e?.errors ?? e));
       setError(e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? "Invalid code.");
     } finally { setLoading(false); }
   };
@@ -290,7 +242,7 @@ export default function SignIn() {
     } finally { setLoading(false); }
   };
 
-  //  MFA Screen 
+  // MFA Screen
   if (mfaStep !== "none") return (
     <View style={s.bg}>
       <View style={s.bgCircle1} />
@@ -306,7 +258,6 @@ export default function SignIn() {
             : mfaStep === "sms"   ? "Enter the code sent to your phone"
             : "Enter one of your emergency backup codes"}
           </Text>
-
           <TextInput
             style={s.otpInput}
             placeholder=""
@@ -319,13 +270,10 @@ export default function SignIn() {
             autoFocus
           />
           {error ? <Text style={s.errorText}>{error}</Text> : null}
-
           <TouchableOpacity style={s.accentBtn} onPress={handleMFA} disabled={loading}>
             {loading ? <ActivityIndicator color="#000" />
               : <Text style={s.accentBtnText}>Verify </Text>}
           </TouchableOpacity>
-
-          {/* Fallback options */}
           <View style={s.fallbackRow}>
             {mfaStep !== "totp" && (
               <TouchableOpacity onPress={() => { setMfaStep("totp"); setMfaCode(""); setError(""); }}>
@@ -348,7 +296,7 @@ export default function SignIn() {
     </View>
   )
 
-  //  OTP Screen 
+  // OTP Screen
   if (step === "otp") return (
     <View style={s.bg}>
       <View style={s.bgCircle1} />
@@ -361,7 +309,6 @@ export default function SignIn() {
           </View>
           <Text style={s.cardTitle}>Check your email</Text>
           <Text style={s.cardSub}>We sent a 6-digit code to{"\n"}<Text style={s.emailHighlight}>{email}</Text></Text>
-
           <TextInput
             style={s.otpInput}
             placeholder="000000"
@@ -374,12 +321,10 @@ export default function SignIn() {
             autoFocus
           />
           {error ? <Text style={s.errorText}>{error}</Text> : null}
-
           <TouchableOpacity style={s.accentBtn} onPress={handleOTP} disabled={loading}>
             {loading ? <ActivityIndicator color="#000" />
               : <Text style={s.accentBtnText}>Verify Code </Text>}
           </TouchableOpacity>
-
           <TouchableOpacity style={s.backLink} onPress={() => { setStep("email"); setCode(""); setError(""); }}>
             <Ionicons name="arrow-back" size={14} color="#94A3B8" />
             <Text style={s.backLinkText}>Use different email</Text>
@@ -389,21 +334,16 @@ export default function SignIn() {
     </View>
   )
 
-  //  Main Login Screen 
+  // Main Login Screen
   return (
     <View style={s.bg}>
-      {/* Background circles */}
       <View style={s.bgCircle1} />
       <View style={s.bgCircle2} />
       <View style={s.bgCircle3} />
-
-      {/* Floating particles */}
       {[80, 160, 240, 320, 120, 200, 280].map((x, i) => (
         <Particle key={i} delay={i * 600} x={x} />
       ))}
-
       <ScrollView contentContainerStyle={s.center} keyboardShouldPersistTaps="handled">
-        {/* Logo */}
         <Animated.View style={[s.logoWrap, { transform: [{ scale: logoScale }], opacity: logoOpacity }]}>
           <View style={s.logoIcon}>
             <Text style={s.logoIconText}>K</Text>
@@ -412,12 +352,10 @@ export default function SignIn() {
           <Text style={s.logoTagline}>Your keys. Your crypto.</Text>
         </Animated.View>
 
-        {/* Card */}
         <Animated.View style={[s.card, { transform: [{ translateY: cardAnim }], opacity: cardOpacity }]}>
           <Text style={s.cardTitle}>Welcome back</Text>
           <Text style={s.cardSub}>Sign in or create your account</Text>
 
-          {/* Google button */}
           <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading} activeOpacity={0.85}>
             <View style={s.googleIconWrap}>
               <Text style={s.googleIconG}>G</Text>
@@ -426,21 +364,18 @@ export default function SignIn() {
             {loading ? <ActivityIndicator size="small" color="#64748B" /> : <View style={{ width: 20 }} />}
           </TouchableOpacity>
 
-          {/* Discord button */}
           <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading} activeOpacity={0.85}>
             <Ionicons name="logo-discord" size={20} color="#fff" />
             <Text style={s.discordBtnText}>Continue with Discord</Text>
             {loading ? <ActivityIndicator size="small" color="#fff" /> : <View style={{ width: 20 }} />}
           </TouchableOpacity>
 
-          {/* Divider */}
           <View style={s.divider}>
             <View style={s.dividerLine} />
             <Text style={s.dividerText}>or continue with email</Text>
             <View style={s.dividerLine} />
           </View>
 
-          {/* Email input */}
           <View style={s.inputWrap}>
             <Ionicons name="mail-outline" size={18} color="#94A3B8" style={s.inputIcon} />
             <TextInput
@@ -469,7 +404,6 @@ export default function SignIn() {
             }
           </TouchableOpacity>
 
-          {/* Security badges */}
           <View style={s.badgeRow}>
             <View style={s.badge}>
               <Ionicons name="shield-checkmark-outline" size={12} color={ACCENT} />
@@ -486,7 +420,6 @@ export default function SignIn() {
           </View>
         </Animated.View>
 
-        {/* Footer */}
         <Text style={s.footer}>
           By continuing you agree to our{" "}
           <Text style={s.footerLink}>Terms</Text> &{" "}
@@ -497,7 +430,6 @@ export default function SignIn() {
   )
 }
 
-//  Particle styles 
 const p = StyleSheet.create({
   particle: {
     position: "absolute", bottom: -10,
@@ -506,74 +438,49 @@ const p = StyleSheet.create({
   },
 })
 
-//  Main styles 
 const s = StyleSheet.create({
   bg:           { flex: 1, backgroundColor: "#0D2E2E" },
   bgCircle1:    { position: "absolute", top: -120, right: -80, width: 350, height: 350, borderRadius: 175, backgroundColor: "#00D4AA", opacity: 0.08 },
   bgCircle2:    { position: "absolute", bottom: -100, left: -60, width: 280, height: 280, borderRadius: 140, backgroundColor: "#00B8FF", opacity: 0.06 },
   bgCircle3:    { position: "absolute", top: "40%", left: "30%", width: 200, height: 200, borderRadius: 100, backgroundColor: "#00D4AA", opacity: 0.04 },
   center:       { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 40, paddingHorizontal: 20 },
-
-  // Logo
   logoWrap:     { alignItems: "center", marginBottom: 32, gap: 8 },
   logoIcon:     { width: 72, height: 72, borderRadius: 20, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", shadowColor: ACCENT, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 12 },
   logoIconText: { fontSize: 36, fontWeight: "900", color: "#0D2E2E" },
   logoTitle:    { fontSize: 28, fontWeight: "900", color: "#fff", letterSpacing: -0.5 },
   logoTagline:  { fontSize: 14, color: ACCENT, fontWeight: "500", letterSpacing: 0.5 },
-
-  // Card
   card:         { width: "100%", maxWidth: 420, backgroundColor: "rgba(255,255,255,0.97)", borderRadius: 28, padding: 28, shadowColor: "#000", shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.3, shadowRadius: 40, elevation: 20 },
   cardTitle:    { fontSize: 24, fontWeight: "800", color: "#1E1B4B", textAlign: "center", marginBottom: 6 },
   cardSub:      { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 24, lineHeight: 20 },
-
-  // Google button
   googleBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   googleIconWrap:{ width: 24, height: 24, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   googleIconG:  { fontSize: 16, fontWeight: "900", color: "#4285F4" },
   googleBtnText:{ fontSize: 15, fontWeight: "700", color: "#1E1B4B", flex: 1, textAlign: "center" },
-
-  // Discord button
   discordBtn:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#5865F2", borderRadius: 14, padding: 14, marginBottom: 20, shadowColor: "#5865F2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4 },
   discordBtnText:{ fontSize: 15, fontWeight: "700", color: "#fff", flex: 1, textAlign: "center" },
-
-  // Divider
   divider:      { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 },
   dividerLine:  { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
   dividerText:  { fontSize: 12, color: "#94A3B8", fontWeight: "500" },
-
-  // Input
   inputWrap:    { flexDirection: "row", alignItems: "center", backgroundColor: "#F8FAFC", borderRadius: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 12, paddingHorizontal: 14 },
   inputIcon:    { marginRight: 10 },
   input:        { flex: 1, fontSize: 15, color: "#1E1B4B", paddingVertical: 14 },
-
-  // Error
   errorBox:     { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
   errorText:    { color: "#EF4444", fontSize: 13, fontWeight: "500", flex: 1 },
-
-  // Accent button
   accentBtn:    { backgroundColor: ACCENT, borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 16, shadowColor: ACCENT, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6 },
   accentBtnText:{ fontSize: 16, fontWeight: "800", color: "#0D2E2E" },
-
-  // Badges
   badgeRow:     { flexDirection: "row", justifyContent: "center", gap: 8, flexWrap: "wrap" },
   badge:        { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#F0FDF9", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#A7F3D0" },
   badgeText:    { fontSize: 11, color: "#065F46", fontWeight: "600" },
-
-  // OTP screen
   otpIconWrap:  { width: 64, height: 64, borderRadius: 20, backgroundColor: "#F0FDF9", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16, borderWidth: 1, borderColor: "#A7F3D0" },
   emailHighlight:{ color: ACCENT, fontWeight: "700" },
   otpInput:     { fontSize: 36, fontWeight: "800", color: "#1E1B4B", letterSpacing: 12, paddingVertical: 16, borderBottomWidth: 2, borderBottomColor: ACCENT, marginBottom: 20, textAlign: "center" },
   backLink:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 4 },
   backLinkText: { fontSize: 13, color: "#94A3B8", fontWeight: "500" },
-
-  // MFA screen
   mfaIcon:      { width: 64, height: 64, borderRadius: 20, backgroundColor: "#F0FDF9", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16, borderWidth: 1, borderColor: "#A7F3D0" },
   mfaTitle:     { fontSize: 22, fontWeight: "800", color: "#1E1B4B", textAlign: "center", marginBottom: 8 },
   mfaSub:       { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 24, lineHeight: 20 },
   fallbackRow:  { flexDirection: "row", justifyContent: "center", gap: 16, flexWrap: "wrap", marginTop: 8 },
   fallbackLink: { fontSize: 13, color: ACCENT, fontWeight: "600" },
-
-  // Footer
   footer:       { marginTop: 24, fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" },
   footerLink:   { color: "rgba(255,255,255,0.7)", fontWeight: "600" },
 })
