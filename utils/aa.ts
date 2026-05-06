@@ -12,55 +12,25 @@
  * BSC excluded  no ERC-4337 bundler on BSC mainnet
  *
  * Stack: permissionless@0.3.5 + viem@2.x (already installed)
- * Ethers v6 used only for key retrieval  all AA ops use viem internally
+ * All AA libs are dynamic-imported so they are never bundled on web.
  */
 
 import { Platform } from 'react-native'
-import {
-  createPublicClient,
-  createWalletClient,
-  http,
-  type Chain as ViemChain,
-} from 'viem'
-import {
-  mainnet,
-  polygon,
-  arbitrum,
-  optimism,
-  base,
-} from 'viem/chains'
-import { privateKeyToAccount } from 'viem/accounts'
-import {
-  createSmartAccountClient,
-  walletClientToSmartAccountSigner,
-  ENTRYPOINT_ADDRESS_V06,
-} from 'permissionless'
-import { signerToLightSmartAccount } from 'permissionless/accounts'
 import { BUNDLER_URLS } from './chains'
-
-//  Viem chain map 
-
-const VIEM_CHAINS: Record<number, ViemChain> = {
-  1:     mainnet,
-  137:   polygon,
-  42161: arbitrum,
-  10:    optimism,
-  8453:  base,
-}
 
 //  Types 
 
 export interface AACall {
   to:    string
   value: bigint
-  data:  string   // hex calldata, '0x' for native transfer
+  data:  string
 }
 
 export interface AAResult {
-  ok:           boolean
-  userOpHash?:  string
-  txHash?:      string
-  error?:       string
+  ok:          boolean
+  userOpHash?: string
+  txHash?:     string
+  error?:      string
 }
 
 export interface SmartAccountInfo {
@@ -69,56 +39,88 @@ export interface SmartAccountInfo {
   chainId:    number
 }
 
+//  Chain support check 
+
+export function chainSupportsAA(chainId: number): boolean {
+  if (Platform.OS === 'web') return false
+  return [1, 137, 42161, 10, 8453].includes(chainId)
+}
+
+//  Internal: load AA libs dynamically (never bundled on web) 
+
+async function loadAALibs() {
+  const [
+    { createPublicClient, createWalletClient, http },
+    { mainnet, polygon, arbitrum, optimism, base },
+    { privateKeyToAccount },
+    { createSmartAccountClient, walletClientToSmartAccountSigner, ENTRYPOINT_ADDRESS_V06 },
+    { signerToLightSmartAccount },
+  ] = await Promise.all([
+    import('viem'),
+    import('viem/chains'),
+    import('viem/accounts'),
+    import('permissionless'),
+    import('permissionless/accounts'),
+  ])
+
+  return {
+    createPublicClient,
+    createWalletClient,
+    http,
+    chains: { mainnet, polygon, arbitrum, optimism, base } as Record<number, any>,
+    privateKeyToAccount,
+    createSmartAccountClient,
+    walletClientToSmartAccountSigner,
+    ENTRYPOINT_ADDRESS_V06,
+    signerToLightSmartAccount,
+  }
+}
+
+const VIEM_CHAIN_IDS: Record<number, string> = {
+  1: 'mainnet', 137: 'polygon', 42161: 'arbitrum', 10: 'optimism', 8453: 'base',
+}
+
 //  Core: build smart account client 
 
-/**
- * Create a LightAccount smart account client for a given EOA private key.
- * The smart account is counterfactually deployed  address is deterministic
- * before deployment. Gas is only spent on the first transaction.
- *
- * @param privateKeyHex  64-char hex private key from SecureKeyStore (no 0x prefix)
- * @param chainId        Active chain ID
- */
-export async function createAAClient(
-  privateKeyHex: string,
-  chainId: number,
-) {
-  const viemChain = VIEM_CHAINS[chainId]
-  if (!viemChain) throw new Error(`Chain ${chainId} not supported for AA`)
+export async function createAAClient(privateKeyHex: string, chainId: number) {
+  if (!chainSupportsAA(chainId)) throw new Error(`Chain ${chainId} not supported for AA`)
 
   const bundlerUrl = BUNDLER_URLS[chainId]
   if (!bundlerUrl) throw new Error(`No bundler URL for chain ${chainId}`)
 
-  // Normalise key  ensure 0x prefix for viem
+  const libs = await loadAALibs()
+  const chainName = VIEM_CHAIN_IDS[chainId]
+  const viemChain = libs.chains[chainName] ?? libs.chains['mainnet']
+
   const pk = (privateKeyHex.startsWith('0x')
     ? privateKeyHex
     : '0x' + privateKeyHex) as `0x${string}`
 
-  const account = privateKeyToAccount(pk)
+  const account = libs.privateKeyToAccount(pk)
 
-  const publicClient = createPublicClient({
-    chain:     viemChain,
-    transport: http(bundlerUrl),
+  const publicClient = libs.createPublicClient({
+    chain: viemChain,
+    transport: libs.http(bundlerUrl),
   })
 
-  const walletClient = createWalletClient({
+  const walletClient = libs.createWalletClient({
     account,
-    chain:     viemChain,
-    transport: http(bundlerUrl),
+    chain: viemChain,
+    transport: libs.http(bundlerUrl),
   })
 
-  const signer = walletClientToSmartAccountSigner(walletClient)
+  const signer = libs.walletClientToSmartAccountSigner(walletClient)
 
-  const smartAccount = await signerToLightSmartAccount(publicClient, {
+  const smartAccount = await libs.signerToLightSmartAccount(publicClient, {
     signer,
-    entryPoint:          ENTRYPOINT_ADDRESS_V06,
+    entryPoint:          libs.ENTRYPOINT_ADDRESS_V06,
     lightAccountVersion: '1.1.0',
   })
 
-  const smartAccountClient = createSmartAccountClient({
+  const smartAccountClient = libs.createSmartAccountClient({
     account:          smartAccount,
     chain:            viemChain,
-    bundlerTransport: http(bundlerUrl),
+    bundlerTransport: libs.http(bundlerUrl),
     middleware: {
       gasPrice: async () => (await publicClient.estimateFeesPerGas()),
     },
@@ -127,12 +129,8 @@ export async function createAAClient(
   return { smartAccountClient, smartAccount, publicClient }
 }
 
-//  Get smart account address (no deployment, no gas) 
+//  Get smart account address 
 
-/**
- * Get the deterministic smart account address for an EOA.
- * Safe to call at any time  does not deploy or spend gas.
- */
 export async function getSmartAccountAddress(
   privateKeyHex: string,
   chainId: number,
@@ -140,10 +138,8 @@ export async function getSmartAccountAddress(
   try {
     const { smartAccount, publicClient } = await createAAClient(privateKeyHex, chainId)
     const address = smartAccount.address
-
     const code = await publicClient.getBytecode({ address: address as `0x${string}` })
     const isDeployed = !!code && code !== '0x'
-
     return { address, isDeployed, chainId }
   } catch (e: any) {
     throw new Error(`Failed to get smart account address: ${e.message}`)
@@ -152,16 +148,6 @@ export async function getSmartAccountAddress(
 
 //  Send a single UserOp 
 
-/**
- * Send a single transaction via ERC-4337 UserOp.
- * On first use, deploys the smart account atomically in the same UserOp.
- *
- * @param privateKeyHex  From loadPrivateKeyFromEnclave()
- * @param chainId        Active chain
- * @param to             Recipient address
- * @param value          Wei amount as bigint
- * @param data           Hex calldata ('0x' for native ETH transfer)
- */
 export async function sendUserOp(
   privateKeyHex: string,
   chainId: number,
@@ -186,27 +172,14 @@ export async function sendUserOp(
       hash: userOpHash,
     })
 
-    return {
-      ok:         true,
-      userOpHash,
-      txHash:     receipt.receipt.transactionHash,
-    }
+    return { ok: true, userOpHash, txHash: receipt.receipt.transactionHash }
   } catch (e: any) {
     return { ok: false, error: e?.message ?? 'UserOp failed' }
   }
 }
 
-//  Batch UserOp (atomic multicall) 
+//  Batch UserOp 
 
-/**
- * Execute multiple calls atomically in a single UserOp.
- * All succeed or all revert  no partial state.
- * Key DeFi pattern: approve + swap in one tx.
- *
- * @param privateKeyHex  From loadPrivateKeyFromEnclave()
- * @param chainId        Active chain
- * @param calls          Array of {to, value, data}
- */
 export async function sendBatchUserOp(
   privateKeyHex: string,
   chainId: number,
@@ -231,38 +204,17 @@ export async function sendBatchUserOp(
       hash: userOpHash,
     })
 
-    return {
-      ok:         true,
-      userOpHash,
-      txHash:     receipt.receipt.transactionHash,
-    }
+    return { ok: true, userOpHash, txHash: receipt.receipt.transactionHash }
   } catch (e: any) {
     return { ok: false, error: e?.message ?? 'Batch UserOp failed' }
   }
 }
 
-//  ERC-20 transfer calldata helper 
+//  ERC-20 transfer calldata 
 
-/**
- * Encode ERC-20 transfer calldata for use in sendUserOp / sendBatchUserOp.
- *
- * @param to      Recipient address
- * @param amount  Amount in token base units (e.g. parseUnits('1.0', 18))
- */
 export function encodeERC20Transfer(to: string, amount: bigint): string {
   const selector  = '0xa9059cbb'
   const paddedTo  = to.toLowerCase().replace('0x', '').padStart(64, '0')
   const paddedAmt = amount.toString(16).padStart(64, '0')
   return selector + paddedTo + paddedAmt
-}
-
-//  Chain support check 
-
-/**
- * Check if the current chain supports ERC-4337.
- * BSC and web are excluded.
- */
-export function chainSupportsAA(chainId: number): boolean {
-  if (Platform.OS === 'web') return false
-  return [1, 137, 42161, 10, 8453].includes(chainId)
 }
