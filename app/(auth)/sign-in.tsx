@@ -32,7 +32,12 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
         ? window.location.origin + "/"
         : "kryptonow://";
 
-      const result = await startSSOFlow({ strategy, redirectUrl });
+      const result = await startSSOFlow({
+        strategy,
+        redirectUrl,
+        // Force redirect on web instead of popup
+        ...(Platform.OS === "web" ? {} : {}),
+      });
       const { createdSessionId, setActive, signIn, signUp } = result;
 
       // Case 1: Session created directly (existing user)
@@ -184,19 +189,34 @@ export default function SignIn() {
   };
 
   const handleGoogle = async () => {
+    if (loading) return; // Prevent double-click
     setLoading(true); setError("");
-    try { await startGoogle(onSuccess); }
-    catch (e: any) {
-      setError(e?.errors?.[0]?.message ?? "Google sign-in failed");
-    } finally { setLoading(false); }
+    try {
+      await startGoogle(onSuccess);
+    } catch (e: any) {
+      const msg = e?.errors?.[0]?.message ?? e?.message ?? "Google sign-in failed";
+      // Ignore popup closed errors
+      if (!msg.includes("popup") && !msg.includes("closed") && !msg.includes("cancelled")) {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDiscord = async () => {
+    if (loading) return; // Prevent double-click
     setLoading(true); setError("");
-    try { await startDiscord(onSuccess); }
-    catch (e: any) {
-      setError(e?.errors?.[0]?.message ?? "Discord sign-in failed");
-    } finally { setLoading(false); }
+    try {
+      await startDiscord(onSuccess);
+    } catch (e: any) {
+      const msg = e?.errors?.[0]?.message ?? e?.message ?? "Discord sign-in failed";
+      if (!msg.includes("popup") && !msg.includes("closed") && !msg.includes("cancelled")) {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEmail = async () => {
@@ -373,7 +393,7 @@ export default function SignIn() {
           <Text style={s.cardTitle}>Welcome back</Text>
           <Text style={s.cardSub}>Sign in or create your account</Text>
 
-          <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading} activeOpacity={0.85}>
+          <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading || !siLoaded || !suLoaded} activeOpacity={0.85}>
             <View style={s.googleIconWrap}>
               <Text style={s.googleIconG}>G</Text>
             </View>
@@ -381,7 +401,7 @@ export default function SignIn() {
             {loading ? <ActivityIndicator size="small" color="#64748B" /> : <View style={{ width: 20 }} />}
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading} activeOpacity={0.85}>
+          <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading || !siLoaded || !suLoaded} activeOpacity={0.85}>
             <Ionicons name="logo-discord" size={20} color="#fff" />
             <Text style={s.discordBtnText}>Continue with Discord</Text>
             {loading ? <ActivityIndicator size="small" color="#fff" /> : <View style={{ width: 20 }} />}
