@@ -393,7 +393,7 @@ export default function SignIn() {
           <Text style={s.cardTitle}>Welcome back</Text>
           <Text style={s.cardSub}>Sign in or create your account</Text>
 
-          <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading || !siLoaded || !suLoaded} activeOpacity={0.85}>
+          <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} disabled={loading} activeOpacity={0.85}>
             <View style={s.googleIconWrap}>
               <Text style={s.googleIconG}>G</Text>
             </View>
@@ -401,7 +401,7 @@ export default function SignIn() {
             {loading ? <ActivityIndicator size="small" color="#64748B" /> : <View style={{ width: 20 }} />}
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading || !siLoaded || !suLoaded} activeOpacity={0.85}>
+          <TouchableOpacity style={s.discordBtn} onPress={handleDiscord} disabled={loading} activeOpacity={0.85}>
             <Ionicons name="logo-discord" size={20} color="#fff" />
             <Text style={s.discordBtnText}>Continue with Discord</Text>
             {loading ? <ActivityIndicator size="small" color="#fff" /> : <View style={{ width: 20 }} />}
