@@ -27,34 +27,92 @@ const LOG = (tag: string, msg: string, data?: any) => {
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
-    const redirectUrl = Platform.OS === "web"
-      ? `${window.location.origin}/`
-      : "kryptonow://";
-    LOG("OAuth", "Starting " + strategy, { redirectUrl, platform: Platform.OS });
+    if (Platform.OS === "web") {
+      return new Promise<void>((resolve, reject) => {
+        const w = 500, h = 650
+        const left = Math.round(window.screenX + (window.outerWidth - w) / 2)
+        const top  = Math.round(window.screenY + (window.outerHeight - h) / 2)
+        const features = `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+        
+        // Use startSSOFlow but intercept the browser opening
+        // Override by directly opening popup to Clerk OAuth
+        const redirectUrl = window.location.origin + "/"
+        const popup = window.open("about:blank", "KryptoNow Auth", features)
+        
+        if (!popup) {
+          // Popup blocked - use startSSOFlow as fallback
+          startSSOFlow({ strategy, redirectUrl })
+            .then(async (result) => {
+              const { createdSessionId, setActive, signIn, signUp } = result
+              if (createdSessionId && setActive) {
+                await setActive({ session: createdSessionId })
+                await onSuccess(); resolve()
+              }
+            }).catch(reject)
+          return
+        }
+
+        // Listen for auth completion via postMessage
+        const msgHandler = async (e: MessageEvent) => {
+          if (e.origin !== window.location.origin) return
+          if (e.data?.type === "KRYPTONOW_AUTH_SUCCESS") {
+            window.removeEventListener("message", msgHandler)
+            clearInterval(pollInterval)
+            popup.close()
+            window.location.href = e.data.dest ?? "/dashboard"
+            resolve()
+          }
+        }
+        window.addEventListener("message", msgHandler)
+
+        // Poll popup closed without auth
+        const pollInterval = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(pollInterval)
+            window.removeEventListener("message", msgHandler)
+            // Give Clerk a moment to process session
+            setTimeout(async () => {
+              try { await onSuccess(); resolve() }
+              catch { reject(new Error("Auth cancelled")) }
+            }, 500)
+          }
+        }, 300)
+
+        // Now trigger Clerk OAuth into the popup
+        startSSOFlow({ strategy, redirectUrl })
+          .then(async (result) => {
+            const { createdSessionId, setActive, signIn, signUp } = result
+            if (createdSessionId && setActive) {
+              clearInterval(pollInterval)
+              window.removeEventListener("message", msgHandler)
+              popup.close()
+              await setActive({ session: createdSessionId })
+              await onSuccess(); resolve()
+            }
+          }).catch((e) => {
+            clearInterval(pollInterval)
+            popup.close()
+            reject(e)
+          })
+      })
+    }
+    // Mobile flow
     try {
-      const result = await startSSOFlow({
-        strategy,
-        redirectUrl,
-      });
-      const { createdSessionId, setActive, signIn, signUp } = result;
+      const result = await startSSOFlow({ strategy, redirectUrl: "kryptonow://" })
+      const { createdSessionId, setActive, signIn, signUp } = result
       if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        await onSuccess();
-        return;
+        await setActive({ session: createdSessionId })
+        await onSuccess(); return
       }
       if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
-        await signUp.create({ transfer: true });
-        await signUp.reload();
+        await signUp.create({ transfer: true }); await signUp.reload()
         if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-          await setActive({ session: signUp.createdSessionId });
-          await onSuccess();
+          await setActive({ session: signUp.createdSessionId })
+          await onSuccess()
         }
       }
-    } catch (e: any) {
-      // On web, OAuth redirects away and back - this is expected
-      LOG("OAuth", "Flow ended (may be redirect)", { error: e?.message });
-    }
-  }, [startSSOFlow, strategy]);
+    } catch(e: any) { throw e }
+  }, [startSSOFlow, strategy])
 }
 
 //  Floating particle component 
