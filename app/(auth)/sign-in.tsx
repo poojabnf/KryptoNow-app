@@ -32,22 +32,15 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
         ? window.location.origin + "/"
         : "kryptonow://";
 
-      const result = await startSSOFlow({
-        strategy,
-        redirectUrl,
-        // Force redirect on web instead of popup
-        ...(Platform.OS === "web" ? {} : {}),
-      });
+      const result = await startSSOFlow({ strategy, redirectUrl });
       const { createdSessionId, setActive, signIn, signUp } = result;
 
-      // Case 1: Session created directly (existing user)
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
         await onSuccess();
         return;
       }
 
-      // Case 2: New user needs to complete sign-up via transfer
       if (signIn?.firstFactorVerification?.status === "transferable" && signUp) {
         await signUp.create({ transfer: true });
         await signUp.reload();
@@ -56,39 +49,12 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
           await onSuccess();
           return;
         }
-        // Sign up missing fields (e.g. username required)
-        if (signUp.status === "missing_requirements") {
-          // Try to complete with available data
-          await signUp.update({});
-          await signUp.reload();
-          if (signUp.status === "complete" && setActive && signUp.createdSessionId) {
-            await setActive({ session: signUp.createdSessionId });
-            await onSuccess();
-            return;
-          }
-        }
       }
 
-      // Case 3: Sign-up needs verification (rare for OAuth)
       if (signUp?.status === "complete" && setActive && signUp.createdSessionId) {
         await setActive({ session: signUp.createdSessionId });
         await onSuccess();
-        return;
       }
-
-      // Case 4: Already has an active session
-      if (signIn?.status === "complete" && setActive && signIn.createdSessionId) {
-        await setActive({ session: signIn.createdSessionId });
-        await onSuccess();
-        return;
-      }
-
-      LOG("OAuth", "No session created - result: " + JSON.stringify({
-        createdSessionId,
-        signInStatus: signIn?.status,
-        signUpStatus: signUp?.status,
-        firstFactor: signIn?.firstFactorVerification?.status,
-      }));
 
     } catch (e: any) {
       LOG("OAuth", "Error: " + (e?.message ?? JSON.stringify(e)));

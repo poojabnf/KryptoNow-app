@@ -1,9 +1,8 @@
-{
+﻿{
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
+  "installCommand": "npm install --legacy-peer-deps",
+  "rewrites": [{"source":"/:path*","destination":"/"}],
   "headers": [
     {
       "source": "/(.*)",
@@ -15,10 +14,6 @@
         {
           "key": "Cross-Origin-Embedder-Policy",
           "value": "unsafe-none"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; connect-src *;"
         }
       ]
     }
