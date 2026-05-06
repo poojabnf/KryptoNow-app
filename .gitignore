@@ -76,3 +76,6 @@ clerk-nextjs/node_modules
 .env.local
 .env
 *.env
+
+# Old fix scripts
+*.py
