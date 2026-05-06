@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, KeyboardAvoidingView, Platform,
-  ActivityIndicator, Linking,
+  ActivityIndicator, Linking, Switch,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
@@ -12,9 +12,10 @@ import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
 import { simulateTransaction, SimulationResult } from "../utils/tenderly"
 import { isValidAddress } from "../utils/crypto"
-import { getTxUrl, getProvider, Chain } from "../utils/chains"
+import { getTxUrl, getProvider, Chain, AA_SUPPORTED_CHAINS } from "../utils/chains"
 import TokenSearchModal from "../components/TokenSearchModal"
 import { CustomToken, loadCustomTokens } from "../utils/tokenSearch"
+import { useAA } from "../hooks/useAA"
 
 const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
@@ -81,7 +82,6 @@ async function fetchGasData(
 ): Promise<GasData> {
   const provider = getProvider(chain)
 
-  // Fetch fee data + estimate gas in parallel
   const [feeData, gasLimit] = await Promise.all([
     provider.getFeeData(),
     (async () => {
@@ -105,10 +105,8 @@ async function fetchGasData(
   const baseFeeWei  = feeData.lastBaseFeePerGas ?? feeData.gasPrice ?? 0n
   const gasPriceWei = feeData.gasPrice ?? 0n
   const isEIP1559   = feeData.lastBaseFeePerGas != null
-
   const baseFeeGwei = Number(baseFeeWei) / 1e9
 
-  // Build 3 tiers
   const buildTier = (
     speed: GasSpeed,
     label: string,
@@ -155,10 +153,21 @@ async function fetchGasData(
 type Step = "form" | "confirm" | "success"
 
 export default function Send() {
-  // Batch send shortcut rendered at top
   const addr        = useWalletStore(s => s.address)
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
+
+  // ── ERC-4337 Account Abstraction ────────────────────────────────────────────
+  const {
+    aaEnabled,
+    isSupported: aaSupported,
+    smartAddress,
+    isDeployed: aaDeployed,
+    loading: aaLoading,
+    toggleAA,
+    sendAA,
+    sendERC20AA,
+  } = useAA()
 
   const [customTokens,    setCustomTokens]    = useState<CustomToken[]>(
     () => loadCustomTokens(activeChain.id)
@@ -199,7 +208,6 @@ export default function Send() {
   const amtValid   = !isNaN(parseFloat(amount)) && parseFloat(amount) > 0
   const canProceed = addrValid && amtValid
 
-  // Fetch native price
   const fetchNativePrice = useCallback(async () => {
     const cgId: Record<number, string> = {
       1:"ethereum", 137:"matic-network", 42161:"ethereum", 10:"ethereum", 56:"binancecoin", 8453:"ethereum"
@@ -213,7 +221,6 @@ export default function Send() {
     } catch { return 0 }
   }, [activeChain.id])
 
-  // Full gas refresh
   const refreshGas = useCallback(async (price?: number) => {
     if (!addr) return
     setGasLoading(true)
@@ -233,7 +240,6 @@ export default function Send() {
     }
   }, [addr, activeChain, toAddress, selectedToken, nativePrice])
 
-  // Init on chain/token change
   useEffect(() => {
     const tokens = [nativeToken, ...(CHAIN_TOKENS[activeChain.id] ?? [])]
     setSelectedToken(tokens[0])
@@ -242,12 +248,10 @@ export default function Send() {
     setCustomTokens(loadCustomTokens(activeChain.id))
   }, [activeChain.id])
 
-  // Re-estimate when address/token changes
   useEffect(() => {
     if (addr) refreshGas()
   }, [toAddress, selectedToken.symbol])
 
-  // Auto-refresh gas every 15 seconds
   useEffect(() => {
     gasTimer.current = setInterval(() => refreshGas(), 15000)
     return () => { if (gasTimer.current) clearInterval(gasTimer.current) }
@@ -292,6 +296,30 @@ export default function Send() {
   async function executeSend() {
     setSending(true)
     try {
+
+      // ── ERC-4337 AA path ────────────────────────────────────────────────────
+      if (aaEnabled && aaSupported) {
+        const result = selectedToken.contract
+          ? await sendERC20AA(
+              selectedToken.contract,
+              toAddress,
+              ethers.parseUnits(amount, selectedToken.decimals),
+            )
+          : await sendAA(
+              toAddress,
+              ethers.parseEther(amount),
+            )
+
+        if (result.ok) {
+          setTxHash(result.txHash ?? result.userOpHash ?? '')
+          setStep("success")
+        } else {
+          Alert.alert("AA Send Failed", result.error ?? "UserOp failed")
+        }
+        return
+      }
+
+      // ── Standard EOA path (unchanged) ──────────────────────────────────────
       const privateKey = await loadPrivateKey()
       if (!privateKey) {
         Alert.alert("Authentication Required", "Could not load wallet key.")
@@ -302,7 +330,6 @@ export default function Send() {
       const gasLimit = gasData?.gasLimit ?? (selectedToken.contract ? 65000n : 21000n)
       const tier     = selectedTier
 
-      // Build gas params
       const gasParams = gasData?.isEIP1559 && tier ? {
         maxFeePerGas:         ethers.parseUnits(tier.maxFeeGwei.toFixed(9), "gwei"),
         maxPriorityFeePerGas: ethers.parseUnits(tier.priorityGwei.toFixed(9), "gwei"),
@@ -347,18 +374,24 @@ export default function Send() {
           <Ionicons name="checkmark" size={36} color="#10B981" />
         </View>
         <Text style={s.successTitle}>Sent!</Text>
+        {aaEnabled && (
+          <View style={s.aaBadgeSuccess}>
+            <Ionicons name="flash" size={12} color="#7C3AED" />
+            <Text style={s.aaBadgeSuccessT}>Sent via Smart Account</Text>
+          </View>
+        )}
         <Text style={s.successSub}>
           {amount} {selectedToken.symbol} on {activeChain.name}{"\n"}
           to {toAddress.slice(0,8)}...{toAddress.slice(-6)}
         </Text>
         <View style={s.hashBox}>
-          <Text style={s.hashLabel}>Transaction Hash</Text>
+          <Text style={s.hashLabel}>{aaEnabled ? "Transaction Hash (UserOp)" : "Transaction Hash"}</Text>
           <Text style={s.hash} numberOfLines={2} selectable>{txHash}</Text>
         </View>
         <TouchableOpacity style={s.explorerBtn}
           onPress={() => Linking.openURL(getTxUrl(activeChain, txHash))}>
           <Text style={[s.explorerBtnT, { color: activeChain.color }]}>
-            View on Explorer  
+            View on Explorer
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.doneBtn, { backgroundColor: activeChain.color }]}
@@ -385,7 +418,13 @@ export default function Send() {
         <View style={[s.confirmCard, { backgroundColor: activeChain.color }]}>
           <Text style={s.confirmLabel}>Sending on {activeChain.name}</Text>
           <Text style={s.confirmAmt}>{amount} {selectedToken.symbol}</Text>
-          {selectedTier && (
+          {aaEnabled && (
+            <View style={s.aaBadgeConfirm}>
+              <Ionicons name="flash" size={12} color="#fff" />
+              <Text style={s.aaBadgeConfirmT}>Smart Account · ERC-4337</Text>
+            </View>
+          )}
+          {selectedTier && !aaEnabled && (
             <View style={s.confirmGasBadge}>
               <Text style={s.confirmGasBadgeT}>
                 {selectedTier.label} gas  ~{selectedTier.limitedTime}
@@ -398,15 +437,22 @@ export default function Send() {
         <View style={s.detailCard}>
           {[
             { l:"Network",    v: activeChain.name },
-            { l:"From",       v: addr ? addr.slice(0,8)+"..."+addr.slice(-6) : "-" },
+            { l:"From",       v: aaEnabled && smartAddress
+                ? `SA: ${smartAddress.slice(0,8)}...${smartAddress.slice(-6)}`
+                : addr ? addr.slice(0,8)+"..."+addr.slice(-6) : "-" },
             { l:"To",         v: toAddress.slice(0,8)+"..."+toAddress.slice(-6) },
             { l:"Token",      v: `${selectedToken.name} (${selectedToken.symbol})` },
-            { l:"Gas limit",  v: gasData ? `${gasData.gasLimit.toLocaleString()} units` : "..." },
-            { l:"Gas price",  v: selectedTier ? `${selectedTier.gwei} Gwei` : "..." },
-            { l:"Max fee",    v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.maxFeeGwei} Gwei` : "-" },
-            { l:"Priority",   v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.priorityGwei} Gwei` : "-" },
-            { l:"Est. fee",   v: selectedTier ? `~$${selectedTier.costUSD} (${selectedTier.costETH} ${activeChain.symbol})` : "..." },
-            { l:"Est. time",  v: selectedTier?.limitedTime ?? "..." },
+            { l:"Send mode",  v: aaEnabled ? "Smart Account (ERC-4337)" : "Standard EOA" },
+            ...(!aaEnabled ? [
+              { l:"Gas limit",  v: gasData ? `${gasData.gasLimit.toLocaleString()} units` : "..." },
+              { l:"Gas price",  v: selectedTier ? `${selectedTier.gwei} Gwei` : "..." },
+              { l:"Max fee",    v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.maxFeeGwei} Gwei` : "-" },
+              { l:"Priority",   v: selectedTier && gasData?.isEIP1559 ? `${selectedTier.priorityGwei} Gwei` : "-" },
+              { l:"Est. fee",   v: selectedTier ? `~$${selectedTier.costUSD} (${selectedTier.costETH} ${activeChain.symbol})` : "..." },
+              { l:"Est. time",  v: selectedTier?.limitedTime ?? "..." },
+            ] : [
+              { l:"Smart account", v: aaDeployed ? "Deployed ✓" : "Will deploy on first tx" },
+            ]),
           ].map(row => (
             <View key={row.l} style={s.detailRow}>
               <Text style={s.detailL}>{row.l}</Text>
@@ -423,13 +469,15 @@ export default function Send() {
         </View>
 
         <TouchableOpacity
-          style={[s.sendBtn, { backgroundColor: activeChain.color }, sending && { opacity: 0.6 }]}
+          style={[s.sendBtn, { backgroundColor: aaEnabled ? "#7C3AED" : activeChain.color }, (sending || aaLoading) && { opacity: 0.6 }]}
           onPress={handleSend}
-          disabled={sending}
+          disabled={sending || aaLoading}
         >
-          {sending
+          {sending || aaLoading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={s.sendBtnT}>Confirm & Send</Text>
+            : <Text style={s.sendBtnT}>
+                {aaEnabled ? "⚡ Confirm & Send (AA)" : "Confirm & Send"}
+              </Text>
           }
         </TouchableOpacity>
         <View style={{ height: 40 }} />
@@ -449,6 +497,31 @@ export default function Send() {
       </View>
 
       <ScrollView style={s.scroll} keyboardShouldPersistTaps="handled">
+
+        {/* ── AA Mode Toggle ── */}
+        {aaSupported && Platform.OS !== 'web' && (
+          <View style={s.aaToggleRow}>
+            <View style={s.aaToggleLeft}>
+              <View style={s.aaToggleIcon}>
+                <Ionicons name="flash" size={16} color="#7C3AED" />
+              </View>
+              <View>
+                <Text style={s.aaToggleLabel}>Smart Account</Text>
+                <Text style={s.aaToggleSub}>
+                  {aaEnabled && smartAddress
+                    ? `${smartAddress.slice(0,8)}...${smartAddress.slice(-6)} · ${aaDeployed ? 'Active' : 'Ready to deploy'}`
+                    : 'ERC-4337 · gas abstraction'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={aaEnabled}
+              onValueChange={toggleAA}
+              trackColor={{ false: "#E2E8F0", true: "#7C3AED" }}
+              thumbColor="#fff"
+            />
+          </View>
+        )}
 
         {/* Token selector */}
         <View style={{ flexDirection:"row", alignItems:"center", justifyContent:"space-between", marginBottom:8, marginTop:16 }}>
@@ -526,114 +599,127 @@ export default function Send() {
           <Text style={s.inputSuffix}>{selectedToken.symbol}</Text>
         </View>
 
-        {/* ====== GAS ESTIMATOR ====== */}
-        <Text style={s.fieldLabel}>Gas Speed</Text>
+        {/* Gas estimator — hidden when AA is on (bundler handles gas) */}
+        {!aaEnabled && (
+          <>
+            <Text style={s.fieldLabel}>Gas Speed</Text>
 
-        {gasLoading && !gasData ? (
-          <View style={s.gasLoadingBox}>
-            <ActivityIndicator size="small" color="#6366F1" />
-            <Text style={s.gasLoadingT}>Fetching gas prices...</Text>
-          </View>
-        ) : gasError ? (
-          <View style={s.gasErrorBox}>
-            <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
-              <Ionicons name="warning-outline" size={14} color="#F59E0B" />
-              <Text style={s.gasErrorT}>Could not fetch gas  using defaults</Text>
-            </View>
-            <TouchableOpacity onPress={() => refreshGas()}>
-              <Text style={s.gasRetryT}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : gasData ? (
-          <View style={s.gasTiersWrap}>
-            {/* EIP-1559 base fee info */}
-            {gasData.isEIP1559 && (
-              <View style={s.baseFeeRow}>
-                <Text style={s.baseFeeLabel}>Base fee ({activeChain.name})</Text>
-                <Text style={s.baseFeeVal}>{gasData.baseFeeGwei.toFixed(2)} Gwei</Text>
-                <View style={s.liveIndicator}>
-                  <View style={s.liveDot} />
-                  <Text style={s.liveT}>Live</Text>
-                </View>
+            {gasLoading && !gasData ? (
+              <View style={s.gasLoadingBox}>
+                <ActivityIndicator size="small" color="#6366F1" />
+                <Text style={s.gasLoadingT}>Fetching gas prices...</Text>
               </View>
-            )}
-
-            {/* Three speed tiers */}
-            {gasData.tiers.map(tier => (
-              <TouchableOpacity
-                key={tier.speed}
-                style={[
-                  s.gasTier,
-                  selectedSpeed === tier.speed && {
-                    borderColor: tier.color,
-                    backgroundColor: tier.bg,
-                  }
-                ]}
-                onPress={() => setSelectedSpeed(tier.speed)}
-                activeOpacity={0.8}
-              >
-                {/* Left: icon + label */}
-                <View style={[s.gasTierIcon, { backgroundColor: tier.color + "20" }]}>
-                  <Ionicons name={tier.icon as any} size={18} color={tier.color} />
+            ) : gasError ? (
+              <View style={s.gasErrorBox}>
+                <View style={{ flexDirection:"row", alignItems:"center", gap:6 }}>
+                  <Ionicons name="warning-outline" size={14} color="#F59E0B" />
+                  <Text style={s.gasErrorT}>Could not fetch gas  using defaults</Text>
                 </View>
-                <View style={s.gasTierMid}>
-                  <Text style={[s.gasTierLabel, selectedSpeed === tier.speed && { color: tier.color }]}>
-                    {tier.label}
-                  </Text>
-                  <Text style={s.gasTierTime}>{tier.limitedTime}</Text>
-                </View>
-
-                {/* Right: price */}
-                <View style={s.gasTierRight}>
-                  <Text style={[s.gasTierGwei, selectedSpeed === tier.speed && { color: tier.color }]}>
-                    {tier.gwei} Gwei
-                  </Text>
-                  <Text style={s.gasTierUSD}>
-                    {tier.costUSD !== "0.0000" ? `~$${tier.costUSD}` : `${tier.costETH} ${activeChain.symbol}`}
-                  </Text>
-                </View>
-
-                {/* Selected checkmark */}
-                {selectedSpeed === tier.speed && (
-                  <View style={[s.gasTierCheck, { backgroundColor: tier.color }]}>
-                    <Ionicons name="checkmark" size={13} color="#fff" />
+                <TouchableOpacity onPress={() => refreshGas()}>
+                  <Text style={s.gasRetryT}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : gasData ? (
+              <View style={s.gasTiersWrap}>
+                {gasData.isEIP1559 && (
+                  <View style={s.baseFeeRow}>
+                    <Text style={s.baseFeeLabel}>Base fee ({activeChain.name})</Text>
+                    <Text style={s.baseFeeVal}>{gasData.baseFeeGwei.toFixed(2)} Gwei</Text>
+                    <View style={s.liveIndicator}>
+                      <View style={s.liveDot} />
+                      <Text style={s.liveT}>Live</Text>
+                    </View>
                   </View>
                 )}
-              </TouchableOpacity>
-            ))}
 
-            {/* Summary row */}
-            {selectedTier && (
-              <View style={s.gasSummary}>
-                <Text style={s.gasSummaryL}>Estimated fee</Text>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={s.gasSummaryAmt}>
-                    {selectedTier.costUSD !== "0.0000"
-                      ? `~$${selectedTier.costUSD}`
-                      : `${selectedTier.costETH} ${activeChain.symbol}`}
+                {gasData.tiers.map(tier => (
+                  <TouchableOpacity
+                    key={tier.speed}
+                    style={[
+                      s.gasTier,
+                      selectedSpeed === tier.speed && {
+                        borderColor: tier.color,
+                        backgroundColor: tier.bg,
+                      }
+                    ]}
+                    onPress={() => setSelectedSpeed(tier.speed)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[s.gasTierIcon, { backgroundColor: tier.color + "20" }]}>
+                      <Ionicons name={tier.icon as any} size={18} color={tier.color} />
+                    </View>
+                    <View style={s.gasTierMid}>
+                      <Text style={[s.gasTierLabel, selectedSpeed === tier.speed && { color: tier.color }]}>
+                        {tier.label}
+                      </Text>
+                      <Text style={s.gasTierTime}>{tier.limitedTime}</Text>
+                    </View>
+
+                    <View style={s.gasTierRight}>
+                      <Text style={[s.gasTierGwei, selectedSpeed === tier.speed && { color: tier.color }]}>
+                        {tier.gwei} Gwei
+                      </Text>
+                      <Text style={s.gasTierUSD}>
+                        {tier.costUSD !== "0.0000" ? `~$${tier.costUSD}` : `${tier.costETH} ${activeChain.symbol}`}
+                      </Text>
+                    </View>
+
+                    {selectedSpeed === tier.speed && (
+                      <View style={[s.gasTierCheck, { backgroundColor: tier.color }]}>
+                        <Ionicons name="checkmark" size={13} color="#fff" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+
+                {selectedTier && (
+                  <View style={s.gasSummary}>
+                    <Text style={s.gasSummaryL}>Estimated fee</Text>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={s.gasSummaryAmt}>
+                        {selectedTier.costUSD !== "0.0000"
+                          ? `~$${selectedTier.costUSD}`
+                          : `${selectedTier.costETH} ${activeChain.symbol}`}
+                      </Text>
+                      <Text style={s.gasSummaryEth}>
+                        {selectedTier.costETH} {activeChain.symbol}    {selectedTier.gwei} Gwei
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                <TouchableOpacity style={s.gasRefreshRow} onPress={() => refreshGas()}>
+                  <Text style={s.gasRefreshT}>
+                    Updated {Math.floor((Date.now() - gasData.lastUpdated) / 1000)}s ago  Tap to refresh
                   </Text>
-                  <Text style={s.gasSummaryEth}>
-                    {selectedTier.costETH} {activeChain.symbol}    {selectedTier.gwei} Gwei
-                  </Text>
-                </View>
+                </TouchableOpacity>
               </View>
-            )}
+            ) : null}
+          </>
+        )}
 
-            {/* Last updated */}
-            <TouchableOpacity style={s.gasRefreshRow} onPress={() => refreshGas()}>
-              <Text style={s.gasRefreshT}>
-                Updated {Math.floor((Date.now() - gasData.lastUpdated) / 1000)}s ago  Tap to refresh
-              </Text>
-            </TouchableOpacity>
+        {/* AA info banner when AA is on */}
+        {aaEnabled && (
+          <View style={s.aaBanner}>
+            <Ionicons name="flash" size={16} color="#7C3AED" />
+            <Text style={s.aaBannerT}>
+              Gas is handled by the bundler. Your smart account will be deployed automatically on first send.
+            </Text>
           </View>
-        ) : null}
+        )}
 
         <TouchableOpacity
-          style={[s.sendBtn, { backgroundColor: activeChain.color }, !canProceed && { opacity: 0.4 }]}
+          style={[
+            s.sendBtn,
+            { backgroundColor: aaEnabled ? "#7C3AED" : activeChain.color },
+            !canProceed && { opacity: 0.4 }
+          ]}
           onPress={() => setStep("confirm")}
           disabled={!canProceed}
         >
-          <Text style={s.sendBtnT}>Review Transaction</Text>
+          <Text style={s.sendBtnT}>
+            {aaEnabled ? "⚡ Review Transaction (AA)" : "Review Transaction"}
+          </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -679,6 +765,23 @@ const s = StyleSheet.create({
   inputSuffix:        { color:"#94A3B8", fontSize:14, fontWeight:"600" },
   validMark:          { color:"#10B981", fontSize:13, fontWeight:"700" },
   errorMsg:           { color:"#EF4444", fontSize:12, marginTop:4, marginLeft:4 },
+
+  // AA toggle
+  aaToggleRow:        { flexDirection:"row", alignItems:"center", justifyContent:"space-between", backgroundColor:"#F5F3FF", borderRadius:14, padding:14, marginTop:16, borderWidth:1, borderColor:"#DDD6FE" },
+  aaToggleLeft:       { flexDirection:"row", alignItems:"center", gap:10, flex:1 },
+  aaToggleIcon:       { width:34, height:34, borderRadius:10, backgroundColor:"#EDE9FE", alignItems:"center", justifyContent:"center" },
+  aaToggleLabel:      { color:"#4C1D95", fontSize:14, fontWeight:"700" },
+  aaToggleSub:        { color:"#7C3AED", fontSize:11, marginTop:1 },
+
+  // AA banner
+  aaBanner:           { flexDirection:"row", alignItems:"flex-start", gap:10, backgroundColor:"#F5F3FF", borderRadius:12, padding:14, marginTop:12, borderWidth:1, borderColor:"#DDD6FE" },
+  aaBannerT:          { flex:1, color:"#5B21B6", fontSize:12, lineHeight:18 },
+
+  // AA badges
+  aaBadgeConfirm:     { flexDirection:"row", alignItems:"center", gap:4, marginTop:8, backgroundColor:"rgba(255,255,255,0.2)", paddingVertical:4, paddingHorizontal:12, borderRadius:20 },
+  aaBadgeConfirmT:    { color:"#fff", fontSize:11, fontWeight:"600" },
+  aaBadgeSuccess:     { flexDirection:"row", alignItems:"center", gap:4, backgroundColor:"#EDE9FE", paddingVertical:5, paddingHorizontal:12, borderRadius:20, marginBottom:12 },
+  aaBadgeSuccessT:    { color:"#7C3AED", fontSize:12, fontWeight:"600" },
 
   // Gas estimator
   gasLoadingBox:      { flexDirection:"row", alignItems:"center", gap:10, backgroundColor:"#fff", borderRadius:14, padding:16, borderWidth:1, borderColor:"#E2E8F0" },
@@ -738,4 +841,3 @@ const s = StyleSheet.create({
   searchTokenBtn:     { backgroundColor:"#EEF2FF", paddingVertical:6, paddingHorizontal:12, borderRadius:10, borderWidth:1, borderColor:"#C7D2FE" },
   searchTokenBtnT:    { color:"#6366F1", fontSize:12, fontWeight:"700" },
 })
-
