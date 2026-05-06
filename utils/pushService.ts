@@ -1,317 +1,269 @@
-/**
+﻿/**
  * utils/pushService.ts
- * --------------------
- * Real push notifications using expo-notifications (web + native)
- * Web: uses browser Notification API
- * Native: uses Expo push notification service
+ *
+ * Expo + FCM push notification service for KryptoNow.
+ *
+ * Works in 3 modes:
+ *   1. Native (iOS/Android)  Expo push tokens via FCM/APNs
+ *   2. Web                   Browser Notification API
+ *   3. Simulator/dev         Falls back to in-app local notification
+ *
+ * Dependencies (already installed):
+ *   expo-notifications
+ *   expo-device
+ *   expo-constants
+ *
+ * To enable real FCM push on native:
+ *   1. Add google-services.json (Android) + GoogleService-Info.plist (iOS)
+ *      to your project root via EAS
+ *   2. Set EXPO_PUBLIC_PUSH_SERVER_URL in .env to your backend endpoint
+ *   3. Your backend calls https://exp.host/--/api/v2/push/send with the token
+ *
+ * Without a backend, push still works in foreground via local notifications.
  */
-import { Platform } from "react-native"
-import { addNotification, loadNotifPrefs } from "./notifications"
 
-// --- Web Browser Push (no FCM needed) ---
-async function requestWebPermission(): Promise<boolean> {
-  try {
-    if (typeof window === "undefined" || !("Notification" in window)) return false
-    if (Notification.permission === "granted") return true
-    if (Notification.permission === "denied") return false
-    const result = await Notification.requestPermission()
-    return result === "granted"
-  } catch { return false }
+import { Platform } from 'react-native'
+import { addNotification } from './notifications'
+
+//  Types 
+
+type NotifType = 'price' | 'tx' | 'security' | 'news'
+
+type PermissionStatus = 'granted' | 'denied' | 'default'
+
+//  Token storage 
+
+const TOKEN_KEY = 'kn_push_token'
+
+function saveToken(token: string) {
+  try { localStorage.setItem(TOKEN_KEY, token) } catch {}
 }
 
-function sendWebNotification(title: string, body: string, type: string): void {
+function loadToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
+
+//  Web: Browser Notification API 
+
+async function requestWebPermission(): Promise<PermissionStatus> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return 'denied'
+  }
+  if (Notification.permission === 'granted') return 'granted'
+  if (Notification.permission === 'denied')  return 'denied'
+  const result = await Notification.requestPermission()
+  return result as PermissionStatus
+}
+
+function getWebPermissionStatus(): PermissionStatus {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'denied'
+  return Notification.permission as PermissionStatus
+}
+
+function sendWebNotification(title: string, body: string) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return
+  if (Notification.permission !== 'granted') return
   try {
-    if (typeof window === "undefined" || !("Notification" in window)) return
-    if (Notification.permission !== "granted") return
-
-    const icons: Record<string, string> = {
-      tx:       "/icon-tx.png",
-      price:    "/icon-price.png",
-      security: "/icon-security.png",
-      news:     "/icon-news.png",
-    }
-
     new Notification(title, {
       body,
-      icon:   icons[type] ?? "/icon.png",
-      badge:  "/badge.png",
-      tag:    `kryptonow-${type}-${Date.now()}`,
-      silent: false,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
     })
   } catch {}
 }
 
-// --- Native Push (expo-notifications) ---
-async function requestNativePermission(): Promise<string | null> {
+//  Native: Expo Notifications 
+
+async function requestNativePermission(): Promise<PermissionStatus> {
   try {
-    const Notifications = await import("expo-notifications")
-    const Device        = await import("expo-device")
+    const Notifications = await import('expo-notifications')
+    const Device        = await import('expo-device')
 
-    if (!Device.default.isDevice) return null
-
-    const { status: existing } = await Notifications.getPermissionsAsync()
-    let finalStatus = existing
-
-    if (existing !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync()
-      finalStatus = status
-    }
-
-    if (finalStatus !== "granted") return null
-
-    // Configure notification handler
+    // Set foreground notification handler
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge:  true,
+        shouldShowBanner: true,
+        shouldShowList: true,
       }),
     })
 
-    // Get push token
-    const token = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PUBLIC_PROJECT_ID ?? "",
-    })
+    if (!Device.isDevice) {
+      // Simulator  permission not available but local notifs work
+      console.log('[KryptoNow Push] Simulator detected  using local notifications only')
+      return 'granted'
+    }
 
-    // Save token to localStorage for backend use
-    try { localStorage.setItem("kryptonow_push_token", token.data) } catch {}
+    const { status: existingStatus } = await Notifications.getPermissionsAsync()
+    if (existingStatus === 'granted') {
+      await registerForPushToken()
+      return 'granted'
+    }
 
-    return token.data
-  } catch { return null }
+    const { status } = await Notifications.requestPermissionsAsync()
+    if (status === 'granted') {
+      await registerForPushToken()
+      return 'granted'
+    }
+
+    return status === 'denied' ? 'denied' : 'default'
+  } catch (e) {
+    console.warn('[KryptoNow Push] Permission error:', e)
+    return 'default'
+  }
 }
 
-// --- Schedule local native notification ---
-async function scheduleLocalNotification(title: string, body: string): Promise<void> {
+async function registerForPushToken(): Promise<string | null> {
   try {
-    const Notifications = await import("expo-notifications")
+    const Notifications = await import('expo-notifications')
+    const Constants     = await import('expo-constants')
+
+    const projectId =
+      Constants.default.expoConfig?.extra?.eas?.projectId ??
+      Constants.default.easConfig?.projectId ??
+      undefined
+
+    const token = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    )
+
+    saveToken(token.data)
+    console.log('[KryptoNow Push] Expo push token:', token.data)
+
+    // Send token to your backend
+    const serverUrl = process.env.EXPO_PUBLIC_PUSH_SERVER_URL
+    if (serverUrl) {
+      await fetch(`${serverUrl}/register-token`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ token: token.data }),
+      }).catch(() => {}) // fail silently  token saved locally
+    }
+
+    return token.data
+  } catch (e) {
+    console.warn('[KryptoNow Push] Token registration error:', e)
+    return null
+  }
+}
+
+async function getNativePermissionStatus(): Promise<PermissionStatus> {
+  try {
+    const Notifications = await import('expo-notifications')
+    const { status } = await Notifications.getPermissionsAsync()
+    return status as PermissionStatus
+  } catch {
+    return 'default'
+  }
+}
+
+async function sendNativeNotification(title: string, body: string): Promise<void> {
+  try {
+    const Notifications = await import('expo-notifications')
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
       trigger: null, // fire immediately
     })
-  } catch {}
+  } catch (e) {
+    console.warn('[KryptoNow Push] Local notification error:', e)
+  }
 }
 
-// --- Main API ---
+//  Public API 
+// These are the 3 functions imported by app/notifications.tsx
 
 /**
- * Request push permission (web + native)
- * Call this when user enables push in settings
+ * Request push notification permission.
+ * Returns true if granted.
  */
 export async function requestPushPermission(): Promise<boolean> {
-  if (Platform.OS === "web") {
-    return requestWebPermission()
-  }
-  const token = await requestNativePermission()
-  return token != null
+  const status = Platform.OS === 'web'
+    ? await requestWebPermission()
+    : await requestNativePermission()
+  return status === 'granted'
 }
 
 /**
- * Send a push notification + add to in-app inbox
- * Works on web (browser notification) and native (local notification)
+ * Get current permission status without prompting.
+ */
+export async function getPushPermissionStatus(): Promise<PermissionStatus> {
+  if (Platform.OS === 'web') {
+    return getWebPermissionStatus()
+  }
+  return getNativePermissionStatus()
+}
+
+/**
+ * Send a push notification immediately.
+ * Also adds it to the in-app notification history.
+ *
+ * @param title  Notification title
+ * @param body   Notification body text
+ * @param type   Category: 'price' | 'tx' | 'security' | 'news'
  */
 export async function sendPushNotification(
   title: string,
   body:  string,
-  type:  "tx" | "price" | "security" | "news",
+  type:  NotifType = 'news',
 ): Promise<void> {
-  const prefs = await loadNotifPrefs()
-  if (!prefs.pushEnabled) return
-
-  // Check type preference
-  if (type === "tx"       && !prefs.txAlerts)       return
-  if (type === "price"    && !prefs.priceAlerts)     return
-  if (type === "security" && !prefs.securityAlerts)  return
-  if (type === "news"     && !prefs.newsAlerts)       return
-
-  // Add to in-app inbox always
+  // Always add to in-app history
   addNotification({ title, body, type })
 
-  // Send platform push
-  if (Platform.OS === "web") {
-    sendWebNotification(title, body, type)
+  // Also send OS-level push
+  if (Platform.OS === 'web') {
+    sendWebNotification(title, body)
   } else {
-    await scheduleLocalNotification(title, body)
+    await sendNativeNotification(title, body)
   }
 }
 
 /**
- * Watch wallet for new transactions and fire alerts
- * Call this on dashboard mount - polls every 60s
+ * Send a transaction notification.
+ * Call this after a tx is confirmed on-chain.
  */
-export function startTxWatcher(
-  address:     string,
-  chainId:     number,
-  chainSymbol: string,
-  onNewTx:     (count: number) => void,
-): () => void {
-  const LAST_KEY = `kryptonow_last_tx_${chainId}_${address.slice(-6)}`
-
-  // async prefs check  return early if disabled
-  let txEnabled = true
-  loadNotifPrefs().then(p => { txEnabled = p.txAlerts && p.pushEnabled })
-
-  if (!txEnabled) return () => {}
-
-  const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? ""
-  const ALCHEMY_RPC: Record<number, string> = {
-    1:     `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-    137:   `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-    42161: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-    10:    `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-    8453:  `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,
-  }
-
-  async function checkNewTxns() {
-    const rpc = ALCHEMY_RPC[chainId]
-    if (!rpc) return
-
-    try {
-      const lastHash = localStorage.getItem(LAST_KEY) ?? ""
-
-      const body = {
-        jsonrpc: "2.0", id: 1,
-        method:  "alchemy_getAssetTransfers",
-        params:  [{
-          fromBlock:        "latest",
-          toBlock:          "latest",
-          toAddress:        address,
-          category:         ["external", "erc20"],
-          withMetadata:     true,
-          excludeZeroValue: true,
-          maxCount:         "0x5",
-          order:            "desc",
-        }],
-      }
-
-      const res  = await fetch(rpc, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
-      })
-      const json = await res.json()
-      const txns = json?.result?.transfers ?? []
-
-      if (txns.length === 0) return
-
-      // Check if newest tx is new
-      const newest = txns[0]
-      if (!newest?.hash || newest.hash === lastHash) return
-
-      // Save latest hash
-      localStorage.setItem(LAST_KEY, newest.hash)
-      if (!lastHash) return // first run - dont notify
-
-      // Count new txns
-      let newCount = 0
-      for (const tx of txns) {
-        if (tx.hash === lastHash) break
-        newCount++
-      }
-      if (newCount === 0) return
-
-      // Fire notification
-      const value  = tx => parseFloat(tx.value ?? 0).toFixed(4)
-      const symbol = txns[0].asset ?? chainSymbol
-      const amt    = value(txns[0])
-
-      await sendPushNotification(
-        "Crypto Received",
-        newCount === 1
-          ? `You received ${amt} ${symbol} on ${chainId === 1 ? "Ethereum" : chainId === 137 ? "Polygon" : "your wallet"}`
-          : `You received ${newCount} new transactions`,
-        "tx",
-      )
-
-      onNewTx(newCount)
-    } catch {}
-  }
-
-  // Initial check after 5s, then every 60s
-  const timeout  = setTimeout(checkNewTxns, 5000)
-  const interval = setInterval(checkNewTxns, 60000)
-
-  return () => {
-    clearTimeout(timeout)
-    clearInterval(interval)
-  }
+export async function sendTxNotification(
+  direction: 'sent' | 'received',
+  amount:    string,
+  symbol:    string,
+  chain:     string,
+  hash:      string,
+): Promise<void> {
+  const title = direction === 'sent'
+    ? `Sent ${amount} ${symbol}`
+    : `Received ${amount} ${symbol}`
+  const body = direction === 'sent'
+    ? `${amount} ${symbol} sent on ${chain}`
+    : `${amount} ${symbol} received on ${chain}  ${hash.slice(0, 8)}...`
+  await sendPushNotification(title, body, 'tx')
 }
 
 /**
- * Start price watcher - checks every 5 mins
- * Fires alert on 5%+ price movement
+ * Send a price alert notification.
  */
-export function startPriceWatcher(): () => void {
-  const prefs = loadNotifPrefs()
-  if (!prefs.priceAlerts || !prefs.pushEnabled) return () => {}
-
-  const LAST_KEY = "kryptonow_last_prices_watch"
-  let priceEnabled = true
-  loadNotifPrefs().then(p => { priceEnabled = p.priceAlerts && p.pushEnabled })
-
-  async function checkPrices() {
-    if (!priceEnabled) return
-    try {
-      const res  = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,binancecoin,matic-network,bitcoin&vs_currencies=usd"
-      )
-      const data = await res.json()
-
-      const prices: Record<string, number> = {
-        eth:   data?.ethereum?.usd         ?? 0,
-        bnb:   data?.binancecoin?.usd      ?? 0,
-        matic: data?.["matic-network"]?.usd ?? 0,
-        btc:   data?.bitcoin?.usd          ?? 0,
-      }
-
-      const lastRaw = localStorage.getItem(LAST_KEY)
-      const last    = lastRaw ? JSON.parse(lastRaw) : {}
-
-      const alerts: { symbol: string; price: number; change: number }[] = []
-
-      for (const [key, price] of Object.entries(prices)) {
-        if (!last[key] || price === 0) continue
-        const change = ((price - last[key]) / last[key]) * 100
-        if (Math.abs(change) >= 5) {
-          alerts.push({ symbol: key.toUpperCase(), price, change })
-        }
-      }
-
-      // Save current prices
-      localStorage.setItem(LAST_KEY, JSON.stringify(prices))
-
-      // Fire one notification per significant move
-      for (const alert of alerts.slice(0, 2)) {
-        const dir = alert.change > 0 ? "surged" : "dropped"
-        await sendPushNotification(
-          `${alert.symbol} Price Alert`,
-          `${alert.symbol} has ${dir} ${Math.abs(alert.change).toFixed(1)}%  now $${alert.price.toLocaleString()}`,
-          "price",
-        )
-      }
-    } catch {}
-  }
-
-  // Check every 5 minutes
-  const timeout  = setTimeout(checkPrices, 10000) // first check after 10s
-  const interval = setInterval(checkPrices, 5 * 60 * 1000)
-
-  return () => {
-    clearTimeout(timeout)
-    clearInterval(interval)
-  }
+export async function sendPriceAlert(
+  symbol:    string,
+  direction: 'up' | 'down',
+  pct:       number,
+  price:     number,
+): Promise<void> {
+  const arrow = direction === 'up' ? '' : ''
+  const title = `${symbol} ${arrow} ${pct.toFixed(1)}%`
+  const body  = `${symbol} is now $${price.toLocaleString()}`
+  await sendPushNotification(title, body, 'price')
 }
 
 /**
- * Get current push permission status
+ * Send a security alert.
  */
-export async function getPushPermissionStatus(): Promise<"granted" | "denied" | "default"> {
-  if (Platform.OS === "web") {
-    if (typeof window === "undefined" || !("Notification" in window)) return "denied"
-    return Notification.permission as "granted" | "denied" | "default"
-  }
-  try {
-    const Notifications = await import("expo-notifications")
-    const { status }    = await Notifications.getPermissionsAsync()
-    return status === "granted" ? "granted" : status === "denied" ? "denied" : "default"
-  } catch { return "default" }
+export async function sendSecurityAlert(message: string): Promise<void> {
+  await sendPushNotification('Security Alert', message, 'security')
+}
+
+/**
+ * Get the stored Expo push token (for sending from backend).
+ */
+export function getStoredPushToken(): string | null {
+  return loadToken()
 }
