@@ -1,3 +1,8 @@
+import * as WebBrowser from 'expo-web-browser'
+// Must run immediately on every page load to detect OAuth popup
+if (typeof window !== 'undefined') {
+  WebBrowser.maybeCompleteAuthSession()
+}
 import ApprovalModal from '../components/ApprovalModal'
 import { kryptoNowProvider } from '../utils/eip1193'
 import 'react-native-get-random-values';
