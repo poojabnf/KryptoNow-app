@@ -1,5 +1,4 @@
-import * as WebBrowser from 'expo-web-browser'
-// Must run immediately on every page load to detect OAuth popup
+﻿import * as WebBrowser from 'expo-web-browser'
 if (typeof window !== 'undefined') {
   WebBrowser.maybeCompleteAuthSession()
 }
@@ -16,17 +15,14 @@ import { ClerkProvider, useAuth } from '@clerk/expo';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { LockProvider } from '../context/LockContext';
+import { Platform } from 'react-native';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
-import { Platform } from 'react-native';
 const tokenCache = Platform.OS === 'web'
   ? {
       async getToken(key: string) {
-        try {
-    if (typeof localStorage !== 'undefined') return localStorage.getItem(key)
-    return null
-  } catch { return null }
+        try { if (typeof localStorage !== 'undefined') return localStorage.getItem(key); return null } catch { return null }
       },
       async setToken(key: string, value: string) {
         try { if (typeof localStorage !== 'undefined') localStorage.setItem(key, value) } catch {}
@@ -37,27 +33,43 @@ const tokenCache = Platform.OS === 'web'
     }
   : {
       async getToken(key: string) {
-        try { return await SecureStore.getItemAsync(key); } catch { return null; }
+        try { return await SecureStore.getItemAsync(key) } catch { return null }
       },
       async setToken(key: string, value: string) {
-        try { await SecureStore.setItemAsync(key, value); } catch {}
+        try { await SecureStore.setItemAsync(key, value) } catch {}
       },
       async deleteToken(key: string) {
-        try { await SecureStore.deleteItemAsync(key); } catch {}
+        try { await SecureStore.deleteItemAsync(key) } catch {}
       },
-    };
+    }
 
 function RootLayoutNav() {
-  const { isLoaded } = useAuth();
-  console.log("[KryptoNow] isLoaded:", isLoaded, "key:", process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0,20));
+  const { isLoaded } = useAuth()
+  const address      = useWalletStore(s => s.address)
+  const activeChain  = useWalletStore(s => s.activeChain)
+
+  // Keep EIP-1193 provider in sync with active wallet + chain
+  useEffect(() => {
+    if (address && activeChain) {
+      kryptoNowProvider.init(address, activeChain.id, activeChain.rpc)
+    }
+  }, [address, activeChain?.id])
+
   if (!isLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2E2E' }}>
         <ActivityIndicator size="large" color="#00D4AA" />
       </View>
-    );
+    )
   }
-  return <Slot />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Slot />
+      {/* ApprovalModal sits above everything  fires when dApps request signing */}
+      <ApprovalModal />
+    </View>
+  )
 }
 
 export default function RootLayout() {
@@ -74,7 +86,14 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache} signInUrl="/sign-in" signUpUrl="/sign-in" afterSignInUrl="/" afterSignUpUrl="/">
+    <ClerkProvider
+      publishableKey={CLERK_PUBLISHABLE_KEY}
+      tokenCache={tokenCache}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-in"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+    >
       <ThemeProvider>
         <LockProvider>
           <AuthProvider>
@@ -83,7 +102,5 @@ export default function RootLayout() {
         </LockProvider>
       </ThemeProvider>
     </ClerkProvider>
-  );
+  )
 }
-
-
