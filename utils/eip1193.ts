@@ -1,27 +1,37 @@
-/**
- * KryptoNow EIP-1193 Provider
- * Injects window.ethereum so any dApp can connect to KryptoNow
+﻿/**
+ * utils/eip1193.ts
+ * KryptoNow EIP-1193 Provider + EIP-6963 Multi-Wallet Discovery
+ *
+ * EIP-1193 : window.ethereum provider for dApp connectivity
+ * EIP-6963 : multi-wallet announcement (works alongside MetaMask etc.)
+ *
+ * FIXED: removed duplicate interface declarations and duplicate announcer fns.
+ * UPGRADED: signing ops load key from Secure Enclave on demand instead of
+ *           storing private key as a class property.
  */
 
 import { ethers } from 'ethers'
+import { loadPrivateKeyFromEnclave } from '../store/SecureKeyStore'
 
 type Listener = (...args: any[]) => void
 
+//  dApp session tracking 
+
 export interface DAppSession {
-  origin: string
-  name: string
-  icon: string
+  origin:      string
+  name:        string
+  icon:        string
   connectedAt: number
-  chainId: number
+  chainId:     number
 }
 
 function saveSessions(sessions: DAppSession[]) {
-  try { localStorage.setItem("kn_dapp_sessions", JSON.stringify(sessions)) } catch {}
+  try { localStorage.setItem('kn_dapp_sessions', JSON.stringify(sessions)) } catch {}
 }
 
 function loadSessions(): DAppSession[] {
   try {
-    const raw = localStorage.getItem("kn_dapp_sessions")
+    const raw = localStorage.getItem('kn_dapp_sessions')
     return raw ? JSON.parse(raw) : []
   } catch { return [] }
 }
@@ -29,42 +39,38 @@ function loadSessions(): DAppSession[] {
 export function getConnectedDApps(): DAppSession[] { return loadSessions() }
 
 export function disconnectDApp(origin: string) {
-  const sessions = loadSessions().filter(s => s.origin !== origin)
-  saveSessions(sessions)
+  saveSessions(loadSessions().filter(s => s.origin !== origin))
 }
 
+//  EIP-1193 Provider 
+
 class KryptoNowProvider {
-  isMetaMask = false
+  isMetaMask  = false
   isKryptoNow = true
   chainId: string = '0x1'
   selectedAddress: string | null = null
 
   private _listeners: Record<string, Listener[]> = {}
-  private _privateKey: string | null = null
-  private _rpc: string = "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3")
-  private _chainId: number = 1
-  private _connected: boolean = false
-  private _pendingRequests: Map<string, { resolve: Function; reject: Function }> = new Map()
+  private _rpc      = 'https://eth-mainnet.g.alchemy.com/v2/' + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 't7T7fcsMA4rqQYH70YRV3')
+  private _chainId  = 1
+  private _connected = false
 
   //  Init 
-  init(address: string, privateKey: string, chainId: number, rpc: string) {
+  init(address: string, chainId: number, rpc: string) {
     this.selectedAddress = address
-    this._privateKey = privateKey
-    this._chainId = chainId
-    this._rpc = rpc
-    this.chainId = '0x' + chainId.toString(16)
+    this._chainId  = chainId
+    this._rpc      = rpc
+    this.chainId   = '0x' + chainId.toString(16)
     this._connected = true
     this._emit('connect', { chainId: this.chainId })
   }
 
   updateChain(chainId: number, rpc: string) {
-    const oldChainId = this.chainId
+    const prev = this.chainId
     this._chainId = chainId
-    this._rpc = rpc
-    this.chainId = '0x' + chainId.toString(16)
-    if (oldChainId !== this.chainId) {
-      this._emit('chainChanged', this.chainId)
-    }
+    this._rpc     = rpc
+    this.chainId  = '0x' + chainId.toString(16)
+    if (prev !== this.chainId) this._emit('chainChanged', this.chainId)
   }
 
   updateAddress(address: string) {
@@ -77,133 +83,94 @@ class KryptoNowProvider {
     const provider = new ethers.JsonRpcProvider(this._rpc, this._chainId)
 
     switch (method) {
-      //  Accounts 
+
       case 'eth_requestAccounts':
-      case 'eth_accounts':
+      case 'eth_accounts': {
         if (!this.selectedAddress) throw this._error(4100, 'Unauthorized')
-        // Track dApp connection
-        if (typeof window !== 'undefined' && method === 'eth_requestAccounts') {
+        if (method === 'eth_requestAccounts' && typeof window !== 'undefined') {
           const origin = window.location?.origin ?? 'unknown'
           const sessions = loadSessions()
           if (!sessions.find(s => s.origin === origin)) {
             sessions.push({
               origin,
-              name: document.title || origin,
-              icon: `https://www.google.com/s2/favicons?domain=${origin}&sz=64`,
+              name:        document.title || origin,
+              icon:        `https://www.google.com/s2/favicons?domain=${origin}&sz=64`,
               connectedAt: Date.now(),
-              chainId: this._chainId,
+              chainId:     this._chainId,
             })
             saveSessions(sessions)
           }
         }
         return [this.selectedAddress]
+      }
 
-      //  Chain 
-      case 'eth_chainId':
-        return this.chainId
+      case 'eth_chainId':    return this.chainId
+      case 'net_version':    return String(this._chainId)
+      case 'eth_blockNumber':return provider.send('eth_blockNumber', [])
 
-      case 'net_version':
-        return String(this._chainId)
-
-      //  Balance 
       case 'eth_getBalance':
-        return provider.send('eth_getBalance', params)
-
-      //  Block 
-      case 'eth_blockNumber':
-        return provider.send('eth_blockNumber', [])
-
-      case 'eth_getBlockByNumber':
-        return provider.send('eth_getBlockByNumber', params)
-
-      //  Gas 
-      case 'eth_gasPrice':
-        return provider.send('eth_gasPrice', [])
-
       case 'eth_estimateGas':
-        return provider.send('eth_estimateGas', params)
-
       case 'eth_feeHistory':
-        return provider.send('eth_feeHistory', params)
-
-      //  Transactions 
       case 'eth_getTransactionCount':
-        return provider.send('eth_getTransactionCount', params)
-
       case 'eth_getTransactionByHash':
-        return provider.send('eth_getTransactionByHash', params)
-
       case 'eth_getTransactionReceipt':
-        return provider.send('eth_getTransactionReceipt', params)
-
       case 'eth_sendRawTransaction':
-        return provider.send('eth_sendRawTransaction', params)
+      case 'eth_call':
+      case 'eth_getLogs':
+      case 'eth_getCode':
+      case 'eth_getStorageAt':
+      case 'eth_getBlockByNumber':
+      case 'eth_gasPrice':
+        return provider.send(method, params)
 
       case 'eth_sendTransaction': {
-        if (!this._privateKey) throw this._error(4100, 'Unauthorized')
-        const tx = params[0]
-        const wallet = new ethers.Wallet(this._privateKey, provider)
-        const approved = await this._requestApproval('sendTransaction', tx)
+        const approved = await this._requestApproval('sendTransaction', params[0])
         if (!approved) throw this._error(4001, 'User rejected transaction')
-        const sent = await wallet.sendTransaction(tx)
+        const pk = await this._getKey()
+        const wallet = new ethers.Wallet(pk, provider)
+        const sent = await wallet.sendTransaction(params[0])
         return sent.hash
       }
 
-      //  Signing 
       case 'personal_sign':
       case 'eth_sign': {
-        if (!this._privateKey) throw this._error(4100, 'Unauthorized')
-        const wallet = new ethers.Wallet(this._privateKey)
         const message = method === 'personal_sign' ? params[0] : params[1]
         const approved = await this._requestApproval('sign', { message })
         if (!approved) throw this._error(4001, 'User rejected signing')
+        const pk = await this._getKey()
+        const wallet = new ethers.Wallet(pk)
         return wallet.signMessage(ethers.getBytes(message))
       }
 
       case 'eth_signTypedData_v4': {
-        if (!this._privateKey) throw this._error(4100, 'Unauthorized')
-        const wallet = new ethers.Wallet(this._privateKey)
-        const typedData = JSON.parse(params[1])
+        const typedData = typeof params[1] === 'string' ? JSON.parse(params[1]) : params[1]
         const approved = await this._requestApproval('signTypedData', typedData)
         if (!approved) throw this._error(4001, 'User rejected signing')
+        const pk = await this._getKey()
+        const wallet = new ethers.Wallet(pk)
         const { domain, types, message } = typedData
         const { EIP712Domain: _, ...cleanTypes } = types
         return wallet.signTypedData(domain, cleanTypes, message)
       }
 
-      //  Chain switching 
       case 'wallet_switchEthereumChain': {
         const newChainId = parseInt(params[0].chainId, 16)
-        const knownChains: Record<number, string> = {
-          ...((_ak) => ({
-            1:     "https://eth-mainnet.g.alchemy.com/v2/" + _ak,
-            137:   "https://polygon-mainnet.g.alchemy.com/v2/" + _ak,
-            56:    'https://bsc-dataseed1.binance.org/',
-            42161: "https://arb-mainnet.g.alchemy.com/v2/" + _ak,
-            10:    "https://opt-mainnet.g.alchemy.com/v2/" + _ak,
-            8453:  "https://base-mainnet.g.alchemy.com/v2/" + _ak,
-          }))(process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
+        const ak = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 't7T7fcsMA4rqQYH70YRV3'
+        const knownRpcs: Record<number, string> = {
+          1:     `https://eth-mainnet.g.alchemy.com/v2/${ak}`,
+          137:   `https://polygon-mainnet.g.alchemy.com/v2/${ak}`,
+          56:    'https://bsc-dataseed1.binance.org/',
+          42161: `https://arb-mainnet.g.alchemy.com/v2/${ak}`,
+          10:    `https://opt-mainnet.g.alchemy.com/v2/${ak}`,
+          8453:  `https://base-mainnet.g.alchemy.com/v2/${ak}`,
         }
-        if (!knownChains[newChainId]) throw this._error(4902, 'Unrecognized chain')
-        this.updateChain(newChainId, knownChains[newChainId])
+        if (!knownRpcs[newChainId]) throw this._error(4902, 'Unrecognized chain')
+        this.updateChain(newChainId, knownRpcs[newChainId])
         return null
       }
 
       case 'wallet_addEthereumChain':
         return null
-
-      //  Contract calls 
-      case 'eth_call':
-        return provider.send('eth_call', params)
-
-      case 'eth_getLogs':
-        return provider.send('eth_getLogs', params)
-
-      case 'eth_getCode':
-        return provider.send('eth_getCode', params)
-
-      case 'eth_getStorageAt':
-        return provider.send('eth_getStorageAt', params)
 
       default:
         return provider.send(method, params)
@@ -216,63 +183,63 @@ class KryptoNowProvider {
     this._listeners[event].push(listener)
     return this
   }
-
   removeListener(event: string, listener: Listener) {
     if (!this._listeners[event]) return this
     this._listeners[event] = this._listeners[event].filter(l => l !== listener)
     return this
   }
-
   off = this.removeListener
 
   private _emit(event: string, ...args: any[]) {
-    (this._listeners[event] ?? []).forEach(l => l(...args))
+    ;(this._listeners[event] ?? []).forEach(l => l(...args))
+  }
+
+  //  Load key from Secure Enclave on demand 
+  // Key never sits in memory  fetched fresh for each signing op,
+  // biometric prompt fires automatically via requireAuthentication.
+  private async _getKey(): Promise<string> {
+    const result = await loadPrivateKeyFromEnclave('Authenticate to sign')
+    if (!result.ok || !result.data) {
+      throw this._error(4001, result.error ?? 'Authentication failed')
+    }
+    return '0x' + result.data
   }
 
   //  Approval popup 
   private _requestApproval(type: string, data: any): Promise<boolean> {
-    return new Promise((resolve) => {
-      const event = new CustomEvent('kryptonow:approval_request', {
-        detail: { type, data, resolve }
-      })
-      window.dispatchEvent(event)
+    return new Promise(resolve => {
+      window.dispatchEvent(
+        new CustomEvent('kryptonow:approval_request', { detail: { type, data, resolve } })
+      )
     })
   }
 
-  //  Errors 
+  //  Error helper 
   private _error(code: number, message: string) {
     return Object.assign(new Error(message), { code })
   }
 
-  //  Legacy 
-  send(method: string, params?: any[]) {
-    return this.request({ method, params })
-  }
-
+  //  Legacy compatibility 
+  send(method: string, params?: any[]) { return this.request({ method, params }) }
   sendAsync(payload: any, callback: Function) {
     this.request(payload)
       .then(result => callback(null, { id: payload.id, jsonrpc: '2.0', result }))
       .catch(error => callback(error, null))
   }
-
-  enable() {
-    return this.request({ method: 'eth_requestAccounts' })
-  }
-
+  enable() { return this.request({ method: 'eth_requestAccounts' }) }
   isConnected() { return this._connected }
 }
 
 export const kryptoNowProvider = new KryptoNowProvider()
 
-// Inject into window
+// Inject window.ethereum
 if (typeof window !== 'undefined') {
-  (window as any).ethereum = kryptoNowProvider
+  ;(window as any).ethereum = kryptoNowProvider
   window.dispatchEvent(new Event('ethereum#initialized'))
   console.log('[KryptoNow] EIP-1193 provider injected ')
 }
+
 //  EIP-6963 Multi-Wallet Discovery 
-// Allows dApps (Uniswap, OpenSea etc.) to detect KryptoNow alongside MetaMask
-// without window.ethereum conflicts. Standard since 2023.
 
 export interface EIP6963ProviderInfo {
   uuid: string
@@ -282,92 +249,33 @@ export interface EIP6963ProviderInfo {
 }
 
 export interface EIP6963ProviderDetail {
-  info: EIP6963ProviderInfo
+  info:     EIP6963ProviderInfo
   provider: KryptoNowProvider
 }
 
-const EIP6963_INFO: EIP6963ProviderInfo = {
-  uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+const KRYPTONOW_INFO: EIP6963ProviderInfo = {
+  uuid: 'f4b8b7e2-1a3c-4d5e-9f0a-2b6c8d4e1f3a',
   name: 'KryptoNow',
-  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236366F1"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="bold" fill="white" font-family="Arial">K</text></svg>',
-  rdns: 'io.kryptonow',
+  icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzBEMkUyRSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjcyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiMwMEQ0QUEiPks8L3RleHQ+PC9zdmc+',
+  rdns: 'xyz.kryptonow',
 }
 
-function announceProvider() {
+export function announceEIP6963Provider() {
   if (typeof window === 'undefined') return
   const detail: EIP6963ProviderDetail = {
-    info: EIP6963_INFO,
+    info:     KRYPTONOW_INFO,
     provider: kryptoNowProvider,
   }
-  window.dispatchEvent(
-    new CustomEvent('eip6963:announceProvider', {
-      detail: Object.freeze(detail),
-    })
-  )
-}
-
-// Announce immediately on load
-announceProvider()
-
-// Re-announce whenever a dApp requests it (e.g. loaded after our script)
-if (typeof window !== 'undefined') {
-  window.addEventListener('eip6963:requestProvider', announceProvider)
-}
-
-//  EIP-6963 Multi-Wallet Discovery 
-// Announces KryptoNow to dApps that support multi-wallet detection
-// dApps listen for "eip6963:announceProvider" and display all detected wallets
-
-interface EIP6963ProviderInfo {
-  uuid:        string
-  name:        string
-  icon:        string
-  rdns:        string
-}
-
-interface EIP6963ProviderDetail {
-  info:     EIP6963ProviderInfo
-  provider: any
-}
-
-interface EIP6963AnnounceProviderEvent extends CustomEvent {
-  type:   "eip6963:announceProvider"
-  detail: EIP6963ProviderDetail
-}
-
-// KryptoNow wallet metadata
-const KRYPTONOW_INFO: EIP6963ProviderInfo = {
-  uuid: "f4b8b7e2-1a3c-4d5e-9f0a-2b6c8d4e1f3a", // stable UUID for KryptoNow
-  name: "KryptoNow",
-  icon: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzBEMkUyRSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjcyIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZpbGw9IiMwMEQ0QUEiPks8L3RleHQ+PC9zdmc+",
-  rdns: "xyz.kryptonow", // reverse domain notation
-}
-
-function announceEIP6963Provider() {
-  if (typeof window === "undefined") return
-
-  const announceEvent = new CustomEvent("eip6963:announceProvider", {
-    detail: Object.freeze({
-      info:     KRYPTONOW_INFO,
-      provider: kryptoNowProvider,
-    }),
-  }) as EIP6963AnnounceProviderEvent
-
-  // Announce immediately
-  window.dispatchEvent(announceEvent)
-
-  // Re-announce when dApps request it
-  window.addEventListener("eip6963:requestProvider", () => {
-    window.dispatchEvent(announceEvent)
+  const event = new CustomEvent('eip6963:announceProvider', {
+    detail: Object.freeze(detail),
   })
-
-  console.log("[KryptoNow] EIP-6963 multi-wallet announced ")
+  window.dispatchEvent(event)
+  console.log('[KryptoNow] EIP-6963 announced ')
 }
 
-// Auto-announce when provider is initialized
-if (typeof window !== "undefined") {
-  // Announce after a short delay to ensure dApps are ready
+if (typeof window !== 'undefined') {
   setTimeout(announceEIP6963Provider, 100)
+  window.addEventListener('eip6963:requestProvider', announceEIP6963Provider)
 }
 
-export { announceEIP6963Provider, KRYPTONOW_INFO }
+export { KRYPTONOW_INFO }
