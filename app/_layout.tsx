@@ -69,7 +69,7 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache} signInUrl="/sign-in" signUpUrl="/sign-in" afterSignInUrl="/" afterSignUpUrl="/">
       <ThemeProvider>
         <LockProvider>
           <AuthProvider>
