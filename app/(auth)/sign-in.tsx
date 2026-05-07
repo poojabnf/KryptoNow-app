@@ -29,7 +29,7 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   return useCallback(async (onSuccess: () => Promise<void>) => {
     try {
       const redirectUrl = Platform.OS === "web"
-        ? window.location.origin + "/"
+        ? window.location.origin + "/sso-callback"
         : "kryptonow://";
 
       const result = await startSSOFlow({ strategy, redirectUrl });
