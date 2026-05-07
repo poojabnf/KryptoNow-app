@@ -32,7 +32,6 @@ export default function Index() {
         if (!isLoaded) return
         try {
           if (isSignedIn) {
-            // Get destination for parent window
             const walletRaw  = await getItem("kryptonow_wallet")
             const legacyAddr = await getItem("kryptonow_address")
             let address: string | null = null
@@ -40,29 +39,26 @@ export default function Index() {
               try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
             }
             if (!address) address = legacyAddr
-
             const profileRaw = await getItem("kryptonow_profile")
             const profile    = profileRaw ? JSON.parse(profileRaw) : null
+            // New user has no address  send to /create
             const dest = !address ? "/create"
               : !profile?.onboarded ? "/onboarding"
               : "/dashboard"
-
-            // Redirect parent window then close popup
-            try {
-              window.opener.location.href = dest
-            } catch {
-              // If cross-origin blocked, use postMessage
-              window.opener.postMessage({ type: "KRYPTONOW_AUTH_SUCCESS", dest }, "*")
-            }
-            // Close popup after short delay
-            setTimeout(() => window.close(), 300)
+            // Signal parent window
+            try { window.opener.location.href = dest } catch {}
+            try { window.opener.postMessage({ type: "KRYPTONOW_AUTH_SUCCESS", dest }, "*") } catch {}
+            setTimeout(() => window.close(), 500)
           } else {
-            // Auth failed - close popup
-            window.close()
+            // Not signed in yet - wait and retry
+            setTimeout(() => {
+              if (window.opener) {
+                try { window.opener.postMessage({ type: "KRYPTONOW_AUTH_RETRY" }, "*") } catch {}
+              }
+              window.close()
+            }, 1000)
           }
-        } catch {
-          window.close()
-        }
+        } catch { window.close() }
       }
       handlePopup()
       return
