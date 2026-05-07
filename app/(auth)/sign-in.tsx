@@ -26,12 +26,14 @@ const LOG = (tag: string, msg: string, data?: any) => {
 // OAuth helper - FIXED: removed manual window.open("about:blank") that caused double popup
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
+  const { signIn } = useSignIn();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     try {
       const redirectUrl = Platform.OS === "web"
         ? window.location.origin + "/"
         : "kryptonow://";
 
+      LOG("OAuth", "Using startSSOFlow", { strategy, redirectUrl })
       const result = await startSSOFlow({ strategy, redirectUrl });
       const { createdSessionId, setActive, signIn, signUp } = result;
 
