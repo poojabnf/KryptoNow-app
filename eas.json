@@ -9,9 +9,7 @@
       "ios": {
         "simulator": true
       },
-      "env": {
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": ""
-      }
+      "env": {}
     },
     "preview": {
       "distribution": "internal",

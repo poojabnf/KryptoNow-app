@@ -1,94 +1,99 @@
 {
-  "expo": {
-    "name": "KryptoNow",
-    "slug": "kryptonow",
-    "scheme": "kryptonow",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1E1B4B"
-    },
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.kryptonow.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "KryptoNow uses your camera to scan WalletConnect QR codes.",
-        "NSFaceIDUsageDescription": "KryptoNow uses Face ID to protect your wallet.",
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "kryptonow"
-            ]
-          }
-        ]
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1E1B4B"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.kryptonow.app",
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.INTERNET",
-        "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
-      ],
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "autoVerify": true,
-          "data": [
-            {
-              "scheme": "kryptonow"
-            }
-          ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
-        }
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro",
-      "htmlTemplate": "./web/index.html"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "5c22ca6d-6705-4f70-bd37-c37207cc140a"
-      },
-      "website": "https://kryptonow.xyz"
-    },
-    "owner": "poojaya2k19",
-    "plugins": [
-      "expo-web-browser",
-      "expo-router",
-      "expo-secure-store",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow KryptoNow to access your camera to scan QR codes."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#6366F1",
-          "defaultChannel": "default"
-        }
-      ]
-    ]
-  }
+    "expo":  {
+                 "name":  "KryptoNow",
+                 "slug":  "kryptonow",
+                 "scheme":  "kryptonow",
+                 "version":  "1.0.0",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/icon.png",
+                 "userInterfaceStyle":  "automatic",
+                 "splash":  {
+                                "image":  "./assets/splash.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#1E1B4B"
+                            },
+                 "ios":  {
+                             "supportsTablet":  false,
+                             "bundleIdentifier":  "com.kryptonow.app",
+                             "infoPlist":  {
+                                               "NSCameraUsageDescription":  "KryptoNow uses your camera to scan WalletConnect QR codes.",
+                                               "NSFaceIDUsageDescription":  "KryptoNow uses Face ID to protect your wallet.",
+                                               "CFBundleURLTypes":  [
+                                                                        {
+                                                                            "CFBundleURLSchemes":  [
+                                                                                                       "kryptonow"
+                                                                                                   ]
+                                                                        }
+                                                                    ]
+                                           },
+                             "googleServicesFile":  "./GoogleService-Info.plist"
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/adaptive-icon.png",
+                                                      "backgroundColor":  "#1E1B4B"
+                                                  },
+                                 "edgeToEdgeEnabled":  true,
+                                 "predictiveBackGestureEnabled":  false,
+                                 "package":  "com.kryptonow.app",
+                                 "permissions":  [
+                                                     "android.permission.CAMERA",
+                                                     "android.permission.USE_BIOMETRIC",
+                                                     "android.permission.USE_FINGERPRINT",
+                                                     "android.permission.INTERNET",
+                                                     "android.permission.VIBRATE",
+                                                     "android.permission.RECEIVE_BOOT_COMPLETED"
+                                                 ],
+                                 "intentFilters":  [
+                                                       {
+                                                           "action":  "VIEW",
+                                                           "autoVerify":  true,
+                                                           "data":  [
+                                                                        {
+                                                                            "scheme":  "kryptonow"
+                                                                        }
+                                                                    ],
+                                                           "category":  [
+                                                                            "BROWSABLE",
+                                                                            "DEFAULT"
+                                                                        ]
+                                                       }
+                                                   ],
+                                 "googleServicesFile":  "./google-services.json"
+                             },
+                 "web":  {
+                             "favicon":  "./assets/favicon.png",
+                             "bundler":  "metro",
+                             "htmlTemplate":  "./web/index.html"
+                         },
+                 "extra":  {
+                               "eas":  {
+                                           "projectId":  "5c22ca6d-6705-4f70-bd37-c37207cc140a"
+                                       },
+                               "website":  "https://kryptonow.xyz"
+                           },
+                 "owner":  "poojaya2k19",
+                 "plugins":  [
+                                 "expo-web-browser",
+                                 "expo-router",
+                                 "expo-secure-store",
+                                 [
+                                     "expo-camera",
+                                     {
+                                         "cameraPermission":  "Allow KryptoNow to access your camera to scan QR codes."
+                                     }
+                                 ],
+                                 [
+                                     "expo-notifications",
+                                     {
+                                         "icon":  "./assets/notification-icon.png",
+                                         "color":  "#6366F1",
+                                         "defaultChannel":  "default"
+                                     }
+                                 ],
+                                 "@react-native-firebase/app",
+                                 "@react-native-firebase/messaging",
+                                 "expo-local-authentication"
+                             ]
+             }
 }
