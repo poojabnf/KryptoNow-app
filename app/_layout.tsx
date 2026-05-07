@@ -1,4 +1,4 @@
-﻿import * as WebBrowser from 'expo-web-browser'
+import * as WebBrowser from 'expo-web-browser'
 if (typeof window !== 'undefined') {
   WebBrowser.maybeCompleteAuthSession()
 }
@@ -72,6 +72,8 @@ function RootLayoutNav() {
   )
 }
 
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function RootLayout() {
   const initFromStorage = useWalletStore(s => s.initFromStorage)
 
@@ -104,3 +106,4 @@ export default function RootLayout() {
     </ClerkProvider>
   )
 }
+

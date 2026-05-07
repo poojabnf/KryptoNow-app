@@ -77,7 +77,8 @@
                  "web":  {
                              "favicon":  "./assets/favicon.png",
                              "bundler":  "metro",
-                             "htmlTemplate":  "./web/index.html"
+                             "htmlTemplate":  "./web/index.html",
+                             "output":  "single"
                          },
                  "extra":  {
                                "eas":  {
