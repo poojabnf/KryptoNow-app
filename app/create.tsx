@@ -1,4 +1,3 @@
-
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput, Platform } from "react-native"
 import { router } from "expo-router"
 import { useAuth } from "@clerk/expo"
@@ -23,7 +22,7 @@ export default function Create() {
   const [importError,  setImportError]  = useState("")
   const [enclaveError, setEnclaveError] = useState("")
 
-    const handleGenerate = () => {
+  const handleGenerate = () => {
     try {
       let w: ethers.Wallet
       if (Platform.OS === "web" && typeof window !== "undefined" && window.crypto) {
@@ -38,16 +37,15 @@ export default function Create() {
         const mnemonic = ethers.Mnemonic.fromEntropy(entropy)
         w = ethers.Wallet.fromPhrase(mnemonic.phrase)
       } else {
-        // Native: react-native-get-random-values polyfill handles this
+        // Native fallback
         w = ethers.Wallet.createRandom()
       }
       setWallet(w)
       setStep("create_show")
     } catch (e: any) {
-      setEnclaveError(e?.message ?? "Failed to generate wallet. Please refresh and try again.")
+      setEnclaveError(e?.message ?? "Failed to generate wallet")
       console.error("Wallet generation error:", e)
     }
-  }
   }
 
   const handleCopyPhrase = async () => {
