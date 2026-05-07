@@ -1,115 +1,113 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { Platform } from 'react-native'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AppState, Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 
-const PIN_KEY = 'kryptonow_pin_hash'
-
-function hashPin(pin: string): string {
-  let h = 7
-  for (let i = 0; i < pin.length; i++) {
-    h = h * 31 + pin.charCodeAt(i)
-    h = h >>> 0
-  }
-  return h.toString(16)
-}
-
-function storageGet(key: string): string | null {
-  try { return localStorage.getItem(key) } catch { return null }
-}
-function storageSet(key: string, val: string) {
-  try { localStorage.setItem(key, val) } catch {}
-}
-function storageRemove(key: string) {
-  try { localStorage.removeItem(key) } catch {}
-}
-
-type LockState = 'locked' | 'unlocked' | 'no_pin'
-
-type LockContextType = {
-  lockState:      LockState
-  hasPin:         boolean
-  biometricAvail: boolean
-  biometricType:  string
-  unlock:         (pin: string) => Promise<boolean>
-  lock:           () => void
-  savePin:        (pin: string) => Promise<void>
-  clearPin:       () => void
-  verifyPin:      (pin: string) => Promise<boolean>
-  biometricUnlock:() => Promise<void>
+interface LockContextType {
+  isUnlocked: boolean;
+  requireUnlock: () => Promise<boolean>;
 }
 
 const LockContext = createContext<LockContextType>({
-  lockState:       'no_pin',
-  hasPin:          false,
-  biometricAvail:  false,
-  biometricType:   '',
-  unlock:          async () => true,
-  lock:            () => {},
-  savePin:         async () => {},
-  clearPin:        () => {},
-  verifyPin:       async () => true,
-  biometricUnlock: async () => {},
-})
+  isUnlocked: true,
+  requireUnlock: async () => true,
+});
 
-export function LockProvider({ children }: { children: React.ReactNode }) {
-  const [lockState,      setLockState]      = useState<LockState>('no_pin')
-  const [hasPin,         setHasPin]         = useState(false)
-  const [biometricAvail, setBiometricAvail] = useState(false)
+export function LockProvider({ children }: { children: ReactNode }) {
+  const [isUnlocked, setIsUnlocked] = useState(true);
+  const [isSupported, setIsSupported] = useState(false);
+  const [appState, setAppState] = useState(AppState.currentState);
 
   useEffect(() => {
-    const stored = storageGet(PIN_KEY)
-    if (stored) {
-      setHasPin(true)
-      setLockState('locked')
-    } else {
-      setLockState('no_pin')
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const compatible = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (compatible && enrolled) {
+          setIsSupported(true);
+          setIsUnlocked(false); // Lock initially if biometrics are configured
+        }
+      }
+    })();
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      // Re-lock the app if it comes back from the background
+      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+         if (Platform.OS !== 'web' && isSupported) {
+           setIsUnlocked(false);
+         }
+      }
+      setAppState(nextAppState);
+    });
+
+    return () => subscription.remove();
+  }, [appState, isSupported]);
+
+  useEffect(() => {
+    if (!isUnlocked && isSupported) {
+      requireUnlock();
     }
-  }, [])
+  }, [isUnlocked, isSupported]);
 
-  async function savePin(pin: string) {
-    const hash = hashPin(pin)
-    storageSet(PIN_KEY, hash)
-    setHasPin(true)
-    setLockState('unlocked')
-  }
+  const requireUnlock = async () => {
+    if (Platform.OS === 'web' || !isSupported) {
+      setIsUnlocked(true);
+      return true;
+    }
 
-  function clearPin() {
-    storageRemove(PIN_KEY)
-    setHasPin(false)
-    setLockState('no_pin')
-  }
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Unlock KryptoNow',
+      fallbackLabel: 'Use PIN',
+      cancelLabel: 'Cancel',
+      disableDeviceFallback: false,
+    });
 
-  async function verifyPin(pin: string): Promise<boolean> {
-    const stored = storageGet(PIN_KEY)
-    if (!stored) return true
-    return hashPin(pin) === stored
-  }
-
-  async function unlock(pin: string): Promise<boolean> {
-    const ok = await verifyPin(pin)
-    if (ok) setLockState('unlocked')
-    return ok
-  }
-
-  function lock() {
-    if (hasPin) setLockState('locked')
-  }
-
-  async function biometricUnlock() {
-    // Web doesn't support biometrics  skip
-    setLockState('unlocked')
-  }
+    if (result.success) {
+      setIsUnlocked(true);
+      return true;
+    }
+    return false;
+  };
 
   return (
-    <LockContext.Provider value={{
-      lockState, hasPin, biometricAvail,
-      biometricType: '',
-      unlock, lock, savePin, clearPin, verifyPin, biometricUnlock,
-    }}>
+    <LockContext.Provider value={{ isUnlocked, requireUnlock }}>
       {children}
+      {!isUnlocked && (
+        <View style={styles.overlay}>
+          <View style={styles.shield}>
+            <Text style={styles.shieldIcon}></Text>
+          </View>
+          <Text style={styles.title}>KryptoNow is Locked</Text>
+          <Text style={styles.sub}>Authenticate to access your funds safely.</Text>
+          <TouchableOpacity style={styles.btn} onPress={requireUnlock}>
+            <Text style={styles.btnText}>Unlock Wallet</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </LockContext.Provider>
-  )
+  );
 }
 
-export function useLockContext() {
-  return useContext(LockContext)
-}
+export const useLock = () => useContext(LockContext);
+
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0D2E2E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999, // Ensure it sits above absolutely everything
+    padding: 24,
+  },
+  shield: {
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: 'rgba(0, 212, 170, 0.1)',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1, borderColor: 'rgba(0, 212, 170, 0.3)'
+  },
+  shieldIcon: { fontSize: 32 },
+  title: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 8 },
+  sub: { fontSize: 14, color: '#A0C4C4', marginBottom: 32, textAlign: 'center' },
+  btn: { backgroundColor: '#00D4AA', paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 },
+  btnText: { color: '#0D2E2E', fontSize: 16, fontWeight: '700' },
+});
