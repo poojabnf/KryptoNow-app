@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, Alert, SafeAreaView,
+  TextInput, Alert, SafeAreaView, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useWalletStore } from '../store/walletStore'
+import { fetchDeFiSummary, DeFiSummary } from '../utils/graph'
 
 //  Data 
 type YieldProduct = {
@@ -119,6 +120,19 @@ export default function EarnScreen() {
   const [selected, setSelected] = useState<string | null>(null)
   const [calcAmt,  setCalcAmt]  = useState('')
 
+  const addr = useWalletStore(s => s.address)
+  const [defi,       setDefi]       = useState<DeFiSummary | null>(null)
+  const [defiLoading,setDefiLoading] = useState(false)
+
+  useEffect(() => {
+    if (!addr) return
+    setDefiLoading(true)
+    fetchDeFiSummary(addr)
+      .then(setDefi)
+      .catch(() => {})
+      .finally(() => setDefiLoading(false))
+  }, [addr])
+
   const selProduct = YIELD_PRODUCTS.find(p => p.id === selected) ?? null
   const earnings   = selProduct && calcAmt
     ? calcEarnings(parseFloat(calcAmt) || 0, selProduct.apyValue)
@@ -162,6 +176,86 @@ export default function EarnScreen() {
             </View>
           </View>
         </View>
+
+        {/* Your DeFi Positions */}
+        {(defiLoading || (defi && defi.hasActivity)) && (
+          <View style={s.section}>
+            <Text style={s.label}>Your DeFi Positions</Text>
+            {defiLoading && (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ActivityIndicator color="#6366F1" />
+                <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 8 }}>Fetching from The Graph...</Text>
+              </View>
+            )}
+            {!defiLoading && defi && defi.uniswapPositions.map(pos => (
+              <View key={pos.id} style={[s.posCard, { borderLeftColor: '#FF007A' }]}>
+                <View style={s.posHeader}>
+                  <View style={[s.posIcon, { backgroundColor: '#FFF0F9' }]}>
+                    <Text style={{ fontSize: 16 }}></Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={s.posTitle}>{pos.symbol0}/{pos.symbol1}</Text>
+                    <Text style={s.posProtocol}>Uniswap v3  Chain {pos.chainId}</Text>
+                  </View>
+                  <View style={[s.posBadge, { backgroundColor: '#FFF0F9' }]}>
+                    <Text style={{ color: '#FF007A', fontSize: 11, fontWeight: '700' }}>LP Active</Text>
+                  </View>
+                </View>
+                <View style={s.posDetails}>
+                  <View style={s.posRow}>
+                    <Text style={s.posKey}>Deposited {pos.symbol0}</Text>
+                    <Text style={s.posVal}>{pos.depositedToken0}</Text>
+                  </View>
+                  <View style={s.posRow}>
+                    <Text style={s.posKey}>Deposited {pos.symbol1}</Text>
+                    <Text style={s.posVal}>{pos.depositedToken1}</Text>
+                  </View>
+                  <View style={s.posRow}>
+                    <Text style={s.posKey}>Collected {pos.symbol0}</Text>
+                    <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '600' }}>{pos.collectedToken0}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+            {!defiLoading && defi && defi.aavePositions.map(pos => (
+              <View key={pos.id} style={[s.posCard, { borderLeftColor: pos.type === 'deposit' ? '#10B981' : '#EF4444' }]}>
+                <View style={s.posHeader}>
+                  <View style={[s.posIcon, { backgroundColor: pos.type === 'deposit' ? '#ECFDF5' : '#FEF2F2' }]}>
+                    <Text style={{ fontSize: 16 }}>{pos.type === 'deposit' ? '' : ''}</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={s.posTitle}>{pos.symbol} {pos.type === 'deposit' ? 'Supply' : 'Borrow'}</Text>
+                    <Text style={s.posProtocol}>Aave v3  Chain {pos.chainId}</Text>
+                  </View>
+                  <View style={[s.posBadge, { backgroundColor: pos.type === 'deposit' ? '#ECFDF5' : '#FEF2F2' }]}>
+                    <Text style={{ color: pos.type === 'deposit' ? '#10B981' : '#EF4444', fontSize: 11, fontWeight: '700' }}>
+                      {pos.type === 'deposit' ? `${pos.liquidityRate}% APY` : 'Borrowed'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={s.posDetails}>
+                  {pos.type === 'deposit' ? (
+                    <View style={s.posRow}>
+                      <Text style={s.posKey}>Supplied</Text>
+                      <Text style={s.posVal}>{pos.currentATokenBalance} {pos.symbol}</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={s.posRow}>
+                        <Text style={s.posKey}>Variable Debt</Text>
+                        <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600' }}>{pos.currentVariableDebt} {pos.symbol}</Text>
+                      </View>
+                      <View style={s.posRow}>
+                        <Text style={s.posKey}>Stable Debt</Text>
+                        <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600' }}>{pos.currentStableDebt} {pos.symbol}</Text>
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Products */}
         <View style={s.section}>
@@ -314,6 +408,16 @@ const s = StyleSheet.create({
   earningItem: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
   earningV:    { fontSize: 14, fontWeight: '700' },
   earningL:    { color: '#94A3B8', fontSize: 11, marginTop: 2 },
+  posCard:     { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0', borderLeftWidth: 4 },
+  posHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  posIcon:     { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  posTitle:    { color: '#1E1B4B', fontSize: 14, fontWeight: '700' },
+  posProtocol: { color: '#94A3B8', fontSize: 11, marginTop: 1 },
+  posBadge:    { borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8 },
+  posDetails:  { gap: 6 },
+  posRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  posKey:      { color: '#94A3B8', fontSize: 13 },
+  posVal:      { color: '#1E1B4B', fontSize: 13, fontWeight: '600' },
   depositBtn:  { borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   depositBtnT: { color: '#fff', fontSize: 14, fontWeight: '700' },
   disclaimer:  { marginHorizontal: 16, backgroundColor: '#FFFBEB', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#FDE68A' },
