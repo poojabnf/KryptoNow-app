@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import { getProvider } from '../utils/chains'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, ScrollView, TextInput } from 'react-native'
 import { router } from 'expo-router'
+import { decodeTypedData, decodePersonalSign } from '../utils/eip712Decoder'
 import { useWalletStore } from '../store/walletStore'
 import { loadPrivateKey } from '../store/keyStore'
 
@@ -195,7 +196,33 @@ export default function WalletConnectScreen() {
   if (pendingReq) return (
     <View style={s.c}>
       <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>setPendingReq(null)}><Ionicons name="arrow-back" size={22} color="#6366F1" /></TouchableOpacity><Text style={s.title}>Sign Request</Text><View style={{width:38}}/></View>
-      <ScrollView style={{flex:1,padding:20}}><View style={s.card}><Text style={{color:'#6366F1',fontWeight:'700',marginBottom:4}}>{pendingReq.origin}</Text><Text style={{color:'#1E1B4B',fontSize:16,fontWeight:'600',marginBottom:12}}>{pendingReq.method}</Text><Text style={{color:'#64748B',fontSize:12,fontFamily:Platform.OS==='ios'?'Courier':'monospace'}}>{JSON.stringify(pendingReq.params,null,2)}</Text></View></ScrollView>
+            <ScrollView style={{flex:1,padding:20}}>
+        <View style={s.card}>
+          <Text style={{color:'#6366F1',fontWeight:'700',marginBottom:4}}>{pendingReq.origin}</Text>
+          <Text style={{color:'#1E1B4B',fontSize:16,fontWeight:'600',marginBottom:12}}>{pendingReq.method}</Text>
+          {(() => {
+            if (pendingReq.method === 'eth_signTypedData_v4') {
+              const decoded = decodeTypedData(pendingReq.params);
+              return decoded ? (
+                <View>
+                  <Text style={{fontWeight:'700', color: decoded.riskLevel === 'danger' ? '#EF4444' : '#1E1B4B', marginBottom: 6}}>{decoded.title}</Text>
+                  {decoded.fields.map((f: any, i: number) => (
+                    <View key={i} style={{flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#F1F5F9'}}>
+                      <Text style={{color:'#64748B', fontSize: 12, flex: 0.4}}>{f.label}</Text>
+                      <Text style={{color:'#1E1B4B', fontSize: 12, fontWeight: '600', flex: 0.6, textAlign: 'right'}}>{f.value}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : <Text style={{color:'#64748B',fontSize:12}}>{JSON.stringify(pendingReq.params, null, 2)}</Text>;
+            }
+            if (pendingReq.method === 'personal_sign') {
+              const decoded = decodePersonalSign(pendingReq.params[0] || pendingReq.params.message);
+              return <Text style={{fontSize:13, color: '#1E1B4B', lineHeight: 20}}>{decoded?.displayText || 'Unknown message format'}</Text>;
+            }
+            return <Text style={{color:'#64748B',fontSize:12,fontFamily:Platform.OS==='ios'?'Courier':'monospace'}}>{JSON.stringify(pendingReq.params,null,2)}</Text>;
+          })()}
+        </View>
+      </ScrollView>
       <View style={s.row}><TouchableOpacity style={s.rejectBtn} onPress={rejectRequest}><Text style={s.rejectT}>Reject</Text></TouchableOpacity><TouchableOpacity style={s.approveBtn} onPress={approveRequest} disabled={signing}>{signing?<ActivityIndicator color="#fff"/>:<Text style={s.approveT}>Approve</Text>}</TouchableOpacity></View>
     </View>
   )

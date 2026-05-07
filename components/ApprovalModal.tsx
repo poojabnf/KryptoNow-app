@@ -1,4 +1,4 @@
-﻿/**
+/**
  * components/ApprovalModal.tsx
  *
  * Approval popup for dApp signing requests.
@@ -110,8 +110,8 @@ export default function ApprovalModal() {
   useEffect(() => {
     if (Platform.OS === 'web') {
       const handler = (e: any) => setRequest(e.detail)
-      window.addEventListener('kryptonow:approval_request', handler)
-      return () => window.removeEventListener('kryptonow:approval_request', handler)
+      window.addEventListener('kryptonow_sign_request', handler)
+      return () => window.removeEventListener('kryptonow_sign_request', handler)
     }
   }, [])
 
