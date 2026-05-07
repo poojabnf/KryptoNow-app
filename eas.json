@@ -9,7 +9,8 @@
       "ios": {
         "simulator": true
       },
-      "env": {}
+      "env": {},
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -18,13 +19,15 @@
       },
       "ios": {
         "simulator": false
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "android": {
-        "buildType": "aab"
+        "buildType": "app-bundle"
       },
-      "ios": {}
+      "ios": {},
+      "channel": "production"
     }
   },
   "submit": {
