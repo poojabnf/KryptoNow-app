@@ -135,19 +135,25 @@ export default function SignIn() {
     try {
       let address: string | null = null
       let profile: any = null
-      if (Platform.OS === "web") {
-        const walletRaw = localStorage.getItem("kryptonow_wallet")
-        if (walletRaw) {
-          try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
+
+      // Helper that works on both web and native
+      const get = async (key: string): Promise<string | null> => {
+        if (Platform.OS === "web") {
+          return typeof localStorage !== "undefined" ? localStorage.getItem(key) : null
         }
-        if (!address) address = localStorage.getItem("kryptonow_address")
-        const profileRaw = localStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
-      } else {
-        address = await AsyncStorage.getItem("kryptonow_address")
-        const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
+        return AsyncStorage.getItem(key)
       }
+
+      // Check new wallet format first, then legacy key
+      const walletRaw = await get("kryptonow_wallet")
+      if (walletRaw) {
+        try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
+      }
+      if (!address) address = await get("kryptonow_address")
+
+      const profileRaw = await get("kryptonow_profile")
+      profile = profileRaw ? JSON.parse(profileRaw) : null
+
       if (!address) router.replace("/create")
       else if (!profile?.onboarded) router.replace("/onboarding")
       else router.replace("/dashboard")

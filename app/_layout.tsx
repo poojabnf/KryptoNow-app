@@ -89,10 +89,10 @@ export default function RootLayout() {
     <ClerkProvider
       publishableKey={CLERK_PUBLISHABLE_KEY}
       tokenCache={tokenCache}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-in"
-      afterSignInUrl="/"
-      afterSignUpUrl="/"
+      signInUrl="/(auth)/sign-in"
+      signUpUrl="/(auth)/sign-in"
+      afterSignInUrl="/sso-callback"
+      afterSignUpUrl="/sso-callback"
     >
       <ThemeProvider>
         <LockProvider>

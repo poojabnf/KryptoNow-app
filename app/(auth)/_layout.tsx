@@ -22,7 +22,7 @@ export default function AuthLayout() {
     );
   }
 
-  if (isSignedIn) return <Redirect href="/" />;
+  if (isSignedIn) return <Redirect href="/sso-callback" />;
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

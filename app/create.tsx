@@ -53,9 +53,16 @@ export default function Create() {
 
       // Save address + profile to localStorage (web) or AsyncStorage (native)
       if (Platform.OS === "web") {
+        // Write both formats so all auth code paths find the wallet
         localStorage.setItem("kryptonow_address", address)
+        localStorage.setItem("kryptonow_wallet",  JSON.stringify({ address, phrase: "" }))
         localStorage.setItem("kryptonow_vault",   privKey)
         localStorage.setItem("kryptonow_profile", JSON.stringify({ onboarded: true }))
+      } else {
+        const AS = require("@react-native-async-storage/async-storage").default
+        await AS.setItem("kryptonow_address", address)
+        await AS.setItem("kryptonow_wallet",  JSON.stringify({ address, phrase: "" }))
+        await AS.setItem("kryptonow_profile", JSON.stringify({ onboarded: true }))
       }
 
       // Update wallet store
