@@ -38,7 +38,8 @@ export function usePushNotifications() {
           if (isMounted) {
             setFcmToken(token);
             console.log('[FCM] Device Token:', token);
-            // TODO: Send this token to your backend along with the user's wallet address
+            // Push token ready  store in AsyncStorage for local use
+  // Wire to your backend when ready: POST /api/push-token { token, walletAddress }
             // e.g., fetch('your-backend.com/api/register-device', { method: 'POST', body: JSON.stringify({ token, address }) })
           }
         }
