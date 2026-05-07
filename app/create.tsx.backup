@@ -1,4 +1,4 @@
-
+import "react-native-get-random-values"
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput, Platform } from "react-native"
 import { router } from "expo-router"
 import { useAuth } from "@clerk/expo"
@@ -23,31 +23,14 @@ export default function Create() {
   const [importError,  setImportError]  = useState("")
   const [enclaveError, setEnclaveError] = useState("")
 
-    const handleGenerate = () => {
+  const handleGenerate = () => {
     try {
-      let w: ethers.Wallet
-      if (Platform.OS === "web" && typeof window !== "undefined" && window.crypto) {
-        // Web: use browser crypto directly
-        const array = new Uint8Array(32)
-        window.crypto.getRandomValues(array)
-        const privateKey = "0x" + Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("")
-        w = new ethers.Wallet(privateKey)
-        // Generate mnemonic separately using browser entropy
-        const entropy = new Uint8Array(16)
-        window.crypto.getRandomValues(entropy)
-        const mnemonic = ethers.Mnemonic.fromEntropy(entropy)
-        w = ethers.Wallet.fromPhrase(mnemonic.phrase)
-      } else {
-        // Native: react-native-get-random-values polyfill handles this
-        w = ethers.Wallet.createRandom()
-      }
+      const w = ethers.Wallet.createRandom()
       setWallet(w)
       setStep("create_show")
     } catch (e: any) {
-      setEnclaveError(e?.message ?? "Failed to generate wallet. Please refresh and try again.")
-      console.error("Wallet generation error:", e)
+      setEnclaveError(e?.message ?? "Failed to generate wallet")
     }
-  }
   }
 
   const handleCopyPhrase = async () => {
