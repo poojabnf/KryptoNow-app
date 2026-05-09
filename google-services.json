@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "698456324003",
+    "project_id": "kryptonow-c6139",
+    "storage_bucket": "kryptonow-c6139.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698456324003:android:52c1910b9d66fac0850c16",
+        "android_client_info": {
+          "package_name": "KryptoNow.xyz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7pEcyfPhm4-nSkz2EDJBceezix8HwDMI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

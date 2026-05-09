@@ -1,0 +1,42 @@
+{
+    "manifest_version":  3,
+    "name":  "KryptoNow Wallet",
+    "version":  "1.0.0",
+    "description":  "The secure Web3 vault for the KryptoNow ecosystem.",
+    "action":  {
+                   "default_popup":  "index.html"
+               },
+    "background":  {
+                       "service_worker":  "src/background.ts",
+                       "type":  "module"
+                   },
+    "content_scripts":  [
+                            {
+                                "matches":  [
+                                                "\u003call_urls\u003e"
+                                            ],
+                                "js":  [
+                                           "src/content.ts"
+                                       ],
+                                "run_at":  "document_start"
+                            }
+                        ],
+    "permissions":  [
+                        "storage",
+                        "activeTab",
+                        "alarms"
+                    ],
+    "host_permissions":  [
+                             "https://*/*"
+                         ],
+    "web_accessible_resources":  [
+                                     {
+                                         "matches":  [
+                                                         "\u003call_urls\u003e"
+                                                     ],
+                                         "resources":  [
+                                                           "src/injected.ts"
+                                                       ]
+                                     }
+                                 ]
+}
