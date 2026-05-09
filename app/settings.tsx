@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Switch, Alert, Platform,
@@ -20,7 +20,7 @@ export default function Settings() {
   const clearWallet = useWalletStore(s => s.clearWallet)
   const { signOut } = useAuth()
   const { theme, mode, setMode } = useTheme()
-  const { hasPin, lockState, lock, clearPin } = useLockContext()
+  const { isUnlocked } = useLockContext()
 
   const [biometrics,    setBiometrics]    = useState(false)
   const [notifications, setNotifications] = useState(true)
@@ -164,7 +164,7 @@ export default function Settings() {
           sublabel: aaLoading ? "Checking..." : aaInfo?.isDeployed ? "Deployed on-chain" : aaInfo ? "Not yet deployed (deploys on first tx)" : "",
           type: "info" },
         { icon: "", iconBg: "#FFFBEB", label: "Gas Sponsorship",
-          sublabel: aaInfo?.gasless ? "Gasless  Pimlico sponsors gas" : "Standard gas (add Pimlico key for gasless)",
+          sublabel: "Standard gas (add Pimlico key for gasless)",
           type: "info" },
       ],
     },
