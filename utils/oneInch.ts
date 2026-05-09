@@ -6,6 +6,8 @@
  * Get your free API key at: https://portal.1inch.dev/
  */
 
+import { CHAIN_TOP_TOKENS, toOneInchFormat } from './topTokens'
+
 export const ONEINCH_API_KEY = 'YourOneInchApiKey' // ← replace with real key
 
 const BASE = 'https://api.1inch.dev/swap/v6.0'
@@ -47,40 +49,9 @@ export type SwapTxData = {
 // ─── Token list ───────────────────────────────────────────────────────────────
 
 // Top tokens per chain — used as default suggestions in the picker
-export const TOP_TOKENS: Record<number, OneInchToken[]> = {
-  1: [  // Ethereum
-    { address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', symbol: 'ETH',  name: 'Ethereum',    decimals: 18, logoURI: '' },
-    { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', symbol: 'USDC', name: 'USD Coin',    decimals: 6,  logoURI: '' },
-    { address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', symbol: 'USDT', name: 'Tether',      decimals: 6,  logoURI: '' },
-    { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'DAI',  name: 'Dai',         decimals: 18, logoURI: '' },
-    { address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', symbol: 'WBTC', name: 'Wrapped BTC', decimals: 8,  logoURI: '' },
-    { address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', symbol: 'UNI',  name: 'Uniswap',     decimals: 18, logoURI: '' },
-    { address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', symbol: 'AAVE', name: 'Aave',        decimals: 18, logoURI: '' },
-    { address: '0x514910771AF9Ca656af840dff83E8264EcF986CA', symbol: 'LINK', name: 'Chainlink',   decimals: 18, logoURI: '' },
-  ],
-  137: [ // Polygon
-    { address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', symbol: 'POL',  name: 'POL',      decimals: 18, logoURI: '' },
-    { address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', symbol: 'USDC', name: 'USD Coin',  decimals: 6,  logoURI: '' },
-    { address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F', symbol: 'USDT', name: 'Tether',    decimals: 6,  logoURI: '' },
-    { address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063', symbol: 'DAI',  name: 'Dai',       decimals: 18, logoURI: '' },
-  ],
-  42161: [ // Arbitrum
-    { address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', symbol: 'ETH',  name: 'Ethereum', decimals: 18, logoURI: '' },
-    { address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', symbol: 'USDC', name: 'USD Coin', decimals: 6,  logoURI: '' },
-    { address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', symbol: 'USDT', name: 'Tether',   decimals: 6,  logoURI: '' },
-    { address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1', symbol: 'DAI',  name: 'Dai',      decimals: 18, logoURI: '' },
-  ],
-  10: [ // Optimism
-    { address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', symbol: 'ETH',  name: 'Ethereum', decimals: 18, logoURI: '' },
-    { address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', symbol: 'USDC', name: 'USD Coin', decimals: 6,  logoURI: '' },
-    { address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', symbol: 'USDT', name: 'Tether',   decimals: 6,  logoURI: '' },
-  ],
-  56: [ // BNB
-    { address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', symbol: 'BNB',  name: 'BNB',      decimals: 18, logoURI: '' },
-    { address: '0x55d398326f99059fF775485246999027B3197955', symbol: 'USDT', name: 'Tether',   decimals: 18, logoURI: '' },
-    { address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', symbol: 'BUSD', name: 'BUSD',     decimals: 18, logoURI: '' },
-  ],
-}
+export const TOP_TOKENS: Record<number, OneInchToken[]> = Object.fromEntries(
+  Object.entries(CHAIN_TOP_TOKENS).map(([id, tokens]) => [id, toOneInchFormat(tokens)])
+)
 
 const NATIVE_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
 

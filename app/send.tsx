@@ -16,35 +16,15 @@ import { getTxUrl, getProvider, Chain, AA_SUPPORTED_CHAINS } from "../utils/chai
 import TokenSearchModal from "../components/TokenSearchModal"
 import { CustomToken, loadCustomTokens } from "../utils/tokenSearch"
 import { useAA } from "../hooks/useAA"
+import { CHAIN_TOP_TOKENS, toSendFormat } from "../utils/topTokens"
 
 const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
 ]
 
-const CHAIN_TOKENS: Record<number, { symbol: string; name: string; decimals: number; contract: string; color: string }[]> = {
-  1: [
-    { symbol:"USDC", name:"USD Coin",  decimals:6,  contract:"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", color:"#2775CA" },
-    { symbol:"USDT", name:"Tether",    decimals:6,  contract:"0xdAC17F958D2ee523a2206206994597C13D831ec7", color:"#26A17B" },
-    { symbol:"LINK", name:"Chainlink", decimals:18, contract:"0x514910771AF9Ca656af840dff83E8264EcF986CA", color:"#375BD2" },
-    { symbol:"UNI",  name:"Uniswap",  decimals:18, contract:"0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", color:"#FF007A" },
-  ],
-  137: [
-    { symbol:"USDC", name:"USD Coin",  decimals:6,  contract:"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", color:"#2775CA" },
-    { symbol:"USDT", name:"Tether",    decimals:6,  contract:"0xc2132D05D31c914a87C6611C10748AEb04B58e8F", color:"#26A17B" },
-  ],
-  42161: [
-    { symbol:"USDC", name:"USD Coin",  decimals:6,  contract:"0xaf88d065e77c8cC2239327C5EDb3A432268e5831", color:"#2775CA" },
-    { symbol:"USDT", name:"Tether",    decimals:6,  contract:"0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", color:"#26A17B" },
-  ],
-  10: [
-    { symbol:"USDC", name:"USD Coin",  decimals:6,  contract:"0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85", color:"#2775CA" },
-    { symbol:"USDT", name:"Tether",    decimals:6,  contract:"0x94b008aA00579c1307B0EF2c499aD98a8ce58e58", color:"#26A17B" },
-  ],
-  56: [
-    { symbol:"USDT", name:"Tether",    decimals:18, contract:"0x55d398326f99059fF775485246999027B3197955", color:"#26A17B" },
-    { symbol:"BUSD", name:"BUSD",      decimals:18, contract:"0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", color:"#F0B90B" },
-  ],
-}
+const CHAIN_TOKENS = Object.fromEntries(
+  Object.entries(CHAIN_TOP_TOKENS).map(([id, tokens]) => [id, toSendFormat(tokens)])
+) as Record<number, { symbol: string; name: string; decimals: number; contract: string; color: string }[]>
 
 // --- Gas Estimator Types ---
 type GasSpeed = "slow" | "standard" | "fast"

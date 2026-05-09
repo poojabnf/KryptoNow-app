@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
 import { retrievePrivateKey } from "../store/SecureKeyStore"
+import { deletePrivateKey } from "../store/keyStore"
 import { CHAINS } from "../utils/chains"
 import { useAuth } from "@clerk/expo"
 import * as Clipboard from "expo-clipboard"
@@ -75,26 +76,21 @@ export default function Settings() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Clear Clerk session tokens only  keep wallet data
-              if (Platform.OS === "web") {
-                // Remove only Clerk session keys, not wallet keys
-                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith("__clerk") || key.startsWith("clerk")) {
-                    localStorage.removeItem(key)
-                  }
-                })
-              }
+              // Let Clerk revoke the server session and clean up its own tokens.
+              // Do NOT manually delete Clerk's localStorage keys before this call —
+              // doing so prevents Clerk from finding the session token to invalidate.
+              lock()
               await signOut()
-              router.replace("/(auth)/sign-in")
-            } catch (e: any) {
-              // Force redirect even if signOut fails
+            } catch {
+              // Best-effort: manually clear Clerk tokens if signOut threw
               if (Platform.OS === "web") {
-                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
+                Object.keys(localStorage).forEach(key => {
                   if (key.startsWith("__clerk") || key.startsWith("clerk")) {
                     localStorage.removeItem(key)
                   }
                 })
               }
+            } finally {
               router.replace("/(auth)/sign-in")
             }
           },
@@ -115,14 +111,21 @@ export default function Settings() {
           style: "destructive",
           onPress: async () => {
             try {
-              clearWallet?.()
+              // Delete private key from SecureStore (native) or keyStore (web)
+              await deletePrivateKey()
+              // Clear wallet state + encrypted vault / AsyncStorage
+              await clearWallet?.()
+              // Clear PIN so LockContext starts fresh on next launch
+              clearPin()
+              // Clear any remaining localStorage entries on web
               if (Platform.OS === "web") {
                 localStorage.clear()
               }
               await signOut()
-              router.replace("/(auth)/sign-in")
             } catch {
+              // Best-effort cleanup even if one step fails
               if (Platform.OS === "web") localStorage.clear()
+            } finally {
               router.replace("/(auth)/sign-in")
             }
           },

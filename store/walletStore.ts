@@ -38,7 +38,7 @@ interface WalletState {
   setLoaded:            (v: boolean) => void
   setActiveChain:       (chain: Chain) => void
   setSmartAccountAddress: (addr: string | null) => void
-  clearWallet:          () => void
+  clearWallet:          () => Promise<void>
   setChainCache:        (chainId: number, data: ChainCache) => void
   getChainCache:        (chainId: number) => ChainCache | null
   initFromStorage:      () => Promise<void>
@@ -51,7 +51,7 @@ const DEFAULT_CHAIN: Chain = {
   symbol:     'ETH',
   icon:       'E',
   color:      '#627EEA',
-  rpc:        "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
+  rpc:        "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? ''),
   explorer:   'https://etherscan.io',
 }
 
@@ -134,9 +134,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     set({ activeChain })
   },
 
-  clearWallet: () => {
-    saveWallet(null)
-    if (Platform.OS !== 'web') AsyncStorage.removeItem(CHAIN_KEY)
+  clearWallet: async () => {
+    await saveWallet(null)
+    if (Platform.OS !== 'web') await AsyncStorage.removeItem(CHAIN_KEY)
     else try { localStorage.removeItem(CHAIN_KEY) } catch {}
     set({ wallet: null, address: null, chainCache: {} })
   },

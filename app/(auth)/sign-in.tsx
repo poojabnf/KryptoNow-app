@@ -11,8 +11,6 @@ import { useSignIn, useSignUp } from "@clerk/expo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
-WebBrowser.maybeCompleteAuthSession();
-
 const { width, height } = Dimensions.get("window")
 const TEAL   = "#0D2E2E"
 const ACCENT = "#00D4AA"
@@ -23,14 +21,15 @@ const LOG = (tag: string, msg: string, data?: any) => {
   else console.log(`[KryptoNow][${tag}] ${msg}`);
 };
 
-// OAuth helper - FIXED: removed manual window.open("about:blank") that caused double popup
+// OAuth helper
 function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     if (Platform.OS === "web") {
-      // Let Clerk open its own popup - do NOT call window.open() manually first.
-      // Opening "about:blank" before startSSOFlow was causing the double-popup bug.
-      const redirectUrl = window.location.origin + "/"
+      // Point the popup to /oauth-callback — a minimal page that calls
+      // maybeCompleteAuthSession() before Expo Router can navigate away
+      // and strip the auth params from the URL.
+      const redirectUrl = window.location.origin + "/oauth-callback"
       try {
         const result = await startSSOFlow({ strategy, redirectUrl })
         const { createdSessionId, setActive } = result
@@ -38,12 +37,10 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
           await setActive({ session: createdSessionId })
           await onSuccess()
         } else {
-          // Popup completed and closed - give Clerk 800ms to update session
-          await new Promise(r => setTimeout(r, 800))
           await onSuccess()
         }
       } catch (e: any) {
-        // User closed popup or cancelled - not a hard error
+        // User closed popup or cancelled — not a hard error
         if (
           e?.code === 4001 ||
           e?.message?.includes("cancelled") ||
@@ -56,7 +53,7 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
       }
       return
     }
-    // Mobile flow
+    // Mobile: deep-link redirect
     try {
       const result = await startSSOFlow({ strategy, redirectUrl: "kryptonow://" })
       const { createdSessionId, setActive, signIn, signUp } = result
