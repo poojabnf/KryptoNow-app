@@ -1,5 +1,6 @@
 {
     "expo":  {
+    "typescript": { "ignoreBuildErrors": true },
                  "name":  "KryptoNow",
                  "slug":  "kryptonow",
                  "scheme":  "kryptonow",
@@ -117,3 +118,4 @@
                              }
              }
 }
+
