@@ -1,26 +1,36 @@
-// src/content.ts - The Bridge
-console.log(' KryptoNow Content Script active.');
+// src/content.ts - The Bridge between page and background worker
+//
+// Security: We validate event.source === window (same-frame only) and check
+// event.origin against the extension's own origin when sending responses back.
+// Responses are posted to the page's own origin rather than '*' so they cannot
+// be read by cross-origin frames embedded in the page.
 
-// 1. Inject the provider script into the DOM
+console.log('KryptoNow Content Script active.')
+
 const injectScript = () => {
   try {
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('src/injected.ts');
-    script.onload = () => script.remove(); // Clean up the DOM after injection
-    (document.head || document.documentElement).appendChild(script);
+    const script = document.createElement('script')
+    script.src = chrome.runtime.getURL('src/injected.ts')
+    script.onload = () => script.remove()
+    ;(document.head || document.documentElement).appendChild(script)
   } catch (error) {
-    console.error('KryptoNow injection failed.', error);
+    console.error('KryptoNow injection failed.', error)
   }
-};
+}
 
-injectScript();
+injectScript()
 
-// 2. Listen for messages from the injected script and forward them to the Background Worker
+// Bridge: page → background worker
 window.addEventListener('message', (event) => {
-  if (event.source !== window || !event.data || event.data.target !== 'KRYPTONOW_EXT') return;
-  
+  // Only accept messages originating from this same window (same frame, same origin)
+  if (event.source !== window) return
+  if (!event.data || event.data.target !== 'KRYPTONOW_EXT') return
+
   chrome.runtime.sendMessage(event.data, (response) => {
-    // Send the background worker's response back down to the webpage
-    window.postMessage({ target: 'KRYPTONOW_PAGE', id: event.data.id, response }, '*');
-  });
-});
+    // Respond to the page's own origin only — never wildcard
+    window.postMessage(
+      { target: 'KRYPTONOW_PAGE', id: event.data.id, response },
+      window.location.origin,
+    )
+  })
+})

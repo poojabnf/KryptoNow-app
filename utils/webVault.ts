@@ -12,9 +12,11 @@
  *   kryptonow_wallet       { ct: base64, iv: base64 } (ciphertext)
  */
 
-// App-level secret from env  injected at build time
-// NEVER store this in localStorage or log it
-const APP_SECRET = process.env.EXPO_PUBLIC_VAULT_SECRET ?? 'kryptonow-default-dev-secret-change-in-prod'
+// App-level secret from env — injected at build time.
+// NEVER store this in localStorage or log it.
+const _vaultSecret = process.env.EXPO_PUBLIC_VAULT_SECRET
+if (!_vaultSecret) throw new Error('EXPO_PUBLIC_VAULT_SECRET is not set. Add a strong random secret to your .env file.')
+const APP_SECRET = _vaultSecret
 
 const SALT_KEY   = 'kryptonow_vault_salt'
 const WALLET_KEY = 'kryptonow_wallet'
@@ -82,29 +84,21 @@ export type VaultPayload = {
  */
 export async function saveEncryptedWallet(payload: VaultPayload): Promise<void> {
   if (typeof window === 'undefined' || !window.crypto?.subtle) {
-    // Fallback for environments without SubtleCrypto (should not happen in browsers)
-    localStorage.setItem(WALLET_KEY, JSON.stringify(payload))
-    return
+    throw new Error('[KryptoNow] SubtleCrypto is unavailable. Cannot store wallet securely.')
   }
 
-  try {
-    const salt      = await getOrCreateSalt()
-    const key       = await deriveKey(salt)
-    const iv        = crypto.getRandomValues(new Uint8Array(12))
-    const encoded   = new TextEncoder().encode(JSON.stringify(payload))
-    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
+  const salt      = await getOrCreateSalt()
+  const key       = await deriveKey(salt)
+  const iv        = crypto.getRandomValues(new Uint8Array(12))
+  const encoded   = new TextEncoder().encode(JSON.stringify(payload))
+  const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
 
-    const stored = {
-      ct:  bufToBase64(cipherBuf),
-      iv:  bufToBase64(iv.buffer),
-      v:   1,  // version  for future migration
-    }
-    localStorage.setItem(WALLET_KEY, JSON.stringify(stored))
-  } catch (e) {
-    console.error('[KryptoNow] Vault encrypt failed:', e)
-    // Fail safe  store without encryption rather than lose the wallet
-    localStorage.setItem(WALLET_KEY, JSON.stringify(payload))
+  const stored = {
+    ct: bufToBase64(cipherBuf),
+    iv: bufToBase64(iv.buffer),
+    v:  1,
   }
+  localStorage.setItem(WALLET_KEY, JSON.stringify(stored))
 }
 
 /**

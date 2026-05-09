@@ -1,4 +1,6 @@
-export const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 'Gw7PHs6VFH8gDXU4joBdN';
+const _alchemyKey = process.env.EXPO_PUBLIC_ALCHEMY_KEY
+if (!_alchemyKey) throw new Error('EXPO_PUBLIC_ALCHEMY_KEY is not set. Add it to your .env file.')
+export const ALCHEMY_KEY = _alchemyKey
 
 export const RPC = {
   ethereum: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`,

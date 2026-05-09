@@ -48,13 +48,12 @@ export default function Create() {
       const address = w.address
       const privKey = w.privateKey
 
-      // Save private key to secure storage
+      // Save private key to secure storage (native: hardware-backed keychain; web: AES-256-GCM vault)
       await savePrivateKey(privKey)
 
-      // Save address + profile to localStorage (web) or AsyncStorage (native)
+      // Save address + profile metadata (no key material)
       if (Platform.OS === "web") {
         localStorage.setItem("kryptonow_address", address)
-        localStorage.setItem("kryptonow_vault",   privKey)
         localStorage.setItem("kryptonow_profile", JSON.stringify({ onboarded: true }))
       }
 

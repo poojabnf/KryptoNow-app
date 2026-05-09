@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useContext } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, Modal, Animated,
@@ -6,6 +6,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useTheme } from "../context/ThemeContext"
+import { useLockContext } from "../context/LockContext"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
@@ -167,6 +168,7 @@ export default function Swap() {
   const addr        = useWalletStore(s => s.address)
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
+  const { lockState } = useLockContext()
   const defaults    = TOP_TOKENS[activeChain.id] ?? TOP_TOKENS[1]
 
   const [fromToken,          setFromToken]          = useState<OneInchToken>(defaults[0])
@@ -244,10 +246,14 @@ export default function Swap() {
   }
 
   async function handleApprove(): Promise<boolean> {
+    if (lockState === 'locked') {
+      Alert.alert("Locked", "Please unlock your wallet before approving.")
+      return false
+    }
     setStep("approving")
     try {
       const privateKey  = await loadPrivateKey()
-      if (!privateKey) throw new Error("Authentication failed")
+      if (!privateKey) throw new Error("No wallet key found")
       const approveData = await getApproveData(activeChain.id, fromToken.address)
       const provider    = getProvider(activeChain)
       const wallet      = new ethers.Wallet(privateKey, provider)
@@ -268,6 +274,10 @@ export default function Swap() {
 
   async function handleSwap() {
     if (!quote || !addr) return
+    if (lockState === 'locked') {
+      Alert.alert("Locked", "Please unlock your wallet before swapping.")
+      return
+    }
     if (needsApproval) {
       const approved = await handleApprove()
       if (!approved) return
@@ -275,7 +285,7 @@ export default function Swap() {
     setStep("swapping")
     try {
       const privateKey = await loadPrivateKey()
-      if (!privateKey) throw new Error("Authentication failed")
+      if (!privateKey) throw new Error("No wallet key found")
 
       let txData: { to: string; data: string; value: string; gas: number; gasPrice: string } | null = null
 
