@@ -1,1 +1,17 @@
-{"buildCommand":"npx expo export --platform web","outputDirectory":"dist","framework":null,"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+﻿{
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "framework": null,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
