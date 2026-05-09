@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, Dimensions, StyleSheet, Platform } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
@@ -24,7 +24,7 @@ export default function PriceChart({
     async function fetchHistory() {
       try {
         // Fetch 7-day hourly data from CoinGecko (Free public API)
-        const res = await fetch(https://api.coingecko.com/api/v3/coins/ + coinId + /market_chart?vs_currency=usd&days=7);
+        const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=7`);
         if (!res.ok) throw new Error('Rate limited or network error');
         
         const json = await res.json();
