@@ -350,3 +350,4 @@ const c = StyleSheet.create({
   sendBtnT:     { fontSize: 20, fontWeight: '700' },
 })
 
+

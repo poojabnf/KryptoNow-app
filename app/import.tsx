@@ -44,7 +44,7 @@ export default function Import() {
       await saveWalletKeys(wallet.privateKey, trimmed)
 
       // Only store the public address in Zustand
-      setWallet(wallet.address)
+      setWallet({ address: wallet.address, phrase: '', name: 'Wallet 1' })
 
       router.replace('/dashboard')
     } catch (e: any) {

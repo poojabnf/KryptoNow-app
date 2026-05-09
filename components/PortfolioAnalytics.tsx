@@ -56,7 +56,7 @@ export default function PortfolioAnalytics() {
           backgroundColor: 'transparent',
           backgroundGradientFrom: '#111118',
           backgroundGradientTo: '#111118',
-          color: (opacity = 1) => gba(0, 212, 170, ),
+          color: (opacity = 1) => `rgba(0, 212, 170, ${opacity})`
         }}
         accessor="population"
         backgroundColor="transparent"
@@ -111,3 +111,4 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(17, 17, 24, 0.8)',
   }
 });
+
