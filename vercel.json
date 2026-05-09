@@ -2,14 +2,5 @@
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
-  "rewrites": [{"source":"/:path*","destination":"/"}],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {"key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups"},
-        {"key": "Cross-Origin-Embedder-Policy", "value": "unsafe-none"}
-      ]
-    }
-  ]
+  "rewrites": [{"source":"/:path*","destination":"/"}]
 }
