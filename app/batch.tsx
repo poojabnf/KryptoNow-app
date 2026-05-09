@@ -85,7 +85,7 @@ export default function BatchSend() {
 
     setEst(true)
     try {
-      const provider  = getProvider(activeChain)
+      const provider  = getProvider(activeChain as any)
       const feeData   = await provider.getFeeData()
       const gasPrice  = feeData.gasPrice ?? ethers.parseUnits("20", "gwei")
       const gasPerTx  = BigInt(21000)
@@ -154,7 +154,7 @@ export default function BatchSend() {
 
       //  Legacy sequential fallback (BSC) 
       } else {
-        const provider = getProvider(activeChain)
+        const provider = getProvider(activeChain as any)
         const wallet   = new ethers.Wallet(privateKey, provider)
         let nonce      = await provider.getTransactionCount(wallet.address, "latest")
         const feeData  = await provider.getFeeData()

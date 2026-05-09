@@ -97,8 +97,8 @@ function Particle({ delay, x }: { delay: number; x: number }) {
 export default function SignIn() {
   const startGoogle  = useOAuthFlow("oauth_google");
   const startDiscord = useOAuthFlow("oauth_discord");
-  const { signIn, setActive: setSignInActive, isLoaded: siLoaded } = useSignIn();
-  const { signUp, setActive: setSignUpActive, isLoaded: suLoaded } = useSignUp();
+  const { signIn, setActive: setSignInActive, isLoaded: siLoaded } = useSignIn() as any;
+  const { signUp, setActive: setSignUpActive, isLoaded: suLoaded } = useSignUp() as any;
 
   const [email,   setEmail  ] = useState("");
   const [code,    setCode   ] = useState("");

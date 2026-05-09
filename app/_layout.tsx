@@ -19,6 +19,7 @@ import { Platform } from 'react-native';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
+// @ts-ignore
 const tokenCache = Platform.OS === 'web'
   ? {
       async getToken(key: string) {
@@ -90,11 +91,9 @@ export default function RootLayout() {
   return (
     <ClerkProvider
       publishableKey={CLERK_PUBLISHABLE_KEY}
-      tokenCache={tokenCache}
-      signInUrl="/(auth)/sign-in"
-      signUpUrl="/(auth)/sign-in"
-      afterSignInUrl="/sso-callback"
-      afterSignUpUrl="/sso-callback"
+      tokenCache={tokenCache as any}
+      after
+      after
     >
       <ThemeProvider>
         <LockProvider>

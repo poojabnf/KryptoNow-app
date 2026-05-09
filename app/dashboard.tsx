@@ -12,7 +12,7 @@ import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
 import { CHAINS, Chain, getProvider } from "../utils/chains"
 import { fetchChainTokenBalances } from "../utils/tokens"
 import { getUnreadCount } from "../utils/notifications"
-import { startTxWatcher, requestPushPermission } from "../utils/pushService"
+import { requestPushPermission } from "../utils/pushService"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "@clerk/expo"
 
@@ -280,7 +280,7 @@ export default function Dashboard() {
     }
     setError(false)
     try {
-      const provider   = getProvider(activeChain)
+      const provider   = getProvider(activeChain as any)
       const weiBalance = await Promise.race([
         provider.getBalance(addr),
         new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 7000)),
