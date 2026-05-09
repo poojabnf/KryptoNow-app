@@ -340,3 +340,4 @@ const st = StyleSheet.create({
   logoutIcon:   { color: "#F43F5E", fontSize: 16, fontWeight: "800" },
   logoutT:      { color: "#F43F5E", fontSize: 16, fontWeight: "700" },
 })
+
