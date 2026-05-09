@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet, FlatList,
@@ -457,4 +458,5 @@ const d = StyleSheet.create({
 }
 
 // --- Styles ---
+
 

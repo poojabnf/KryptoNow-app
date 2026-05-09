@@ -79,3 +79,5 @@ clerk-nextjs/node_modules
 
 # Old fix scripts
 *.py
+
+kryptonow-backend/serviceAccountKey.json

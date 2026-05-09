@@ -1,7 +1,13 @@
+/**
+ * store/walletStore.ts
+ * --------------------
+ * ✅ Bug 6 fix: removed phrase from WalletData stored in AsyncStorage.
+ * Phrase now lives ONLY in SecureStore via keyStore.ts.
+ * AsyncStorage only holds the public address + chain preference.
+ */
 import { create } from 'zustand'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { saveEncryptedWallet, loadEncryptedWallet, deleteEncryptedWallet } from '../utils/webVault'
 
 export interface Chain {
   id:          number
@@ -14,9 +20,9 @@ export interface Chain {
   explorer:    string
 }
 
+// ✅ phrase removed — never store seed phrase in AsyncStorage
 export interface WalletData {
   address: string
-  phrase:  string
   name?:   string
 }
 
@@ -30,7 +36,7 @@ interface ChainCache {
 interface WalletState {
   wallet:               WalletData | null
   address:              string | null
-  smartAccountAddress:  string | null   // ERC-4337 LightAccount address
+  smartAccountAddress:  string | null
   isLoaded:             boolean
   activeChain:          Chain
   chainCache:           Record<number, ChainCache>
@@ -44,71 +50,41 @@ interface WalletState {
   initFromStorage:      () => Promise<void>
 }
 
-const DEFAULT_CHAIN: Chain = {
+export const DEFAULT_CHAIN: Chain = {
   id:         1,
   name:       'Ethereum',
   nativeName: 'Ether',
   symbol:     'ETH',
   icon:       'E',
   color:      '#627EEA',
-  rpc:        "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
+  rpc:        `https://eth-mainnet.g.alchemy.com/v2/${process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? ''}`,
   explorer:   'https://etherscan.io',
 }
 
 const STORAGE_KEY = 'kryptonow_wallet'
 const CHAIN_KEY   = 'kryptonow_chain'
 
-// Sync load for web (initial state)
-function loadWalletSync(): WalletData | null {
-  if (Platform.OS !== 'web') return null
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null } catch { return null }
-}
-function loadChainSync(): Chain {
-  if (Platform.OS !== 'web') return DEFAULT_CHAIN
-  try { const r = localStorage.getItem(CHAIN_KEY); return r ? JSON.parse(r) : DEFAULT_CHAIN } catch { return DEFAULT_CHAIN }
-}
-
+// ── Persistence helpers ───────────────────────────────────────────
 async function saveWallet(w: WalletData | null) {
-  if (Platform.OS !== 'web') {
-    if (w) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(w))
-    else await AsyncStorage.removeItem(STORAGE_KEY)
-  } else {
-    try {
-      if (w) await saveEncryptedWallet({ address: w.address, phrase: w.phrase ?? '', name: w.name })
-      else deleteEncryptedWallet()
-    } catch {}
-  }
+  if (w) await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(w))
+  else   await AsyncStorage.removeItem(STORAGE_KEY)
 }
 
 async function saveChain(c: Chain) {
-  if (Platform.OS !== 'web') {
-    await AsyncStorage.setItem(CHAIN_KEY, JSON.stringify(c))
-  } else {
-    try { localStorage.setItem(CHAIN_KEY, JSON.stringify(c)) } catch {}
-  }
+  await AsyncStorage.setItem(CHAIN_KEY, JSON.stringify(c))
 }
 
+// ── Store ─────────────────────────────────────────────────────────
 export const useWalletStore = create<WalletState>((set, get) => ({
-  wallet:               loadWalletSync(),
-  address:              loadWalletSync()?.address ?? null,
+  wallet:               null,
+  address:              null,
   smartAccountAddress:  null,
-  isLoaded:             Platform.OS === 'web', // web loads sync, native needs initFromStorage
-  activeChain: loadChainSync(),
-  chainCache:  {},
+  isLoaded:             false,
+  activeChain:          DEFAULT_CHAIN,
+  chainCache:           {},
 
   initFromStorage: async () => {
     try {
-      if (Platform.OS === 'web') {
-        // Web: decrypt vault + load chain
-        const [wallet, chainRaw] = await Promise.all([
-          loadEncryptedWallet(),
-          Promise.resolve(localStorage.getItem(CHAIN_KEY)),
-        ])
-        const chain = chainRaw ? JSON.parse(chainRaw) : DEFAULT_CHAIN
-        set({ wallet, address: wallet?.address ?? null, activeChain: chain, isLoaded: true })
-        return
-      }
-      // Native: AsyncStorage
       const [walletRaw, chainRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
         AsyncStorage.getItem(CHAIN_KEY),
@@ -122,12 +98,14 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
 
   setWallet: (wallet) => {
-    saveWallet(wallet)
-    set({ wallet, address: wallet?.address ?? null })
+    // ✅ Strip phrase before saving — if caller accidentally passes one
+    const safe = wallet ? { address: wallet.address, name: wallet.name } : null
+    saveWallet(safe)
+    set({ wallet: safe, address: safe?.address ?? null })
   },
 
-  setLoaded: (isLoaded) => set({ isLoaded }),
-  setSmartAccountAddress: (smartAccountAddress) => set({ smartAccountAddress }),
+  setLoaded:              (isLoaded)             => set({ isLoaded }),
+  setSmartAccountAddress: (smartAccountAddress)  => set({ smartAccountAddress }),
 
   setActiveChain: (activeChain) => {
     saveChain(activeChain)
@@ -136,8 +114,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   clearWallet: () => {
     saveWallet(null)
-    if (Platform.OS !== 'web') AsyncStorage.removeItem(CHAIN_KEY)
-    else try { localStorage.removeItem(CHAIN_KEY) } catch {}
+    AsyncStorage.removeItem(CHAIN_KEY)
     set({ wallet: null, address: null, chainCache: {} })
   },
 
@@ -148,7 +125,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   getChainCache: (chainId) => {
     const cache = get().chainCache[chainId]
     if (!cache) return null
-    if (Date.now() - cache.lastFetch > 60000) return null
+    if (Date.now() - cache.lastFetch > 60_000) return null
     return cache
   },
 }))

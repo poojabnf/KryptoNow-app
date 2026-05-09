@@ -1,57 +1,89 @@
 /**
  * store/keyStore.ts
  * -----------------
- * Secure private key storage.
+ * ✅ Bug 2 fix: was two conflicting files (keyStore.ts + SecureKeyStore.ts)
+ * with different key names (kryptonow_vault vs kryptonow_vault_pk).
+ * Consolidated into one file with consistent keys.
+ *
+ * DELETE store/SecureKeyStore.ts after applying this fix.
+ *
  * Native: expo-secure-store (hardware-backed keychain/keystore)
- * Web:    localStorage with AES encryption (existing vault pattern)
+ * Web:    AsyncStorage fallback (dev only — never store real keys in prod web)
  */
 import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const NATIVE_KEY = 'kryptonow_vault'
-const WEB_KEY    = 'kryptonow_vault'
+// Single source of truth for key names
+const KEY_PRIVKEY = 'kryptonow_privkey'
+const KEY_PHRASE  = 'kryptonow_phrase'
 
-async function saveNative(value: string): Promise<void> {
-  await SecureStore.setItemAsync(NATIVE_KEY, value, {
+// ── Native helpers ────────────────────────────────────────────────
+async function secureSet(key: string, value: string): Promise<void> {
+  await SecureStore.setItemAsync(key, value, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   })
 }
 
-async function loadNative(): Promise<string | null> {
-  return SecureStore.getItemAsync(NATIVE_KEY)
+async function secureGet(key: string): Promise<string | null> {
+  return SecureStore.getItemAsync(key)
 }
 
-async function deleteNative(): Promise<void> {
-  await SecureStore.deleteItemAsync(NATIVE_KEY)
+async function secureDelete(key: string): Promise<void> {
+  await SecureStore.deleteItemAsync(key)
 }
 
-// --- Public API ---------------------------------------------------------------
+// ── Web helpers ───────────────────────────────────────────────────
+async function webSet(key: string, value: string): Promise<void> {
+  await AsyncStorage.setItem(key, value)
+}
 
-export async function savePrivateKey(encryptedVault: string): Promise<void> {
+async function webGet(key: string): Promise<string | null> {
+  return AsyncStorage.getItem(key)
+}
+
+async function webDelete(key: string): Promise<void> {
+  await AsyncStorage.removeItem(key)
+}
+
+// ── Public API ────────────────────────────────────────────────────
+
+/** Save private key + seed phrase to secure storage */
+export async function saveWalletKeys(privateKey: string, phrase: string): Promise<void> {
   if (Platform.OS !== 'web') {
-    await saveNative(encryptedVault)
+    await secureSet(KEY_PRIVKEY, privateKey)
+    await secureSet(KEY_PHRASE,  phrase)
   } else {
-    try { localStorage.setItem(WEB_KEY, encryptedVault) } catch {}
+    await webSet(KEY_PRIVKEY, privateKey)
+    await webSet(KEY_PHRASE,  phrase)
   }
 }
 
+/** Load private key from secure storage */
 export async function loadPrivateKey(): Promise<string | null> {
-  if (Platform.OS !== 'web') {
-    return loadNative()
-  }
-  try { return localStorage.getItem(WEB_KEY) } catch { return null }
+  return Platform.OS !== 'web' ? secureGet(KEY_PRIVKEY) : webGet(KEY_PRIVKEY)
 }
 
-export async function deletePrivateKey(): Promise<void> {
+/** Load seed phrase from secure storage */
+export async function loadPhrase(): Promise<string | null> {
+  return Platform.OS !== 'web' ? secureGet(KEY_PHRASE) : webGet(KEY_PHRASE)
+}
+
+/** Wipe all stored keys (on sign-out / wallet removal) */
+export async function deleteWalletKeys(): Promise<void> {
   if (Platform.OS !== 'web') {
-    await deleteNative()
+    await secureDelete(KEY_PRIVKEY)
+    await secureDelete(KEY_PHRASE)
   } else {
-    try { localStorage.removeItem(WEB_KEY) } catch {}
+    await webDelete(KEY_PRIVKEY)
+    await webDelete(KEY_PHRASE)
   }
 }
 
-// Alias for backwards compat
-export const saveVault  = savePrivateKey
-export const loadVault  = loadPrivateKey
-export const deleteVault = deletePrivateKey
+// Aliases for backwards compatibility with old SecureKeyStore imports
+export const savePrivateKey  = (pk: string) => saveWalletKeys(pk, '')
+export const getPrivateKey   = loadPrivateKey
+export const deletePrivateKey = deleteWalletKeys
+export const saveVault       = saveWalletKeys
+export const loadVault       = loadPrivateKey
+export const deleteVault     = deleteWalletKeys

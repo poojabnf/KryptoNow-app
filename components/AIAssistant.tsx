@@ -7,7 +7,8 @@ import {
 } from 'react-native'
 import { useWalletStore } from '../store/walletStore'
 
-const GROQ_API_KEY = 'process.env.EXPO_PUBLIC_GROQ_API_KEY ?? ""'
+// ✅ Bug 3 fix: was a string literal 'process.env...' — now correctly evaluated
+const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY ?? ''
 const GROQ_MODEL   = 'llama-3.3-70b-versatile'
 const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions'
 
@@ -40,14 +41,12 @@ export default function AIAssistant() {
   const scrollRef  = useRef<ScrollView>(null)
   const msgId      = useRef(0)
 
-  // ── Draggable position ────────────────────────────────────────────────────
+  // ── Draggable position ──────────────────────────────────────────
   const pan        = useRef(new Animated.ValueXY({ x: DEFAULT_X, y: DEFAULT_Y })).current
   const panOffset  = useRef({ x: DEFAULT_X, y: DEFAULT_Y })
   const isDragging = useRef(false)
-  const dragStart  = useRef({ x: 0, y: 0 })
   const scaleAnim  = useRef(new Animated.Value(1)).current
 
-  // Keep panOffset in sync
   useEffect(() => {
     const xId = pan.x.addListener(({ value }) => { panOffset.current.x = value })
     const yId = pan.y.addListener(({ value }) => { panOffset.current.y = value })
@@ -58,53 +57,35 @@ export default function AIAssistant() {
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder:  (_, g) => Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4,
-
-      onPanResponderGrant: (e) => {
+      onPanResponderGrant: () => {
         isDragging.current = false
-        dragStart.current  = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }
         pan.setOffset({ x: panOffset.current.x, y: panOffset.current.y })
         pan.setValue({ x: 0, y: 0 })
         Animated.spring(scaleAnim, { toValue: 1.15, useNativeDriver: false, speed: 30 }).start()
       },
-
       onPanResponderMove: (e, g) => {
         if (Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6) isDragging.current = true
         Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false })(e, g)
       },
-
-      onPanResponderRelease: (_, g) => {
+      onPanResponderRelease: () => {
         pan.flattenOffset()
         Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: false, speed: 25 }).start()
-
-        // Snap to nearest edge
-        const curX = panOffset.current.x
-        const curY = panOffset.current.y
-        const snapX = curX < SW / 2
-          ? EDGE_PADDING
-          : SW - BUBBLE_SIZE - EDGE_PADDING
+        const curX  = panOffset.current.x
+        const curY  = panOffset.current.y
+        const snapX = curX < SW / 2 ? EDGE_PADDING : SW - BUBBLE_SIZE - EDGE_PADDING
         const clampedY = Math.max(60, Math.min(SH - BUBBLE_SIZE - 60, curY))
-
         Animated.spring(pan, {
-          toValue:        { x: snapX, y: clampedY },
-          useNativeDriver: false,
-          tension:         80,
-          friction:        10,
-        }).start(() => {
-          panOffset.current = { x: snapX, y: clampedY }
-        })
-
-        // If not dragging → open chat
-        if (!isDragging.current) {
-          setOpen(true)
-        }
+          toValue: { x: snapX, y: clampedY },
+          useNativeDriver: false, tension: 80, friction: 10,
+        }).start(() => { panOffset.current = { x: snapX, y: clampedY } })
+        if (!isDragging.current) setOpen(true)
       },
     })
   ).current
 
-  // ── System prompt ─────────────────────────────────────────────────────────
   const buildSystemPrompt = useCallback(() => {
     const shortAddr = addr ? addr.slice(0, 6) + '...' + addr.slice(-4) : 'not connected'
-    return `You are Kryptonow AI, a helpful crypto wallet assistant.
+    return `You are KryptoNow AI, a helpful crypto wallet assistant.
 WALLET CONTEXT:
 - Wallet: ${shortAddr}
 - Chain: ${activeChain.name} (ID: ${activeChain.id})
@@ -112,10 +93,19 @@ WALLET CONTEXT:
 Be concise, friendly and clear. Use bullet points for lists. Max 200 words unless asked for detail. Always mention risks for investments.`
   }, [addr, activeChain])
 
-  // ── Send message ──────────────────────────────────────────────────────────
   async function sendMessage(text: string) {
     const trimmed = text.trim()
     if (!trimmed || loading) return
+
+    if (!GROQ_API_KEY) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '⚠️ Groq API key not set. Add EXPO_PUBLIC_GROQ_API_KEY to your .env.local file.',
+        id: ++msgId.current,
+      }])
+      return
+    }
+
     setInput('')
     setLoading(true)
     const userMsg: Message = { role: 'user', content: trimmed, id: ++msgId.current }
@@ -131,12 +121,12 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
           'Authorization': `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [
+          model:       GROQ_MODEL,
+          messages:    [
             { role: 'system', content: buildSystemPrompt() },
             ...newMessages.map(m => ({ role: m.role, content: m.content })),
           ],
-          max_tokens: 512,
+          max_tokens:  512,
           temperature: 0.7,
         }),
       })
@@ -157,18 +147,8 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
 
   return (
     <>
-      {/* ── Draggable floating bubble ──────────────────────────────────── */}
       <Animated.View
-        style={[
-          b.bubble,
-          {
-            transform: [
-              { translateX: pan.x },
-              { translateY: pan.y },
-              { scale: scaleAnim },
-            ],
-          },
-        ]}
+        style={[b.bubble, { transform: [{ translateX: pan.x }, { translateY: pan.y }, { scale: scaleAnim }] }]}
         {...panResponder.panHandlers}
       >
         <View style={[b.bubbleBtn, { backgroundColor: activeChain.color }]}>
@@ -179,24 +159,20 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
             </View>
           )}
         </View>
-        {/* Drag hint ring — visible briefly */}
         <View style={[b.ring, { borderColor: activeChain.color + '40' }]} />
       </Animated.View>
 
-      {/* ── Chat Modal ────────────────────────────────────────────────── */}
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <TouchableOpacity style={c.backdrop} activeOpacity={1} onPress={() => setOpen(false)} />
           <View style={c.sheet}>
-
-            {/* Header */}
             <View style={c.header}>
               <View style={c.headerLeft}>
                 <View style={[c.aiDot, { backgroundColor: activeChain.color }]}>
                   <Text style={{ fontSize: 16 }}>🤖</Text>
                 </View>
                 <View>
-                  <Text style={c.headerTitle}>Kryptonow AI</Text>
+                  <Text style={c.headerTitle}>KryptoNow AI</Text>
                   <Text style={c.headerSub}>{activeChain.name} · {addr ? addr.slice(0,6)+'...'+addr.slice(-4) : 'No wallet'}</Text>
                 </View>
               </View>
@@ -212,7 +188,6 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
               </View>
             </View>
 
-            {/* Messages */}
             <ScrollView
               ref={scrollRef}
               style={c.messages}
@@ -223,7 +198,7 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
               {messages.length === 0 && (
                 <View style={c.welcome}>
                   <Text style={c.welcomeEmoji}>🤖</Text>
-                  <Text style={c.welcomeTitle}>Hi! I'm Kryptonow AI</Text>
+                  <Text style={c.welcomeTitle}>Hi! I'm KryptoNow AI</Text>
                   <Text style={c.welcomeSub}>Ask me anything about crypto, DeFi, gas fees or your wallet.</Text>
                   <View style={c.quickGrid}>
                     {QUICK_PROMPTS.map(q => (
@@ -273,7 +248,6 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
               )}
             </ScrollView>
 
-            {/* Input */}
             <View style={c.inputBar}>
               <TextInput
                 style={c.input}
@@ -293,10 +267,9 @@ Be concise, friendly and clear. Use bullet points for lists. Max 200 words unles
                 disabled={!input.trim() || loading}
                 activeOpacity={0.85}
               >
-                <Text style={[c.sendBtnT, { color: input.trim() && !loading ? '#fff' : '#94A3B8' }]}>↑</Text>
+                <Text style={[c.sendBtnT, { color: input.trim() && !loading ? '#fff' : '#94A3B8' }]}>→</Text>
               </TouchableOpacity>
             </View>
-
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -349,5 +322,3 @@ const c = StyleSheet.create({
   sendBtn:      { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   sendBtnT:     { fontSize: 20, fontWeight: '700' },
 })
-
-
