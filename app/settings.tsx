@@ -9,7 +9,7 @@ import { useLockContext } from "../context/LockContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
-import { retrievePrivateKey } from "../store/SecureKeyStore"
+import { getPrivateKey } from "../store/SecureKeyStore"
 import { CHAINS } from "../utils/chains"
 import { useAuth } from "@clerk/expo"
 import * as Clipboard from "expo-clipboard"
@@ -45,7 +45,7 @@ export default function Settings() {
   useEffect(() => {
     if (Platform.OS === 'web' || !addr || !chainSupportsAA(activeChain.id)) return
     setAaLoading(true)
-    retrievePrivateKey(0, 'Authenticate to load smart account info')
+    getPrivateKey()
       .then(async res => {
         if (!res.ok || !res.data) return
         const info = await getSmartAccountAddress(res.data, activeChain.id)
@@ -340,4 +340,5 @@ const st = StyleSheet.create({
   logoutIcon:   { color: "#F43F5E", fontSize: 16, fontWeight: "800" },
   logoutT:      { color: "#F43F5E", fontSize: 16, fontWeight: "700" },
 })
+
 
