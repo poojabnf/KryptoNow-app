@@ -1,5 +1,6 @@
 import { router } from 'expo-router'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import { useState, useEffect, useRef, useCallback } from "react"
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
@@ -136,6 +137,7 @@ export default function Send() {
   const addr        = useWalletStore(s => s.address)
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
+  const { user }    = useAuth()
 
   // ── ERC-4337 Account Abstraction ────────────────────────────────────────────
   const {
@@ -238,6 +240,19 @@ export default function Send() {
   }, [refreshGas])
 
   async function handleSend() {
+    // KYC wall — required for fiat-on/off ramp and regulatory compliance
+    if (user?.kycStatus !== 'verified') {
+      Alert.alert(
+        'KYC Required',
+        'You need to complete identity verification before sending funds. This is required by regulatory guidelines.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Verify Identity', onPress: () => router.push('/kyc') },
+        ]
+      )
+      return
+    }
+
     // Tenderly pre-sign simulation
     setSimLoading(true)
     try {

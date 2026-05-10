@@ -109,7 +109,7 @@ export default function WalletConnectScreen() {
       const { Core }                  = await import('@walletconnect/core')
       const { WalletKit }             = await import('@reown/walletkit')
       const { buildApprovedNamespaces } = await import('@walletconnect/utils')
-      walletkit = await WalletKit.init({ core: new Core({ projectId: WC_PROJECT_ID }), metadata: { name:'Kryptonow',description:'Your vault. Your rules.',url:'https://Kryptonow.io',icons:[] } })
+      walletkit = await WalletKit.init({ core: new Core({ projectId: WC_PROJECT_ID }), metadata: { name:'Kryptonow',description:'Your vault. Your rules.',url:'https://kryptonow.xyz',icons:[] } })
       setWcReady(true)
       refreshSessions()
       walletkit.on('session_proposal', async ({ id, params }: any) => {

@@ -8,7 +8,7 @@
 
 import { CHAIN_TOP_TOKENS, toOneInchFormat } from './topTokens'
 
-export const ONEINCH_API_KEY = 'YourOneInchApiKey' // ← replace with real key
+export const ONEINCH_API_KEY = process.env.EXPO_PUBLIC_ONEINCH_KEY ?? ''  // set EXPO_PUBLIC_ONEINCH_KEY in EAS secrets
 
 const BASE = 'https://api.1inch.dev/swap/v6.0'
 
@@ -22,7 +22,7 @@ const HEADERS = {
 // Register at https://portal.1inch.dev/ to activate fee sharing.
 // Pro subscribers pay 0% — use hasFee=false when calling getQuote/getSwapData.
 export const SWAP_FEE_PERCENT  = 0.1   // 0.1% — shown to users in UI
-export const FEE_RECIPIENT     = '0xYOUR_FEE_COLLECTION_WALLET'  // ← replace with your wallet
+export const FEE_RECIPIENT     = process.env.EXPO_PUBLIC_FEE_WALLET ?? ''  // set EXPO_PUBLIC_FEE_WALLET in EAS secrets
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

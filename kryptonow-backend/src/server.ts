@@ -7,6 +7,14 @@ import { Expo } from 'expo-server-sdk'
 
 dotenv.config()
 
+// Fail fast on missing required config
+if (!process.env.ADMIN_WALLET) {
+  console.warn('[KryptoNow] ADMIN_WALLET env var not set — admin routes will be inaccessible')
+}
+if (!process.env.JWT_SECRET) {
+  throw new Error('[KryptoNow] JWT_SECRET env var is required. Set a strong random value.')
+}
+
 const fastify = Fastify({ logger: true })
 const prisma  = new PrismaClient()
 const expo    = new Expo()
@@ -16,7 +24,7 @@ const LOG_TTL_DAYS = 15
 const KYC_TTL_YEARS = 10
 
 fastify.register(cors, { origin: '*' })
-fastify.register(jwt,  { secret: process.env.JWT_SECRET || 'super-secret' })
+fastify.register(jwt,  { secret: process.env.JWT_SECRET })
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -59,6 +67,25 @@ setInterval(purgeExpiredLogs, 60 * 60 * 1000)
 // Health
 // ─────────────────────────────────────────────────────────────
 fastify.get('/health', async () => ({ status: 'online' }))
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Device token registration (push notifications)
+// ─────────────────────────────────────────────────────────────────────────────
+fastify.post('/api/devices/register', async (request, reply) => {
+  const { token, walletAddress } = request.body as any
+  if (!token || !walletAddress) return reply.status(400).send({ error: 'Missing token or walletAddress' })
+  try {
+    await prisma.user.upsert({
+      where:  { publicAddress: walletAddress },
+      update: { expoPushToken: token },
+      create: { publicAddress: walletAddress, nonce: '', expoPushToken: token },
+    })
+    return { ok: true }
+  } catch (e: any) {
+    await appLog('error', 'devices.register', e.message, { wallet: walletAddress })
+    return reply.status(500).send({ error: 'Internal error' })
+  }
+})
 
 // ─────────────────────────────────────────────────────────────
 // Client log ingestion

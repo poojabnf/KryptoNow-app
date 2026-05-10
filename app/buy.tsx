@@ -5,6 +5,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useTheme } from "../context/ThemeContext"
+import { useAuth } from "../context/AuthContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { MARKET_TOKENS } from "../utils/topTokens"
@@ -77,6 +78,7 @@ export default function BuyScreen() {
   const addr        = useWalletStore(s => s.address)
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
+  const { user }    = useAuth()
 
   const [amount,      setAmount]      = useState("100")
   const [selToken,    setSelToken]    = useState("ETH")
@@ -94,6 +96,18 @@ export default function BuyScreen() {
   const token = TOKENS.find(t => t.symbol === selToken) ?? TOKENS[0]
 
   function handleBuy() {
+    // KYC wall — on-ramp providers require identity verification
+    if (user?.kycStatus !== 'verified') {
+      Alert.alert(
+        'KYC Required',
+        'Identity verification is required before purchasing crypto. This is mandated by on-ramp providers and regulatory guidelines.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Verify Identity', onPress: () => router.push('/kyc') },
+        ]
+      )
+      return
+    }
     if (!selProvider) { Alert.alert("Select a provider", "Tap a provider card first."); return }
     const p = PROVIDERS.find(x => x.id === selProvider)!
     if (parseFloat(amount) < p.minAmount) {

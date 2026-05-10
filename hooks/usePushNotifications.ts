@@ -46,13 +46,15 @@ export function usePushNotifications() {
         const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId })
         if (isMounted) {
           setExpoPushToken(token)
-          console.log('[Push] Expo push token:', token)
-          // Register with your backend when ready:
-          // await fetch('https://api.kryptonow.xyz/devices', {
-          //   method: 'POST',
-          //   headers: { 'Content-Type': 'application/json' },
-          //   body: JSON.stringify({ token, walletAddress: address }),
-          // })
+          // Register token with backend so we can send KYC/transaction push notifications
+          const API = process.env.EXPO_PUBLIC_API_URL ?? ''
+          if (API && address) {
+            fetch(`${API}/api/devices/register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, walletAddress: address }),
+            }).catch(() => {})
+          }
         }
       } catch (e) {
         console.error('[Push] Failed to get push token:', e)
