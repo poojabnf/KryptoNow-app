@@ -10,10 +10,68 @@ datasource db {
 model User {
   id            String   @id @default(uuid())
   publicAddress String   @unique
-  nonce         String   
+  nonce         String
   username      String?
-  fcmToken      String?   // Firebase Cloud Messaging token  
+  firstName     String?
+  lastName      String?
+  country       String?
+  kycStatus     String   @default("none")  // none | pending | verified | rejected
+  referralCode  String?  @unique
+  appliedCode   String?
+  expoPushToken String?
+  fcmToken      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  referralsMade Referral[] @relation("referrer")
+  kycRecords    KYCRecord[]
+  logsAsUser    AppLog[]
 }
 
+model Referral {
+  id           String   @id @default(uuid())
+  referrerId   String
+  refereeAddr  String
+  refereeName  String?
+  status       String   @default("pending")  // pending | rewarded
+  rewardAmount Float    @default(150)
+  bonusAmount  Float    @default(100)
+  createdAt    DateTime @default(now())
+  rewardedAt   DateTime?
+
+  referrer     User     @relation("referrer", fields: [referrerId], references: [id])
+}
+
+model KYCRecord {
+  id           String   @id @default(uuid())
+  userId       String
+  walletAddr   String
+  country      String
+  docType      String
+  docNumber    String
+  fullName     String
+  dob          String
+  status       String   @default("pending")  // pending | verified | rejected
+  reviewNote   String?
+  submittedAt  DateTime @default(now())
+  reviewedAt   DateTime?
+  // Retain for 10 years — deletion prevented at application layer
+  retainUntil  DateTime
+
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model AppLog {
+  id        String   @id @default(uuid())
+  level     String   // info | warn | error
+  event     String
+  userId    String?
+  wallet    String?
+  message   String
+  meta      String?  // JSON string for extra data
+  createdAt DateTime @default(now())
+  // Retain for 15 days — cleaned up by scheduled job
+  expiresAt DateTime
+
+  user      User?    @relation(fields: [userId], references: [id])
+}

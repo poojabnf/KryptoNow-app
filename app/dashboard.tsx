@@ -5,7 +5,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Modal, Animated, Platform, useWindowDimensions,
 } from "react-native"
-import { router } from "expo-router"
+import { router, usePathname } from "expo-router"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
@@ -59,35 +59,45 @@ function fmt(n: number) {
 
 // --- Sidebar Nav Items ---
 const NAV_ITEMS = [
-  { label: "Dashboard",     icon: "grid-outline",          route: "/dashboard",     active: true  },
-  { label: "Send",          icon: "send-outline",          route: "/send",          active: false },
-  { label: "Receive",       icon: "download-outline",      route: "/receive",       active: false },
-  { label: "Swap",          icon: "swap-horizontal-outline", route: "/swap",          active: false },
-  { label: "Buy",           icon: "card-outline",          route: "/buy",           active: false },
-  { label: "History",       icon: "time-outline",          route: "/history",       active: false },
-  { label: "dApps",          icon: "globe-outline",         route: "/dapps",         active: false },
-  { label: "Batch Send",     icon: "layers-outline",        route: "/batch",         active: false },
-  { label: "Hardware",       icon: "hardware-chip-outline", route: "/hardware",      active: false },
-  { label: "Options",        icon: "trending-up-outline",   route: "/options",       active: false },
-  { label: "Portfolio",     icon: "pie-chart-outline",     route: "/portfolio",     active: false },
-  { label: "NFTs",           icon: "image-outline",          route: "/nfts",          active: false },
-  { label: "WalletConnect",  icon: "link-outline",           route: "/walletconnect", active: false },
-  { label: "Recovery",       icon: "shield-checkmark-outline", route: "/recovery",      active: false },
-  { label: "Price Alerts",  icon: "trending-up-outline",  route: "/pricealerts",   active: false },
-  { label: "Notifications", icon: "notifications-outline", route: "/notifications", active: false },
-  { label: "Settings",      icon: "settings-outline",      route: "/settings",      active: false },
+  { label: "Dashboard",     icon: "grid-outline",             route: "/dashboard"     },
+  { label: "Send",          icon: "send-outline",             route: "/send"          },
+  { label: "Receive",       icon: "download-outline",         route: "/receive"       },
+  { label: "Swap",          icon: "swap-horizontal-outline",  route: "/swap"          },
+  { label: "Buy",           icon: "card-outline",             route: "/buy"           },
+  { label: "History",       icon: "time-outline",             route: "/history"       },
+  { label: "dApps",         icon: "globe-outline",            route: "/dapps"         },
+  { label: "Referral",      icon: "gift-outline",             route: "/referral"      },
+  { label: "Portfolio",     icon: "pie-chart-outline",        route: "/portfolio"     },
+  { label: "NFTs",          icon: "image-outline",            route: "/nfts"          },
+  { label: "WalletConnect", icon: "link-outline",             route: "/walletconnect" },
+  { label: "Batch Send",    icon: "layers-outline",           route: "/batch"         },
+  { label: "Hardware",      icon: "hardware-chip-outline",    route: "/hardware"      },
+  { label: "Options",       icon: "trending-up-outline",      route: "/options"       },
+  { label: "Recovery",      icon: "shield-checkmark-outline", route: "/recovery"      },
+  { label: "KYC",           icon: "id-card-outline",          route: "/kyc"           },
+  { label: "Price Alerts",  icon: "alarm-outline",            route: "/pricealerts"   },
+  { label: "Notifications", icon: "notifications-outline",    route: "/notifications" },
+  { label: "Settings",      icon: "settings-outline",         route: "/settings"      },
+  { label: "Admin",         icon: "shield-outline",           route: "/admin"         },
 ]
 
-// --- Sidebar (web only) ---
+// --- Sidebar ---
 function Sidebar({
-  activeChain, addr, unreadCount, onSignOut,
+  activeChain, addr, unreadCount, onSignOut, pathname, onClose,
 }: {
   activeChain: Chain
   addr: string | null
   unreadCount: number
   onSignOut: () => void
+  pathname: string
+  onClose?: () => void
 }) {
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
+  // Hide Admin from non-admin wallets (env var sets owner address)
+  const ownerAddr = process.env.EXPO_PUBLIC_ADMIN_WALLET?.toLowerCase() ?? ""
+  const isAdmin   = ownerAddr && addr?.toLowerCase() === ownerAddr
+  const visibleItems = NAV_ITEMS.filter(i => i.route !== "/admin" || isAdmin)
+
   return (
     <View style={sb.sidebar}>
       {/* Logo */}
@@ -95,10 +105,15 @@ function Sidebar({
         <View style={[sb.logoIcon, { backgroundColor: activeChain.color }]}>
           <Text style={sb.logoIconT}>KN</Text>
         </View>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={sb.logoTitle}>KryptoNow</Text>
           <Text style={sb.logoSub}>Web3 Wallet</Text>
         </View>
+        {onClose && (
+          <TouchableOpacity onPress={onClose} style={sb.closeBtn} hitSlop={{ top:8, bottom:8, left:8, right:8 }}>
+            <Ionicons name="close" size={20} color="#64748B" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Wallet info */}
@@ -116,20 +131,26 @@ function Sidebar({
       </View>
 
       {/* Nav links */}
-      <ScrollView style={sb.navScroll} showsVerticalScrollIndicator={false}>
-        {NAV_ITEMS.map(item => {
-          const isNotif = item.route === "/notifications"
+      <ScrollView
+        style={sb.navScroll}
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
+        keyboardShouldPersistTaps="handled"
+      >
+        {visibleItems.map(item => {
+          const isActive  = pathname === item.route || (item.route !== "/dashboard" && pathname.startsWith(item.route))
+          const isNotif   = item.route === "/notifications"
           return (
             <TouchableOpacity
               key={item.route}
-              style={[sb.navItem, item.active && { backgroundColor: activeChain.color + "15" }]}
-              onPress={() => router.push(item.route as any)}
+              style={[sb.navItem, isActive && { backgroundColor: activeChain.color + "15" }]}
+              onPress={() => { onClose?.(); router.push(item.route as any) }}
               activeOpacity={0.7}
             >
-              <View style={[sb.navIcon, item.active && { backgroundColor: activeChain.color }]}>
-                <Ionicons name={item.icon as any} size={18} color={item.active ? "#fff" : "#64748B"} />
+              <View style={[sb.navIcon, isActive && { backgroundColor: activeChain.color }]}>
+                <Ionicons name={item.icon as any} size={18} color={isActive ? "#fff" : "#64748B"} />
               </View>
-              <Text style={[sb.navLabel, item.active && { color: activeChain.color, fontWeight: "700" }]}>
+              <Text style={[sb.navLabel, isActive && { color: activeChain.color, fontWeight: "700" }]}>
                 {item.label}
               </Text>
               {isNotif && unreadCount > 0 && (
@@ -137,16 +158,17 @@ function Sidebar({
                   <Text style={sb.notifBadgeT}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
                 </View>
               )}
-              {item.active && <View style={[sb.activeBar, { backgroundColor: activeChain.color }]} />}
+              {isActive && <View style={[sb.activeBar, { backgroundColor: activeChain.color }]} />}
             </TouchableOpacity>
           )
         })}
+        <View style={{ height: 24 }} />
       </ScrollView>
 
       {/* Bottom actions */}
       <View style={sb.bottomWrap}>
         <TouchableOpacity style={sb.signOutBtn} onPress={onSignOut} activeOpacity={0.8}>
-          <Text style={sb.signOutIcon}>O</Text>
+          <Ionicons name="log-out-outline" size={17} color="#F43F5E" />
           <Text style={sb.signOutT}>Log Out</Text>
         </TouchableOpacity>
       </View>
@@ -206,6 +228,7 @@ const ACTIONS = [
 
 export default function Dashboard() {
   const { theme, mode } = useTheme()
+  const pathname        = usePathname()
   const addr           = useWalletStore(s => s.address)
   const activeChain    = useWalletStore(s => s.activeChain)
   const setActiveChain = useWalletStore(s => s.setActiveChain)
@@ -532,6 +555,7 @@ export default function Dashboard() {
             addr={addr}
             unreadCount={unreadCount}
             onSignOut={handleSignOut}
+            pathname={pathname}
           />
           <View style={s.webMain}>
             {/* Web top bar */}
@@ -575,26 +599,29 @@ export default function Dashboard() {
           </View>
         </View>
       ) : (
-        // MOBILE LAYOUT: original header + content
+        // MOBILE LAYOUT: header + always-mounted drawer
         <>
-          {/* Mobile slide-in drawer */}
+          {/* Mobile slide-in drawer — always mounted so animation works */}
           {drawerOpen && (
-            <>
-              <TouchableOpacity
-                style={s.drawerOverlay}
-                activeOpacity={1}
-                onPress={closeDrawer}
-              />
-              <Animated.View style={[s.drawer, { transform: [{ translateX: drawerAnim }] }]}>
-                <Sidebar
-                  activeChain={activeChain}
-                  addr={addr}
-                  unreadCount={unreadCount}
-                  onSignOut={() => { closeDrawer(); handleSignOut() }}
-                />
-              </Animated.View>
-            </>
+            <TouchableOpacity
+              style={s.drawerOverlay}
+              activeOpacity={1}
+              onPress={closeDrawer}
+            />
           )}
+          <Animated.View
+            style={[s.drawer, { transform: [{ translateX: drawerAnim }] }]}
+            pointerEvents={drawerOpen ? "auto" : "none"}
+          >
+            <Sidebar
+              activeChain={activeChain}
+              addr={addr}
+              unreadCount={unreadCount}
+              onSignOut={() => { closeDrawer(); handleSignOut() }}
+              pathname={pathname}
+              onClose={closeDrawer}
+            />
+          </Animated.View>
           <View style={[s.header, { backgroundColor: theme.bgApp }]}>
             <TouchableOpacity
               style={s.hamburger}
@@ -688,28 +715,29 @@ export default function Dashboard() {
 
 // --- Sidebar Styles ---
 const sb = StyleSheet.create({
-  sidebar:       { width: 260, backgroundColor: "#FAFBFF", borderRightWidth: 1, borderRightColor: "#EEF2FF", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflowY: "hidden" as any, flexShrink: 0 },
-  logoWrap:      { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
-  logoIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  sidebar:       { width: 260, backgroundColor: "#FAFBFF", borderRightWidth: 1, borderRightColor: "#EEF2FF", paddingTop: 24, paddingBottom: 0, flexDirection: "column", height: "100%" as any, position: "sticky" as any, top: 0, flexShrink: 0, overflow: "hidden" as any },
+  logoWrap:      { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 20, marginBottom: 20 },
+  logoIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   logoIconT:     { color: "#fff", fontSize: 14, fontWeight: "800" },
   logoTitle:     { color: "#1E1B4B", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
   logoSub:       { color: "#94A3B8", fontSize: 11 },
-  walletCard:    { marginHorizontal: 16, marginBottom: 20, borderRadius: 14, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
+  closeBtn:      { marginLeft: "auto" as any, padding: 4 },
+  walletCard:    { marginHorizontal: 16, marginBottom: 16, borderRadius: 14, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   walletAvatar:  { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   walletAvatarT: { color: "#fff", fontSize: 13, fontWeight: "800" },
   walletAddr:    { color: "#1E1B4B", fontSize: 13, fontWeight: "600", marginBottom: 4 },
   chainBadge:    { flexDirection: "row", alignItems: "center", gap: 4 },
   chainDot:      { width: 6, height: 6, borderRadius: 3 },
   chainName:     { fontSize: 11, fontWeight: "600" },
-  navScroll:     { flex: 1, paddingHorizontal: 12, overflowY: "scroll" as any, overflowX: "hidden" as any, maxHeight: "calc(100vh - 240px)" as any },
-  navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, position: "relative" },
-  navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
+  navScroll:     { flex: 1, paddingHorizontal: 12 },
+  navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 1, position: "relative" },
+  navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   navIconT:      { fontSize: 13, fontWeight: "700", color: "#64748B" },
   navLabel:      { color: "#64748B", fontSize: 13, fontWeight: "500", flex: 1 },
   notifBadge:    { backgroundColor: "#EF4444", borderRadius: 10, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
   notifBadgeT:   { color: "#fff", fontSize: 10, fontWeight: "700" },
   activeBar:     { position: "absolute", right: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
-  bottomWrap:    { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#F1F5F9" },
+  bottomWrap:    { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20, borderTopWidth: 1, borderTopColor: "#F1F5F9" },
   signOutBtn:    { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: "#FFF1F2", borderWidth: 1.5, borderColor: "#FECDD3" },
   signOutIcon:   { color: "#F43F5E", fontSize: 14, fontWeight: "800" },
   signOutT:      { color: "#F43F5E", fontSize: 14, fontWeight: "600" },
