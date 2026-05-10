@@ -9,12 +9,6 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
-      },
-      "env": {
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_REPLACE_WITH_DEV_KEY",
-        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_DEV_ALCHEMY_KEY",
-        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_DEV_VAULT_SECRET",
-        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_DEV_PIMLICO_KEY"
       }
     },
     "preview": {
@@ -24,26 +18,14 @@
       },
       "ios": {
         "simulator": false
-      },
-      "env": {
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_REPLACE_WITH_PREVIEW_KEY",
-        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_PREVIEW_ALCHEMY_KEY",
-        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_PREVIEW_VAULT_SECRET",
-        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_PREVIEW_PIMLICO_KEY"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "aab"
+        "buildType": "app-bundle"
       },
-      "ios": {},
-      "env": {
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_REPLACE_WITH_PROD_KEY",
-        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_PROD_ALCHEMY_KEY",
-        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_PROD_VAULT_SECRET",
-        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_PROD_PIMLICO_KEY"
-      }
+      "ios": {}
     }
   },
   "submit": {
@@ -52,8 +34,7 @@
         "appleId": "pooja.bnf@icloud.com",
         "ascAppId": "6768106476",
         "appleTeamId": "QGKA75U5S4",
-        "bundleIdentifier": "com.kryptonow.app",
-        "metadataPath": "./store-assets/ios/metadata.json"
+        "bundleIdentifier": "com.kryptonow.app"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
