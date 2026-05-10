@@ -1,0 +1,59 @@
+{
+  "_comment": "App Store Connect metadata for EAS Submit. Fill in ascAppId in eas.json after creating the app in appstoreconnect.apple.com",
+
+  "apple_id": "pooja.bnf@gmail.com",
+  "team_id":  "QGKA75U5S4",
+  "bundle_id": "com.kryptonow.app",
+
+  "app_store_connect": {
+    "app_name":    "KryptoNow - Web3 Crypto Wallet",
+    "subtitle":    "Swap, Bridge & Earn Crypto",
+    "category":    "FINANCE",
+    "subcategory": "UTILITIES",
+    "content_rating": "4+",
+    "privacy_url":    "https://kryptonow.xyz/privacy",
+    "support_url":    "https://kryptonow.xyz",
+    "marketing_url":  "https://kryptonow.xyz"
+  },
+
+  "description": "KryptoNow is a secure, non-custodial Web3 wallet that gives you full control of your crypto — no middlemen, no custody.\n\n🔐 SECURITY FIRST\n• Private keys stored exclusively on your device (Secure Enclave / iOS Keychain)\n• Biometric lock with Face ID / Touch ID\n• Social recovery for lost devices\n• Hardware wallet support (Ledger)\n\n💸 TRADE & EARN\n• Swap 100+ tokens across Ethereum, Polygon, BNB Chain, Arbitrum, Optimism, Base\n• Best rates via 1inch DEX aggregation\n• Bridge assets cross-chain (Across, Stargate, Hop, Relay)\n• Buy crypto with card via MoonPay, Transak, Ramp & Simplex\n• Earn yield with Aave, Lido, and top DeFi protocols\n\n🌐 WEB3 READY\n• WalletConnect v2 — connect to any dApp\n• ERC-4337 Account Abstraction (gasless transactions)\n• Full NFT gallery with BNB, Ethereum & Polygon support\n• Built-in dApp browser\n\n📊 PORTFOLIO & ANALYTICS\n• Live portfolio tracking with price charts\n• Price alerts for any token\n• Full transaction history\n• Multi-chain balance aggregation\n\n🤖 AI ASSISTANT\n• Ask anything about crypto, DeFi, or your portfolio\n• Powered by Groq (Llama 3)\n\n✨ PREMIUM EXPERIENCE\n• Light, Dark, and Pro (gold) themes\n• Transaction simulation before sending (Tenderly)\n• Batch send to multiple addresses\n• Referral program — earn rewards\n\nKryptoNow is free to download. Pro subscription unlocks 0% swap fees and advanced features.",
+
+  "keywords": "crypto wallet, ethereum, bitcoin, defi, web3, nft, swap, polygon, bnb, blockchain, non-custodial, walletconnect",
+
+  "what_is_new": "Initial App Store release.\n• Non-custodial wallet with Secure Enclave key storage\n• Multi-chain: Ethereum, Polygon, BNB, Arbitrum, Optimism, Base\n• Token swaps via 1inch\n• Cross-chain bridge (Across, Stargate, Hop)\n• Buy crypto with card\n• WalletConnect dApp browser\n• NFT gallery\n• AI crypto assistant",
+
+  "age_rating": {
+    "gambling": false,
+    "contests": false,
+    "alcohol": false,
+    "gambling_or_contests": false,
+    "fantasy_sports": false,
+    "unrestricted_web": false,
+    "sexual_content": "NONE",
+    "violence": "NONE",
+    "medical_information": false
+  },
+
+  "pricing": {
+    "tier": "FREE",
+    "in_app_purchases": [
+      {
+        "product_id":    "com.kryptonow.app.pro_monthly",
+        "reference_name":"KryptoNow Pro — Monthly",
+        "type":          "RENEWABLE_SUBSCRIPTION",
+        "price_tier":    "TIER_3"
+      },
+      {
+        "product_id":    "com.kryptonow.app.pro_annual",
+        "reference_name":"KryptoNow Pro — Annual",
+        "type":          "RENEWABLE_SUBSCRIPTION",
+        "price_tier":    "TIER_23"
+      }
+    ]
+  },
+
+  "review_information": {
+    "demo_account_required": false,
+    "notes": "This is a non-custodial crypto wallet. To test core functionality:\n1. Tap 'Create New Wallet' on the first screen\n2. A seed phrase is generated on-device — no account needed\n3. The Dashboard shows a zero balance (new wallet)\n4. Swap, Buy, Bridge, and Receive screens are accessible from the dashboard\n5. WalletConnect allows connecting to test dApps at app.uniswap.org\n\nNote: Real crypto transactions require funded wallets. No demo credentials needed — the app works without an account (Clerk sign-in is optional for push notifications and referral tracking)."
+  }
+}

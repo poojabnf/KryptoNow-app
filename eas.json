@@ -49,9 +49,11 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your@apple.com",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
+        "appleId": "pooja.bnf@gmail.com",
+        "ascAppId": "REPLACE_WITH_ASC_NUMERIC_APP_ID",
+        "appleTeamId": "QGKA75U5S4",
+        "bundleIdentifier": "com.kryptonow.app",
+        "metadataPath": "./store-assets/ios/metadata.json"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",

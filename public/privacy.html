@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — KryptoNow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0F172A;
+      --card:     #1E293B;
+      --accent:   #818CF8;
+      --text:     #F1F5F9;
+      --muted:    #94A3B8;
+      --border:   #334155;
+      --success:  #34D399;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 0;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #0F172A 100%);
+      padding: 64px 24px 48px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: var(--accent);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff;
+    }
+    .logo-name { font-size: 22px; font-weight: 800; color: #fff; }
+    h1 { font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    .hero p { color: var(--muted); font-size: 16px; max-width: 500px; margin: 0 auto; }
+    .updated { display: inline-block; margin-top: 16px; background: rgba(129,140,248,0.15); color: var(--accent); font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(129,140,248,0.3); }
+
+    main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin-bottom: 6px; }
+    .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+
+    section { margin-bottom: 40px; }
+    h2 {
+      font-size: 22px; font-weight: 700; color: var(--text);
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2 .icon { font-size: 20px; }
+    p { color: #CBD5E1; margin-bottom: 14px; font-size: 15px; }
+    ul, ol { color: #CBD5E1; padding-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; font-size: 15px; }
+
+    .highlight {
+      background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .highlight p { color: var(--success); margin: 0; font-weight: 500; }
+
+    .warning {
+      background: rgba(251,176,36,0.08);
+      border: 1px solid rgba(251,176,36,0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 16px 0;
+    }
+    .warning p { color: #FBB024; margin: 0; }
+
+    table {
+      width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;
+    }
+    th {
+      text-align: left; padding: 10px 14px;
+      background: rgba(129,140,248,0.1); color: var(--accent);
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 14px; color: #CBD5E1;
+      border-bottom: 1px solid rgba(51,65,85,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    .contact-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .contact-card .icon { font-size: 28px; flex-shrink: 0; }
+    .contact-card a { color: var(--accent); }
+
+    footer {
+      text-align: center; padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 13px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">
+    <div class="logo-icon">KN</div>
+    <span class="logo-name">KryptoNow</span>
+  </div>
+  <h1>Privacy Policy</h1>
+  <p>We built KryptoNow on one principle: your keys, your crypto, your data. Here's exactly what we collect — and what we don't.</p>
+  <span class="updated">Last updated: May 2026</span>
+</div>
+
+<main>
+
+  <nav class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#summary">Quick Summary</a></li>
+      <li><a href="#what-we-collect">What We Collect</a></li>
+      <li><a href="#what-we-dont">What We Never Collect</a></li>
+      <li><a href="#third-parties">Third-Party Services</a></li>
+      <li><a href="#data-storage">Data Storage &amp; Security</a></li>
+      <li><a href="#kyc">KYC &amp; Identity Verification</a></li>
+      <li><a href="#children">Children's Privacy</a></li>
+      <li><a href="#your-rights">Your Rights</a></li>
+      <li><a href="#changes">Changes to This Policy</a></li>
+      <li><a href="#contact">Contact Us</a></li>
+    </ol>
+  </nav>
+
+  <section id="summary">
+    <h2><span class="icon">⚡</span> Quick Summary</h2>
+    <div class="highlight">
+      <p>✓ Your private keys and seed phrase are stored only on your device — never transmitted to our servers.<br>
+         ✓ We do not sell your data to any third party.<br>
+         ✓ You can delete your account and data at any time.</p>
+    </div>
+    <p>KryptoNow ("we", "us", "our") is a non-custodial Web3 wallet application. This Privacy Policy describes how we handle information when you use our iOS app, Android app, and web app at <strong>kryptonow.xyz</strong>.</p>
+    <p>By using KryptoNow, you agree to the collection and use of information described in this policy.</p>
+  </section>
+
+  <section id="what-we-collect">
+    <h2><span class="icon">📋</span> What We Collect</h2>
+    <table>
+      <tr>
+        <th>Data</th>
+        <th>Why</th>
+        <th>Stored Where</th>
+      </tr>
+      <tr>
+        <td><strong>Email address / OAuth identity</strong></td>
+        <td>Account creation and sign-in via Clerk authentication</td>
+        <td>Clerk (our auth provider) servers</td>
+      </tr>
+      <tr>
+        <td><strong>Wallet address (public)</strong></td>
+        <td>Display balances, transaction history, notifications</td>
+        <td>Our backend + your device</td>
+      </tr>
+      <tr>
+        <td><strong>Push notification token</strong></td>
+        <td>Send you transaction alerts you opt into</td>
+        <td>Our backend</td>
+      </tr>
+      <tr>
+        <td><strong>KYC documents</strong> (if submitted)</td>
+        <td>Regulatory compliance required by on-ramp providers (e.g. MoonPay, Transak). Submitted voluntarily.</td>
+        <td>Our encrypted backend, retained 10 years per AML regulations</td>
+      </tr>
+      <tr>
+        <td><strong>App usage logs</strong></td>
+        <td>Bug reports, error monitoring, abuse prevention</td>
+        <td>Our backend — purged after 15 days</td>
+      </tr>
+      <tr>
+        <td><strong>Device locale / timezone</strong></td>
+        <td>Displaying correct currency format and time</td>
+        <td>Not stored — evaluated on-device only</td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="what-we-dont">
+    <h2><span class="icon">🔒</span> What We Never Collect</h2>
+    <div class="highlight">
+      <p>🔑 <strong>Private keys and seed phrases</strong> are generated on your device and stored in your device's Secure Enclave (iOS Keychain / Android Keystore). They are never transmitted to KryptoNow servers or any third party.</p>
+    </div>
+    <ul>
+      <li>Your private key or mnemonic seed phrase</li>
+      <li>Transaction amounts or recipients (we read these from public blockchain data only)</li>
+      <li>Browsing history or dApp interactions</li>
+      <li>Location data</li>
+      <li>Contacts or address book</li>
+    </ul>
+  </section>
+
+  <section id="third-parties">
+    <h2><span class="icon">🤝</span> Third-Party Services</h2>
+    <p>KryptoNow integrates with the following third-party services. Each has its own privacy policy.</p>
+    <table>
+      <tr>
+        <th>Service</th>
+        <th>Purpose</th>
+        <th>Data Shared</th>
+      </tr>
+      <tr>
+        <td><strong>Clerk</strong></td>
+        <td>Authentication (email, Google sign-in)</td>
+        <td>Email address, OAuth identity</td>
+      </tr>
+      <tr>
+        <td><strong>Alchemy</strong></td>
+        <td>Blockchain RPC — fetching balances and transactions</td>
+        <td>Wallet address (public)</td>
+      </tr>
+      <tr>
+        <td><strong>1inch</strong></td>
+        <td>DEX aggregation for token swaps</td>
+        <td>Wallet address, swap parameters</td>
+      </tr>
+      <tr>
+        <td><strong>Pimlico</strong></td>
+        <td>ERC-4337 account abstraction bundler</td>
+        <td>Wallet address, UserOperation</td>
+      </tr>
+      <tr>
+        <td><strong>MoonPay / Transak / Ramp</strong></td>
+        <td>Fiat on-ramp (buy crypto with card)</td>
+        <td>Wallet address; KYC data collected directly by these services</td>
+      </tr>
+      <tr>
+        <td><strong>Groq</strong></td>
+        <td>AI assistant (crypto Q&amp;A)</td>
+        <td>Your typed messages to the assistant</td>
+      </tr>
+      <tr>
+        <td><strong>WalletConnect / Reown</strong></td>
+        <td>Connect to dApps</td>
+        <td>Wallet address, session data</td>
+      </tr>
+      <tr>
+        <td><strong>Expo / EAS</strong></td>
+        <td>App delivery, over-the-air updates</td>
+        <td>App version, device platform</td>
+      </tr>
+      <tr>
+        <td><strong>Bridge providers</strong> (Across, Stargate, Hop, Relay)</td>
+        <td>Cross-chain bridging (opens provider's website)</td>
+        <td>Wallet address passed in URL — governed by each provider's policy</td>
+      </tr>
+    </table>
+    <div class="warning">
+      <p>⚠️ When you use on-ramp services (Buy Crypto), you are redirected to MoonPay, Transak, Ramp, or Simplex. KYC/AML verification is handled entirely by those providers — KryptoNow does not see your card details or government ID submitted to them.</p>
+    </div>
+  </section>
+
+  <section id="data-storage">
+    <h2><span class="icon">🗄️</span> Data Storage &amp; Security</h2>
+    <ul>
+      <li><strong>On-device:</strong> Private keys and seed phrases are stored exclusively in your device's hardware-backed secure enclave. We use iOS Keychain and Android Keystore.</li>
+      <li><strong>In transit:</strong> All API communication uses HTTPS/TLS 1.3. JWT tokens are signed with a secret key and expire after 7 days.</li>
+      <li><strong>At rest:</strong> Our backend database is encrypted at rest. Production secrets are managed via environment variables — not checked into source control.</li>
+      <li><strong>Log retention:</strong> Application logs are automatically purged after <strong>15 days</strong>.</li>
+      <li><strong>KYC retention:</strong> Identity documents are retained for <strong>10 years</strong> as required by anti-money-laundering regulations, then securely deleted.</li>
+    </ul>
+  </section>
+
+  <section id="kyc">
+    <h2><span class="icon">🪪</span> KYC &amp; Identity Verification</h2>
+    <p>KYC (Know Your Customer) verification is <strong>optional</strong> unless you choose to use a fiat on-ramp that requires it. KryptoNow uses KYC data solely to comply with applicable financial regulations and to unlock on-ramp functionality.</p>
+    <ul>
+      <li>Documents are encrypted in our database and never sold or shared beyond regulatory requirements.</li>
+      <li>You may request deletion of KYC data after the mandatory 10-year AML retention period expires.</li>
+      <li>We do not use KYC data for advertising or profiling.</li>
+    </ul>
+  </section>
+
+  <section id="children">
+    <h2><span class="icon">👶</span> Children's Privacy</h2>
+    <p>KryptoNow is intended for users who are at least 18 years old (or the minimum legal age in their jurisdiction for financial services). We do not knowingly collect personal information from anyone under 18. If you believe a child has provided us with personal information, please contact us so we can delete it promptly.</p>
+  </section>
+
+  <section id="your-rights">
+    <h2><span class="icon">⚖️</span> Your Rights</h2>
+    <p>Depending on your location (EEA, UK, California, India, etc.) you may have the following rights:</p>
+    <ul>
+      <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
+      <li><strong>Correction:</strong> Update inaccurate information in your profile.</li>
+      <li><strong>Deletion:</strong> Delete your account and associated data (except data we are legally required to retain, such as AML-mandated KYC records).</li>
+      <li><strong>Portability:</strong> Receive your data in a machine-readable format.</li>
+      <li><strong>Opt-out of notifications:</strong> Disable push notifications at any time in Settings → Notifications or in your device settings.</li>
+    </ul>
+    <p>To exercise any of these rights, email us at <strong>privacy@kryptonow.xyz</strong>. We will respond within 30 days.</p>
+  </section>
+
+  <section id="changes">
+    <h2><span class="icon">🔄</span> Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. When we do, we will:</p>
+    <ul>
+      <li>Update the "Last updated" date at the top of this page.</li>
+      <li>For material changes, send a push notification or in-app banner to active users.</li>
+    </ul>
+    <p>Continued use of KryptoNow after changes constitutes acceptance of the updated policy.</p>
+  </section>
+
+  <section id="contact">
+    <h2><span class="icon">✉️</span> Contact Us</h2>
+    <div class="contact-card">
+      <div class="icon">📬</div>
+      <div>
+        <p style="margin-bottom:8px"><strong>KryptoNow</strong></p>
+        <p style="margin-bottom:6px">Privacy inquiries: <a href="mailto:privacy@kryptonow.xyz">privacy@kryptonow.xyz</a></p>
+        <p style="margin-bottom:6px">General support: <a href="mailto:support@kryptonow.xyz">support@kryptonow.xyz</a></p>
+        <p style="margin-bottom:0">Website: <a href="https://kryptonow.xyz">https://kryptonow.xyz</a></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>&copy; 2026 KryptoNow. All rights reserved.</p>
+  <p style="margin-top:8px"><a href="/">App</a> &nbsp;·&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp; <a href="/terms">Terms of Service</a> &nbsp;·&nbsp; <a href="mailto:support@kryptonow.xyz">Support</a></p>
+</footer>
+
+</body>
+</html>
