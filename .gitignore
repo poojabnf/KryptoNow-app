@@ -32,6 +32,12 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env.production
+.env.staging
+
+# Mobile secrets — never commit these
+google-service-account.json
+GoogleService-Info.plist
 
 # typescript
 *.tsbuildinfo

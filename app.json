@@ -6,56 +6,56 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1E1B4B"
+      "backgroundColor": "#0D2E2E"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kryptonow.app",
+      "buildNumber": "1",
+      "minimumOsVersion": "16.0",
       "infoPlist": {
         "NSCameraUsageDescription": "KryptoNow uses your camera to scan WalletConnect QR codes.",
         "NSFaceIDUsageDescription": "KryptoNow uses Face ID to protect your wallet.",
+        "NSPhotoLibraryUsageDescription": "KryptoNow needs photo library access to import QR code images.",
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "kryptonow"
-            ]
+            "CFBundleURLSchemes": ["kryptonow"]
           }
         ]
-      }
+      },
+      "associatedDomains": ["applinks:kryptonow.xyz"]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1E1B4B"
+        "backgroundColor": "#0D2E2E"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.kryptonow.app",
+      "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.INTERNET",
         "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            {
-              "scheme": "kryptonow"
-            }
+            { "scheme": "kryptonow" },
+            { "scheme": "https", "host": "kryptonow.xyz" }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -84,9 +84,28 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#6366F1",
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#00D4AA",
           "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "KryptoNow uses Face ID to protect your wallet."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          },
+          "android": {
+            "minSdkVersion": 26,
+            "targetSdkVersion": 35,
+            "compileSdkVersion": 35
+          }
         }
       ]
     ]

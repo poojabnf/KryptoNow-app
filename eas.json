@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -10,7 +11,10 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": ""
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_REPLACE_WITH_DEV_KEY",
+        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_DEV_ALCHEMY_KEY",
+        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_DEV_VAULT_SECRET",
+        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_DEV_PIMLICO_KEY"
       }
     },
     "preview": {
@@ -20,13 +24,26 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_REPLACE_WITH_PREVIEW_KEY",
+        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_PREVIEW_ALCHEMY_KEY",
+        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_PREVIEW_VAULT_SECRET",
+        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_PREVIEW_PIMLICO_KEY"
       }
     },
     "production": {
+      "autoIncrement": true,
       "android": {
         "buildType": "aab"
       },
-      "ios": {}
+      "ios": {},
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_REPLACE_WITH_PROD_KEY",
+        "EXPO_PUBLIC_ALCHEMY_KEY": "REPLACE_WITH_PROD_ALCHEMY_KEY",
+        "EXPO_PUBLIC_VAULT_SECRET": "REPLACE_WITH_PROD_VAULT_SECRET",
+        "EXPO_PUBLIC_PIMLICO_KEY": "REPLACE_WITH_PROD_PIMLICO_KEY"
+      }
     }
   },
   "submit": {
@@ -38,7 +55,7 @@
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "internal"
+        "track": "production"
       }
     }
   }

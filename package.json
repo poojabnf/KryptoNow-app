@@ -7,7 +7,14 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:web": "expo export -p web"
+    "build:web": "expo export -p web",
+    "build:ios": "eas build --platform ios --profile production",
+    "build:android": "eas build --platform android --profile production",
+    "build:preview:ios": "eas build --platform ios --profile preview",
+    "build:preview:android": "eas build --platform android --profile preview",
+    "submit:ios": "eas submit --platform ios --profile production",
+    "submit:android": "eas submit --platform android --profile production",
+    "build:all": "eas build --platform all --profile production"
   },
   "dependencies": {
     "@clerk/expo": "^3.2.4",
@@ -22,6 +29,7 @@
     "ethers": "^6.13.4",
     "expo": "~55.0.0",
     "expo-auth-session": "~55.0.15",
+    "expo-build-properties": "~0.14.6",
     "expo-camera": "~55.0.16",
     "expo-clipboard": "~55.0.13",
     "expo-constants": "~55.0.16",
