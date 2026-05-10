@@ -15,8 +15,9 @@ import { getTxUrl, getProvider } from "../utils/chains"
 import {
   OneInchToken, QuoteResult, TOP_TOKENS,
   getQuote, getSwapData, getAllowance, getApproveData,
-  isNativeToken, toWei, ONEINCH_API_KEY,
+  isNativeToken, toWei, ONEINCH_API_KEY, SWAP_FEE_PERCENT,
 } from "../utils/oneInch"
+import { useSubscription } from "../context/SubscriptionContext"
 
 const TOKEN_COLORS: Record<string, string> = {
   ETH:"#6366F1", BNB:"#F0B90B", POL:"#8247E5",
@@ -169,6 +170,7 @@ export default function Swap() {
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
   const { lockState } = useLockContext()
+  const { isPro, openUpgrade } = useSubscription()
   const defaults    = TOP_TOKENS[activeChain.id] ?? TOP_TOKENS[1]
 
   const [fromToken,          setFromToken]          = useState<OneInchToken>(defaults[0])
@@ -208,7 +210,7 @@ export default function Swap() {
     setQuoting(true); setQuoteError("")
     try {
       const amtWei = toWei(fromAmount, fromToken.decimals)
-      const q      = await getQuote(activeChain.id, fromToken, toToken, amtWei)
+      const q      = await getQuote(activeChain.id, fromToken, toToken, amtWei, !isPro)
       setQuote(q)
     } catch (e: any) {
       setQuote(null)
@@ -292,7 +294,7 @@ export default function Swap() {
       if (ONEINCH_API_KEY && ONEINCH_API_KEY !== "YourOneInchApiKey") {
         txData = await getSwapData(
           activeChain.id, fromToken, toToken,
-          quote.fromAmount, addr, slippage
+          quote.fromAmount, addr, slippage, !isPro
         )
       }
 
@@ -412,6 +414,7 @@ export default function Swap() {
               { l:"Rate",         v: quote ? `1 ${fromToken.symbol} ~ ${(parseFloat(quote.toAmountHuman) / parseFloat(fromAmount)).toFixed(4)} ${toToken.symbol}` : "-" },
               { l:"Price impact", v: quote ? `${quote.priceImpact.toFixed(2)}%` : "-", color: priceImpactColor },
               { l:"Slippage",     v: `${slippage}%` },
+              { l:"Platform fee", v: isPro ? "0% (Pro)" : `${SWAP_FEE_PERCENT}%`, color: isPro ? "#10B981" : undefined },
               { l:"Min received", v: quote ? `${(parseFloat(quote.toAmountHuman) * (1 - slippage / 100)).toFixed(4)} ${toToken.symbol}` : "-" },
               { l:"Est. gas",     v: quote ? `~${quote.gas.toLocaleString()} units` : "-" },
               { l:"Router",       v: "1inch v6" },
@@ -422,6 +425,11 @@ export default function Swap() {
               </View>
             ))}
           </View>
+          {!isPro && (
+            <TouchableOpacity style={s.feeUpgradeBanner} onPress={openUpgrade} activeOpacity={0.8}>
+              <Text style={s.feeUpgradeT}>⚡ Go Pro — remove the 0.1% swap fee</Text>
+            </TouchableOpacity>
+          )}
 
           {needsApproval && (
             <View style={s.approvalBanner}>
@@ -623,6 +631,8 @@ const s = StyleSheet.create({
   detailRow:       { flexDirection:"row", justifyContent:"space-between", padding:14, borderBottomWidth:1, borderBottomColor:"#F1F5F9" },
   detailL:         { color:"#64748B", fontSize:13 },
   detailV:         { color:"#1E1B4B", fontSize:13, fontWeight:"600" },
+  feeUpgradeBanner: { backgroundColor:"#00D4AA15", borderRadius:12, padding:12, marginBottom:12, borderWidth:1, borderColor:"#00D4AA40", alignItems:"center" },
+  feeUpgradeT:      { fontSize:13, fontWeight:"700", color:"#00D4AA" },
   approvalBanner:  { backgroundColor:"#FFF7ED", borderRadius:12, padding:14, marginBottom:12, borderWidth:1, borderColor:"#FED7AA" },
   approvalTitle:   { color:"#C2410C", fontSize:14, fontWeight:"700", marginBottom:4 },
   approvalSub:     { color:"#92400E", fontSize:12, lineHeight:18 },

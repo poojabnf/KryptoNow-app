@@ -17,6 +17,13 @@ const HEADERS = {
   'Accept':        'application/json',
 }
 
+// ─── Revenue: Swap fee collection ─────────────────────────────────────────────
+// KryptoNow earns 0.1% on every swap via 1inch referral program.
+// Register at https://portal.1inch.dev/ to activate fee sharing.
+// Pro subscribers pay 0% — use hasFee=false when calling getQuote/getSwapData.
+export const SWAP_FEE_PERCENT  = 0.1   // 0.1% — shown to users in UI
+export const FEE_RECIPIENT     = '0xYOUR_FEE_COLLECTION_WALLET'  // ← replace with your wallet
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type OneInchToken = {
@@ -62,6 +69,7 @@ export async function getQuote(
   fromToken:  OneInchToken,
   toToken:    OneInchToken,
   fromAmount: string,         // in wei
+  hasFee = true,              // false for Pro subscribers
 ): Promise<QuoteResult> {
   const params = new URLSearchParams({
     src:             fromToken.address,
@@ -70,6 +78,10 @@ export async function getQuote(
     includeGas:      'true',
     includeProtocols:'false',
   })
+  if (hasFee) {
+    params.set('fee',      SWAP_FEE_PERCENT.toString())
+    params.set('referrer', FEE_RECIPIENT)
+  }
 
   const res = await fetch(`${BASE}/${chainId}/quote?${params}`, { headers: HEADERS })
   if (!res.ok) {
@@ -101,6 +113,7 @@ export async function getSwapData(
   fromAmount: string,          // in wei
   fromAddress:string,          // wallet address
   slippage:   number,          // percent, e.g. 1 for 1%
+  hasFee = true,               // false for Pro subscribers
 ): Promise<SwapTxData> {
   const params = new URLSearchParams({
     src:         fromToken.address,
@@ -111,6 +124,10 @@ export async function getSwapData(
     disableEstimate: 'false',
     allowPartialFill:'false',
   })
+  if (hasFee) {
+    params.set('fee',      SWAP_FEE_PERCENT.toString())
+    params.set('referrer', FEE_RECIPIENT)
+  }
 
   const res = await fetch(`${BASE}/${chainId}/swap?${params}`, { headers: HEADERS })
   if (!res.ok) {

@@ -11,6 +11,7 @@ import { ClerkProvider, useAuth } from '@clerk/expo';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { LockProvider } from '../context/LockContext';
+import { SubscriptionProvider } from '../context/SubscriptionContext';
 import { Platform } from 'react-native';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
@@ -93,7 +94,9 @@ export default function RootLayout() {
       <ThemeProvider>
         <LockProvider>
           <AuthProvider>
-            <RootLayoutNav />
+            <SubscriptionProvider>
+              <RootLayoutNav />
+            </SubscriptionProvider>
           </AuthProvider>
         </LockProvider>
       </ThemeProvider>
