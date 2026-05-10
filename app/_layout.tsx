@@ -73,12 +73,16 @@ export default function RootLayout() {
   const initFromStorage = useWalletStore(s => s.initFromStorage)
 
   useEffect(() => {
+    // Start storage load immediately — don't await migration first
     initFromStorage()
     if (Platform.OS !== 'web') {
-      migrateFromWalletStore(0).then(r => {
-        if (!r.ok) console.warn('[KryptoNow] Enclave migration:', r.error)
-        else console.log('[KryptoNow] Enclave migration: OK')
-      })
+      // Migration runs at most once (SecureKeyStore checks MIGRATION_FLAG_KEY internally).
+      // Defer it so it doesn't compete with the initial wallet load.
+      setTimeout(() => {
+        migrateFromWalletStore(0).then(r => {
+          if (!r.ok) console.warn('[KryptoNow] Enclave migration:', r.error)
+        }).catch(() => {})
+      }, 2000)
     }
   }, [])
 

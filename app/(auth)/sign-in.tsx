@@ -8,8 +8,10 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSignIn, useSignUp } from "@clerk/expo";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useWalletStore } from "../../store/walletStore";
+import { useAuth } from "../../context/AuthContext";
+// AsyncStorage intentionally removed — routing uses in-memory store state
 
 const { width, height } = Dimensions.get("window")
 const TEAL   = "#0D2E2E"
@@ -107,6 +109,10 @@ export default function SignIn() {
   const { signIn, setActive: setSignInActive, isLoaded: siLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: suLoaded } = useSignUp();
 
+  // Read already-loaded data from stores — avoids re-reading AsyncStorage after auth
+  const walletAddress = useWalletStore(s => s.address);
+  const { user: authUser } = useAuth();
+
   const [email,   setEmail  ] = useState("");
   const [code,    setCode   ] = useState("");
   const [step,    setStep   ] = useState<"email" | "otp">("email");
@@ -140,28 +146,18 @@ export default function SignIn() {
     }
   }, []);
 
-  const onSuccess = async () => {
+  // Uses already-loaded in-memory state — no async reads needed after sign-in
+  const onSuccess = useCallback(async () => {
     try {
-      let address: string | null = null
-      let profile: any = null
-      if (Platform.OS === "web") {
-        const walletRaw = localStorage.getItem("kryptonow_wallet")
-        if (walletRaw) {
-          try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
-        }
-        if (!address) address = localStorage.getItem("kryptonow_address")
-        const profileRaw = localStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
-      } else {
-        address = await AsyncStorage.getItem("kryptonow_address")
-        const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
-      }
-      if (!address) router.replace("/create")
+      // walletAddress and authUser are loaded at app startup via initFromStorage / AuthProvider
+      // Snapshot current values at call time to avoid stale closure issues
+      const addr    = useWalletStore.getState().address
+      const profile = authUser
+      if (!addr) router.replace("/create")
       else if (!profile?.onboarded) router.replace("/onboarding")
       else router.replace("/dashboard")
     } catch { router.replace("/create") }
-  };
+  }, [authUser]);
 
   const handleGoogle = async () => {
     setLoading(true); setError("");
@@ -186,13 +182,20 @@ export default function SignIn() {
     try {
       await signIn!.create({ identifier: trimmed, strategy: "email_code" });
       setFlow("signin"); setStep("otp");
-    } catch {
-      try {
-        await signUp!.create({ emailAddress: trimmed });
-        await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
-        setFlow("signup"); setStep("otp");
-      } catch (e2: any) {
-        setError(e2?.errors?.[0]?.message ?? "Failed to send code.");
+    } catch (e: any) {
+      // Only fall through to sign-up when Clerk says the identifier doesn't exist.
+      // For all other errors (rate-limit, network, etc.) surface immediately.
+      const code = e?.errors?.[0]?.code ?? "";
+      if (code === "form_identifier_not_found" || code === "form_param_value_invalid") {
+        try {
+          await signUp!.create({ emailAddress: trimmed });
+          await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
+          setFlow("signup"); setStep("otp");
+        } catch (e2: any) {
+          setError(e2?.errors?.[0]?.message ?? "Failed to send code.");
+        }
+      } else {
+        setError(e?.errors?.[0]?.message ?? "Failed to send code.");
       }
     } finally { setLoading(false); }
   };
@@ -337,8 +340,8 @@ export default function SignIn() {
       <View style={s.bgCircle1} />
       <View style={s.bgCircle2} />
       <View style={s.bgCircle3} />
-      {[80, 160, 240, 320, 120, 200, 280].map((x, i) => (
-        <Particle key={i} delay={i * 600} x={x} />
+      {[100, 220, 300].map((x, i) => (
+        <Particle key={i} delay={i * 1000} x={x} />
       ))}
       <ScrollView contentContainerStyle={s.center} keyboardShouldPersistTaps="handled">
         <Animated.View style={[s.logoWrap, { transform: [{ scale: logoScale }], opacity: logoOpacity }]}>
