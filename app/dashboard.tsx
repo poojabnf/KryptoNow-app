@@ -11,7 +11,6 @@ import { router, usePathname } from "expo-router"
 import BottomTabBar from '../components/BottomTabBar'
 import TxDetailModal from '../components/TxDetailModal'
 import { useToast } from '../context/ToastContext'
-import type { Tx } from '../hooks/useTransactions'
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
