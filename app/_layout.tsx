@@ -12,6 +12,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import { LockProvider } from '../context/LockContext';
 import { SubscriptionProvider } from '../context/SubscriptionContext';
+import { ToastProvider } from '../context/ToastContext';
 import { Platform } from 'react-native';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
@@ -99,7 +100,9 @@ export default function RootLayout() {
         <LockProvider>
           <AuthProvider>
             <SubscriptionProvider>
-              <RootLayoutNav />
+              <ToastProvider>
+                <RootLayoutNav />
+              </ToastProvider>
             </SubscriptionProvider>
           </AuthProvider>
         </LockProvider>

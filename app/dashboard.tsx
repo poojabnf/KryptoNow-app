@@ -1,11 +1,17 @@
 import { kryptoNowProvider } from '../utils/eip1193'
 import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useEffect, useState, useCallback, useRef } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  RefreshControl, ActivityIndicator, Modal, Animated, Platform, useWindowDimensions,
+  RefreshControl, ActivityIndicator, Modal, Animated, Platform,
+  useWindowDimensions, Clipboard,
 } from "react-native"
 import { router, usePathname } from "expo-router"
+import BottomTabBar from '../components/BottomTabBar'
+import TxDetailModal from '../components/TxDetailModal'
+import { useToast } from '../context/ToastContext'
+import type { Tx } from '../hooks/useTransactions'
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
 import { useTransactions, Tx, TxType } from "../hooks/useTransactions"
@@ -65,6 +71,7 @@ const NAV_ITEMS = [
   { label: "Swap",          icon: "swap-horizontal-outline",  route: "/swap"          },
   { label: "Buy",           icon: "card-outline",             route: "/buy"           },
   { label: "History",       icon: "time-outline",             route: "/history"       },
+  { label: "Bridge",        icon: "swap-vertical-outline",    route: "/bridge"        },
   { label: "dApps",         icon: "globe-outline",            route: "/dapps"         },
   { label: "Referral",      icon: "gift-outline",             route: "/referral"      },
   { label: "Portfolio",     icon: "pie-chart-outline",        route: "/portfolio"     },
@@ -219,11 +226,11 @@ function ChainModal({ visible, current, onSelect, onClose }: {
 }
 
 const ACTIONS = [
-  { l: "Send",    icon: "send-outline",             route: "/send"    },
-  { l: "Receive", icon: "download-outline",         route: "/receive" },
-  { l: "Swap",    icon: "swap-horizontal-outline",  route: "/swap"    },
-  { l: "Buy",     icon: "add-circle-outline",       route: "/buy"     },
-  { l: "Portfolio", icon: "pie-chart-outline", route: "/portfolio" },
+  { l: "Send",    icon: "send-outline",            route: "/send"    },
+  { l: "Receive", icon: "download-outline",        route: "/receive" },
+  { l: "Swap",    icon: "swap-horizontal-outline", route: "/swap"    },
+  { l: "Buy",     icon: "add-circle-outline",      route: "/buy"     },
+  { l: "Bridge",  icon: "swap-vertical-outline",   route: "/bridge"  },
 ]
 
 export default function Dashboard() {
@@ -235,8 +242,19 @@ export default function Dashboard() {
   const setChainCache  = useWalletStore(s => s.setChainCache)
   const getChainCache  = useWalletStore(s => s.getChainCache)
   const { signOut }    = useAuth()
+  const toast          = useToast()
 
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
+
+  function copyAddress() {
+    if (!addr) return
+    if (Platform.OS === 'web') {
+      navigator.clipboard?.writeText(addr).catch(() => {})
+    } else {
+      Clipboard.setString(addr)
+    }
+    toast.success('Address copied!')
+  }
   const isWeb = Platform.OS === "web"
   const { width: screenWidth } = useWindowDimensions()
   const isLargeScreen = isWeb && screenWidth >= 768
@@ -250,6 +268,7 @@ export default function Dashboard() {
   const [fundSheet,   setFundSheet]   = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [drawerOpen,   setDrawerOpen]   = useState(false)
+  const [selectedTx,   setSelectedTx]   = useState<Tx | null>(null)
   const drawerAnim = useRef(new Animated.Value(-260)).current
 
   function openDrawer() {
@@ -405,19 +424,37 @@ export default function Dashboard() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={activeChain.color} />
       }
-      contentContainerStyle={{ paddingBottom: 48 }}
+      contentContainerStyle={{ paddingBottom: isLargeScreen ? 48 : 90 }}
     >
-      {/* Balance Card */}
-      <View style={[s.balanceCard, { backgroundColor: activeChain.color }]}>
-        <View style={s.avatarWrap}>
-          <Text style={s.avatarText}>{addr ? addr.slice(2, 4).toUpperCase() : "--"}</Text>
+      {/* Balance Card — premium gradient */}
+      <View style={s.balanceCard}>
+        <LinearGradient
+          colors={[activeChain.color, activeChain.color + 'CC', activeChain.color + '88']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* Frosted glass overlay circles */}
+        <View style={[s.bgCircle1, { backgroundColor: 'rgba(255,255,255,0.06)' }]} />
+        <View style={[s.bgCircle2, { backgroundColor: 'rgba(255,255,255,0.04)' }]} />
+
+        <View style={s.cardTopRow}>
+          <View style={s.avatarWrap}>
+            <Text style={s.avatarText}>{addr ? addr.slice(2, 4).toUpperCase() : "--"}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.balLabel}>Total Balance</Text>
+            {loading
+              ? <ActivityIndicator color="#fff" size="small" style={{ marginVertical: 4 }} />
+              : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
+            }
+          </View>
+          <View style={[s.networkBadge, { borderColor: 'rgba(255,255,255,0.2)' }]}>
+            <View style={[s.chainDotSmall, { backgroundColor: '#fff' }]} />
+            <Text style={s.networkBadgeText}>{activeChain.name}</Text>
+          </View>
         </View>
-        <Text style={s.walletAddr}>{short}</Text>
-        <Text style={s.balLabel}>Total Balance</Text>
-        {loading
-          ? <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 12 }} />
-          : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
-        }
+
         {!loading && tokens[0] && (
           <View style={s.balMeta}>
             <Text style={s.balNative}>{parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}</Text>
@@ -428,9 +465,12 @@ export default function Dashboard() {
             </View>
           </View>
         )}
-        <View style={s.networkBadge}>
-          <Text style={s.networkBadgeText}>{activeChain.name}  Encrypted</Text>
-        </View>
+
+        <TouchableOpacity style={s.addrRow} onPress={copyAddress} activeOpacity={0.75}>
+          <Ionicons name="wallet-outline" size={13} color="rgba(255,255,255,0.6)" />
+          <Text style={s.walletAddr}>{short}</Text>
+          <Ionicons name="copy-outline" size={13} color="rgba(255,255,255,0.45)" />
+        </TouchableOpacity>
       </View>
 
       {/* Error */}
@@ -440,26 +480,39 @@ export default function Dashboard() {
         </TouchableOpacity>
       )}
 
-      {/* Action Buttons */}
+      {/* Action Buttons — premium circular */}
       <View style={s.actions}>
         {ACTIONS.map(a => (
           <TouchableOpacity
             key={a.l}
             style={s.actionItem}
             onPress={() => router.push(a.route as any)}
-            activeOpacity={0.7}
+            activeOpacity={0.75}
           >
-            <View style={[s.actionBtn, { borderColor: activeChain.color + "55" }]}>
-              <Ionicons name={a.icon as any} size={24} color={activeChain.color} />
-            </View>
-            <Text style={s.actionLabel}>{a.l}</Text>
+            <LinearGradient
+              colors={[activeChain.color + '22', activeChain.color + '10']}
+              style={[s.actionBtn, { borderColor: activeChain.color + '33' }]}
+            >
+              <Ionicons name={a.icon as any} size={22} color={activeChain.color} />
+            </LinearGradient>
+            <Text style={[s.actionLabel, { color: theme.textSecondary }]}>{a.l}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Assets */}
       <View style={s.section}>
-        <Text style={s.sectionTitle}>Assets on {activeChain.name}</Text>
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>Assets on {activeChain.name}</Text>
+          <TouchableOpacity
+            style={[s.importBtn, { borderColor: activeChain.color + '40', backgroundColor: activeChain.color + '0C' }]}
+            onPress={() => router.push('/token-import' as any)}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="add-circle-outline" size={14} color={activeChain.color} />
+            <Text style={[s.importBtnT, { color: activeChain.color }]}>Import</Text>
+          </TouchableOpacity>
+        </View>
         {loading ? (
           <View style={s.loadBox}>
             <ActivityIndicator color={activeChain.color} />
@@ -517,7 +570,7 @@ export default function Dashboard() {
               <TouchableOpacity
                 key={i}
                 style={s.txRow}
-                onPress={() => router.push("/history" as any)}
+                onPress={() => setSelectedTx(tx)}
                 activeOpacity={0.7}
               >
                 <View style={[s.txIcon, { backgroundColor: meta.bg }]}>
@@ -660,6 +713,7 @@ export default function Dashboard() {
             </View>
           </View>
           {mainContent}
+          <BottomTabBar onOpenDrawer={openDrawer} />
         </>
       )}
 
@@ -708,6 +762,12 @@ export default function Dashboard() {
         current={activeChain}
         onSelect={setActiveChain}
         onClose={() => setChainModal(false)}
+      />
+
+      <TxDetailModal
+        tx={selectedTx}
+        visible={!!selectedTx}
+        onClose={() => setSelectedTx(null)}
       />
     </View>
   )
@@ -764,18 +824,23 @@ const s = StyleSheet.create({
   bellBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#EEF2FF", alignItems: "center", justifyContent: "center", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
   bellBadge:       { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#EF4444", alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: "#fff" },
   bellBadgeT:      { color: "#fff", fontSize: 9, fontWeight: "800" },
-  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 32, padding: 32, alignItems: "center", shadowColor: "#4338CA", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 32, elevation: 16 },
-  avatarWrap:      { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", marginBottom: 14, borderWidth: 2.5, borderColor: "rgba(255,255,255,0.35)" },
-  avatarText:      { color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.5 },
-  walletAddr:      { color: "rgba(255,255,255,0.6)", fontSize: 12, marginBottom: 20, letterSpacing: 0.8 },
-  balLabel:        { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600", marginBottom: 6, letterSpacing: 1 },
-  balAmount:       { color: "#fff", fontSize: 46, fontWeight: "800", letterSpacing: -2 },
-  balMeta:         { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10, marginBottom: 20 },
-  balNative:       { color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: "500" },
-  changePill:      { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-  changeText:      { fontSize: 12, fontWeight: "700" },
-  networkBadge:    { backgroundColor: "rgba(255,255,255,0.12)", paddingVertical: 6, paddingHorizontal: 18, borderRadius: 24, borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" },
-  networkBadgeText:{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
+  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 28, padding: 22, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.28, shadowRadius: 32, elevation: 16 },
+  bgCircle1:       { position: "absolute", width: 200, height: 200, borderRadius: 100, top: -60, right: -40 },
+  bgCircle2:       { position: "absolute", width: 140, height: 140, borderRadius: 70, bottom: -40, left: -20 },
+  cardTopRow:      { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 14 },
+  avatarWrap:      { width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "rgba(255,255,255,0.3)", flexShrink: 0 },
+  avatarText:      { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
+  addrRow:         { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
+  walletAddr:      { color: "rgba(255,255,255,0.65)", fontSize: 12, letterSpacing: 0.5, flex: 1 },
+  balLabel:        { color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "600", letterSpacing: 0.8, marginBottom: 4 },
+  balAmount:       { color: "#fff", fontSize: 32, fontWeight: "800", letterSpacing: -1 },
+  balMeta:         { flexDirection: "row", alignItems: "center", gap: 12 },
+  balNative:       { color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "500" },
+  changePill:      { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 16 },
+  changeText:      { fontSize: 11, fontWeight: "700" },
+  chainDotSmall:   { width: 6, height: 6, borderRadius: 3 },
+  networkBadge:    { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(0,0,0,0.25)", paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1 },
+  networkBadgeText:{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "600" },
   errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: "#FEF2F2", borderRadius: 14, borderWidth: 1, borderColor: "#FECACA", padding: 13 },
   errorText:       { color: "#DC2626", fontSize: 13, textAlign: "center", fontWeight: "500" },
   actions:         { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 20, marginBottom: 32 },
@@ -785,7 +850,9 @@ const s = StyleSheet.create({
   actionLabel:     { color: "#64748B", fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
   section:         { paddingHorizontal: 20, marginBottom: 28 },
   sectionHeader:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  sectionTitle:    { color: "#1E1B4B", fontSize: 17, fontWeight: "800", marginBottom: 16, letterSpacing: -0.3 },
+  sectionTitle:    { color: "#1E1B4B", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  importBtn:       { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1 },
+  importBtnT:      { fontSize: 12, fontWeight: "700" },
   viewAll:         { fontSize: 13, fontWeight: "700", color: "#6366F1" },
   loadBox:         { backgroundColor: "#fff", borderRadius: 18, padding: 28, alignItems: "center", gap: 12, borderWidth: 1, borderColor: "#F1F5F9" },
   loadText:        { color: "#94A3B8", fontSize: 13 },
