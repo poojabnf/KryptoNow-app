@@ -49,7 +49,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "pooja.bnf@gmail.com",
+        "appleId": "pooja.bnf@icloud.com",
         "ascAppId": "REPLACE_WITH_ASC_NUMERIC_APP_ID",
         "appleTeamId": "QGKA75U5S4",
         "bundleIdentifier": "com.kryptonow.app",
