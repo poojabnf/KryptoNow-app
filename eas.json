@@ -50,7 +50,7 @@
     "production": {
       "ios": {
         "appleId": "pooja.bnf@icloud.com",
-        "ascAppId": "REPLACE_WITH_ASC_NUMERIC_APP_ID",
+        "ascAppId": "6768106476",
         "appleTeamId": "QGKA75U5S4",
         "bundleIdentifier": "com.kryptonow.app",
         "metadataPath": "./store-assets/ios/metadata.json"
