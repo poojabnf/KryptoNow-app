@@ -79,3 +79,6 @@ clerk-nextjs/node_modules
 
 # Old fix scripts
 *.py
+
+# Ignore Google Cloud Secrets
+kryptonow-backend/serviceAccountKey.json

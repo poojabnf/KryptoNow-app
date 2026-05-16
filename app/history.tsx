@@ -51,6 +51,47 @@ function matchFilter(tx: Tx, filter: FilterKey): boolean {
   return true
 }
 
+// Row + detail styles (module-level; screen shell uses themed `s` inside History)
+const r = StyleSheet.create({
+  row:          { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: "#EEF3FF", shadowColor: "#64748B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  iconWrap:     { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 12 },
+  mid:          { flex: 1 },
+  topRow:       { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
+  label:        { color: "#0F1729", fontSize: 14, fontWeight: "600" },
+  failBadge:    { backgroundColor: "#FEF2F2", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  failBadgeT:   { color: "#EF4444", fontSize: 10, fontWeight: "700" },
+  erc20Badge:   { backgroundColor: "#E8EEFF", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  erc20BadgeT:  { color: "#6366F1", fontSize: 10, fontWeight: "700" },
+  addr:         { color: "#8896AB", fontSize: 12, marginBottom: 2 },
+  time:         { color: "#8896AB", fontSize: 11 },
+  right:        { alignItems: "flex-end" },
+  amount:       { fontSize: 14, fontWeight: "600", marginBottom: 3 },
+  block:        { color: "#8896AB", fontSize: 11 },
+})
+
+const d = StyleSheet.create({
+  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15,23,42,0.5)" },
+  sheet:        { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#FFFFFF", borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "85%", paddingTop: 12 },
+  handle:       { width: 36, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 16 },
+  hdr:          { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, gap: 14, marginBottom: 16 },
+  typeIcon:     { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  typeLabel:    { color: "#8896AB", fontSize: 13, fontWeight: "500", marginBottom: 2 },
+  amountLarge:  { fontSize: 24, fontWeight: "700" },
+  closeBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
+  hashBox:      { marginHorizontal: 20, backgroundColor: "#EBF0FF", borderRadius: 12, borderWidth: 1, borderColor: "#DDE6FF", padding: 12, marginBottom: 16 },
+  hashLabel:    { color: "#8896AB", fontSize: 11, fontWeight: "600", marginBottom: 4 },
+  hash:         { color: "#6366F1", fontSize: 12, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
+  scroll:       { paddingHorizontal: 20 },
+  card:         { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#DDE6FF", overflow: "hidden", marginBottom: 14 },
+  detailRow:    { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 },
+  bordered:     { borderBottomWidth: 1, borderBottomColor: "#F8FAFF" },
+  detailL:      { color: "#8896AB", fontSize: 13, flex: 1 },
+  detailV:      { color: "#0F1729", fontSize: 13, fontWeight: "500", flex: 2, textAlign: "right" },
+  mono:         { fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11 },
+  explorerBtn:  { backgroundColor: "#E8EEFF", paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1.5, borderColor: "#C7D2FE" },
+  explorerBtnT: { color: "#6366F1", fontSize: 14, fontWeight: "600" },
+})
+
 // --- TxRow ---
 function TxRow({ tx, onPress }: { tx: Tx; onPress: () => void }) {
   const meta   = TYPE_META[tx.type]
@@ -274,49 +315,6 @@ const s = StyleSheet.create({
   loadMoreWrap:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 20 },
   loadMoreT:        { color: theme.textMuted, fontSize: 13 },
   endT:             { color: theme.textMuted, fontSize: 12, textAlign: "center", paddingVertical: 20 },
-})
-
-const r = StyleSheet.create({
-  row:          { flexDirection: "row", alignItems: "center", backgroundColor: theme.bgCard, borderRadius: 16, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.borderLight, shadowColor: "#64748B", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
-  iconWrap:     { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 12 },
-  icon:         { fontSize: 13, fontWeight: "800" },
-  mid:          { flex: 1 },
-  topRow:       { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
-  label:        { color: theme.textPrimary, fontSize: 14, fontWeight: "600" },
-  failBadge:    { backgroundColor: "#FEF2F2", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  failBadgeT:   { color: "#EF4444", fontSize: 10, fontWeight: "700" },
-  erc20Badge:   { backgroundColor: theme.bgPill, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  erc20BadgeT:  { color: "#6366F1", fontSize: 10, fontWeight: "700" },
-  addr:         { color: theme.textMuted, fontSize: 12, marginBottom: 2 },
-  time:         { color: theme.textMuted, fontSize: 11 },
-  right:        { alignItems: "flex-end" },
-  amount:       { fontSize: 14, fontWeight: "600", marginBottom: 3 },
-  block:        { color: theme.textMuted, fontSize: 11 },
-})
-
-const d = StyleSheet.create({
-  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet:        { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: theme.bgCard, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: "85%", paddingTop: 12 },
-  handle:       { width: 36, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 16 },
-  hdr:          { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, gap: 14, marginBottom: 16 },
-  typeIcon:     { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-  typeIconT:    { fontSize: 16, fontWeight: "800" },
-  typeLabel:    { color: theme.textMuted, fontSize: 13, fontWeight: "500", marginBottom: 2 },
-  amountLarge:  { fontSize: 24, fontWeight: "700" },
-  closeBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
-  closeBtnT:    { color: theme.textSecondary, fontSize: 12, fontWeight: "700" },
-  hashBox:      { marginHorizontal: 20, backgroundColor: theme.bgApp, borderRadius: 12, borderWidth: 1, borderColor: theme.border, padding: 12, marginBottom: 16 },
-  hashLabel:    { color: theme.textMuted, fontSize: 11, fontWeight: "600", marginBottom: 4 },
-  hash:         { color: "#6366F1", fontSize: 12, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
-  scroll:       { paddingHorizontal: 20 },
-  card:         { backgroundColor: theme.bgCard, borderRadius: 16, borderWidth: 1, borderColor: theme.border, overflow: "hidden", marginBottom: 14 },
-  detailRow:    { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 },
-  bordered:     { borderBottomWidth: 1, borderBottomColor: "#F8FAFF" },
-  detailL:      { color: theme.textMuted, fontSize: 13, flex: 1 },
-  detailV:      { color: theme.textPrimary, fontSize: 13, fontWeight: "500", flex: 2, textAlign: "right" },
-  mono:         { fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11 },
-  explorerBtn:  { backgroundColor: theme.bgPill, paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1.5, borderColor: "#C7D2FE" },
-  explorerBtnT: { color: "#6366F1", fontSize: 14, fontWeight: "600" },
 })
 
   return (

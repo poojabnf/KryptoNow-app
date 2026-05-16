@@ -450,7 +450,7 @@ export default function PriceAlertsScreen() {
               { text: "Alert when BNB goes above $800" },
             ].map((ex, i) => (
               <View key={i} style={s.exampleRow}>
-                <Text style={s.exampleDot}>[>]</Text>
+                <Text style={s.exampleDot}>{'[>]'}</Text>
                 <Text style={s.exampleT}>{ex.text}</Text>
               </View>
             ))}

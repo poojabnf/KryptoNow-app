@@ -345,7 +345,7 @@ export default function Swap() {
             </View>
             <TouchableOpacity style={s.explorerBtn}
               onPress={() => Linking.openURL(getTxUrl(activeChain.id, txHash))}>
-              <Text style={[s.explorerBtnT, { color: activeChain.color }]}>View on Explorer [->]</Text>
+              <Text style={[s.explorerBtnT, { color: activeChain.color }]}>View on Explorer {'[->]'}</Text>
             </TouchableOpacity>
           </>
         ) : null}

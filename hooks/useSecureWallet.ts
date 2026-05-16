@@ -24,7 +24,7 @@ import {
   migrateToSecureEnclave,
   type KeyMeta,
   type SecureStoreResult,
-} from './SecureKeyStore';
+} from '../store/SecureKeyStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

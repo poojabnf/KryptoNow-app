@@ -247,7 +247,7 @@ export default function Dashboard() {
         try {
           const ETH_PATH = "m/44'/60'/0'/0/0"
           const hdNode   = ethers.HDNodeWallet.fromPhrase(wallet.phrase.trim(), undefined, ETH_PATH)
-          kryptoNowProvider.init(addr, hdNode.privateKey, activeChain.id, activeChain.rpc)
+          kryptoNowProvider.init(addr, activeChain.id, activeChain.rpc)
         } catch {}
       }
     }
@@ -358,7 +358,7 @@ export default function Dashboard() {
       addr,
       activeChain.id,
       activeChain.symbol,
-      (count) => setUnreadCount(prev => prev + count)
+      (count: number) => setUnreadCount(prev => prev + count)
     )
     return () => stop()
   }, [addr, activeChain.id])
@@ -385,28 +385,36 @@ export default function Dashboard() {
       contentContainerStyle={{ paddingBottom: 48 }}
     >
       {/* Balance Card */}
-      <View style={[s.balanceCard, { backgroundColor: activeChain.color }]}>
-        <View style={s.avatarWrap}>
-          <Text style={s.avatarText}>{addr ? addr.slice(2, 4).toUpperCase() : "--"}</Text>
-        </View>
-        <Text style={s.walletAddr}>{short}</Text>
-        <Text style={s.balLabel}>Total Balance</Text>
-        {loading
-          ? <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 12 }} />
-          : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
-        }
-        {!loading && tokens[0] && (
-          <View style={s.balMeta}>
-            <Text style={s.balNative}>{parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}</Text>
-            <View style={[s.changePill, { backgroundColor: tokens[0].change24h >= 0 ? "rgba(134,239,172,0.25)" : "rgba(252,165,165,0.25)" }]}>
-              <Text style={[s.changeText, { color: tokens[0].change24h >= 0 ? "#86EFAC" : "#FCA5A5" }]}>
-                {tokens[0].change24h >= 0 ? "+" : ""}{tokens[0].change24h.toFixed(2)}%
-              </Text>
-            </View>
+      <View style={s.balanceCard}>
+        {/* Coloured header band */}
+        <View style={[s.balCardBand, { backgroundColor: activeChain.color }]}>
+          <View style={[s.avatarWrap, { backgroundColor: "rgba(255,255,255,0.22)" }]}>
+            <Text style={s.avatarText}>{addr ? addr.slice(2, 4).toUpperCase() : "--"}</Text>
           </View>
-        )}
-        <View style={s.networkBadge}>
-          <Text style={s.networkBadgeText}>{activeChain.name}  Encrypted</Text>
+          <Text style={s.walletAddr}>{short}</Text>
+          <View style={[s.networkBadge, { backgroundColor: "rgba(255,255,255,0.18)", borderColor: "rgba(255,255,255,0.25)" }]}>
+            <View style={s.networkDot} />
+            <Text style={s.networkBadgeText}>{activeChain.name}</Text>
+            <Text style={s.networkEncrypted}>• Encrypted</Text>
+          </View>
+        </View>
+        {/* White body */}
+        <View style={s.balCardBody}>
+          <Text style={s.balLabel}>Total Balance</Text>
+          {loading
+            ? <ActivityIndicator color={activeChain.color} size="large" style={{ marginVertical: 12 }} />
+            : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
+          }
+          {!loading && tokens[0] && (
+            <View style={s.balMeta}>
+              <Text style={s.balNative}>{parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}</Text>
+              <View style={[s.changePill, { backgroundColor: tokens[0].change24h >= 0 ? "#E6FBF3" : "#FEF0F2" }]}>
+                <Text style={[s.changeText, { color: tokens[0].change24h >= 0 ? "#0ECB81" : "#F6465D" }]}>
+                  {tokens[0].change24h >= 0 ? "▲" : "▼"} {Math.abs(tokens[0].change24h).toFixed(2)}%
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       </View>
 
@@ -419,19 +427,27 @@ export default function Dashboard() {
 
       {/* Action Buttons */}
       <View style={s.actions}>
-        {ACTIONS.map(a => (
-          <TouchableOpacity
-            key={a.l}
-            style={s.actionItem}
-            onPress={() => router.push(a.route as any)}
-            activeOpacity={0.7}
-          >
-            <View style={[s.actionBtn, { borderColor: activeChain.color + "55" }]}>
-              <Ionicons name={a.icon as any} size={24} color={activeChain.color} />
-            </View>
-            <Text style={s.actionLabel}>{a.l}</Text>
-          </TouchableOpacity>
-        ))}
+        {ACTIONS.map(a => {
+          const isPrimary = a.l === "Swap"
+          return (
+            <TouchableOpacity
+              key={a.l}
+              style={s.actionItem}
+              onPress={() => router.push(a.route as any)}
+              activeOpacity={0.75}
+            >
+              <View style={[
+                s.actionBtn,
+                isPrimary
+                  ? { backgroundColor: activeChain.color, borderColor: "transparent", shadowColor: activeChain.color, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8 }
+                  : { borderColor: theme.border }
+              ]}>
+                <Ionicons name={a.icon as any} size={22} color={isPrimary ? "#fff" : activeChain.color} />
+              </View>
+              <Text style={[s.actionLabel, isPrimary && { color: activeChain.color, fontWeight: "800" }]}>{a.l}</Text>
+            </TouchableOpacity>
+          )
+        })}
       </View>
 
       {/* Assets */}
@@ -688,12 +704,12 @@ export default function Dashboard() {
 
 // --- Sidebar Styles ---
 const sb = StyleSheet.create({
-  sidebar:       { width: 260, backgroundColor: "#FAFBFF", borderRightWidth: 1, borderRightColor: "#EEF2FF", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflowY: "hidden" as any, flexShrink: 0 },
+  sidebar:       { width: 260, backgroundColor: "#fff", borderRightWidth: 1, borderRightColor: "#DDE6FF", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflow: "hidden" as any, flexShrink: 0 },
   logoWrap:      { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
   logoIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   logoIconT:     { color: "#fff", fontSize: 14, fontWeight: "800" },
-  logoTitle:     { color: "#1E1B4B", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
-  logoSub:       { color: "#94A3B8", fontSize: 11 },
+  logoTitle:     { color: "#0F1729", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  logoSub:       { color: "#8896AB", fontSize: 11 },
   walletCard:    { marginHorizontal: 16, marginBottom: 20, borderRadius: 14, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   walletAvatar:  { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   walletAvatarT: { color: "#fff", fontSize: 13, fontWeight: "800" },
@@ -701,7 +717,7 @@ const sb = StyleSheet.create({
   chainBadge:    { flexDirection: "row", alignItems: "center", gap: 4 },
   chainDot:      { width: 6, height: 6, borderRadius: 3 },
   chainName:     { fontSize: 11, fontWeight: "600" },
-  navScroll:     { flex: 1, paddingHorizontal: 12, overflowY: "scroll" as any, overflowX: "hidden" as any, maxHeight: "calc(100vh - 240px)" as any },
+  navScroll:     { flex: 1, paddingHorizontal: 12, overflow: "scroll" as any, maxHeight: "calc(100vh - 240px)" as any },
   navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, position: "relative" },
   navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
   navIconT:      { fontSize: 13, fontWeight: "700", color: "#64748B" },
@@ -717,69 +733,73 @@ const sb = StyleSheet.create({
 
 // --- Main Styles ---
 const s = StyleSheet.create({
-  c:               { flex: 1, backgroundColor: "#F4F7FF" },
+  c:               { flex: 1, backgroundColor: "#EBF0FF" },
   webLayout:       { flex: 1, flexDirection: "row", height: "100vh" as any, overflow: "hidden" as any },
   webLayoutMobile: { flex: 1, flexDirection: "column" },
   hamburger:       { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 4 },
-  drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: "#fff", shadowColor: "#000", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 20 },
-  drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.45)", zIndex: 99 },
-  webMain:         { flex: 1, backgroundColor: "#F4F7FF", overflowY: "scroll" as any, height: "100vh" as any },
-  webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingVertical: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#EEF2FF", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: "#fff", shadowColor: "#1A3A8F", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 20 },
+  drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(8,16,40,0.5)", zIndex: 99 },
+  webMain:         { flex: 1, backgroundColor: "#EBF0FF", overflow: "scroll" as any, height: "100vh" as any },
+  webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingVertical: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#DDE6FF", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  chainPill:       { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1.5, borderColor: "#EEF2FF", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  chainPill:       { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1.5, borderColor: "#DDE6FF", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 },
   chainDot:        { width: 8, height: 8, borderRadius: 4 },
-  chainName:       { fontSize: 13, fontWeight: "700", color: "#1E1B4B" },
-  chevron:         { fontSize: 12, color: "#94A3B8" },
+  chainName:       { fontSize: 13, fontWeight: "700", color: "#0F1729" },
+  chevron:         { fontSize: 12, color: "#8896AB" },
   headerRight:     { flexDirection: "row", gap: 8 },
-  iconBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#EEF2FF", alignItems: "center", justifyContent: "center", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
+  iconBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#DDE6FF", alignItems: "center", justifyContent: "center", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 },
   iconBtnText:     { fontSize: 14, fontWeight: "700" },
-  bellBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#EEF2FF", alignItems: "center", justifyContent: "center", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 },
-  bellBadge:       { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#EF4444", alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: "#fff" },
+  bellBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#DDE6FF", alignItems: "center", justifyContent: "center", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 },
+  bellBadge:       { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#F6465D", alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: "#fff" },
   bellBadgeT:      { color: "#fff", fontSize: 9, fontWeight: "800" },
-  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 32, padding: 32, alignItems: "center", shadowColor: "#4338CA", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.35, shadowRadius: 32, elevation: 16 },
-  avatarWrap:      { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", marginBottom: 14, borderWidth: 2.5, borderColor: "rgba(255,255,255,0.35)" },
-  avatarText:      { color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: -0.5 },
-  walletAddr:      { color: "rgba(255,255,255,0.6)", fontSize: 12, marginBottom: 20, letterSpacing: 0.8 },
-  balLabel:        { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600", marginBottom: 6, letterSpacing: 1 },
-  balAmount:       { color: "#fff", fontSize: 46, fontWeight: "800", letterSpacing: -2 },
-  balMeta:         { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10, marginBottom: 20 },
-  balNative:       { color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: "500" },
-  changePill:      { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 28, overflow: "hidden", backgroundColor: "#fff", shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 10 },
+  balCardBand:     { paddingTop: 24, paddingBottom: 20, paddingHorizontal: 24, alignItems: "center" },
+  balCardBody:     { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, alignItems: "center", backgroundColor: "#fff" },
+  avatarWrap:      { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", marginBottom: 10, borderWidth: 2, borderColor: "rgba(255,255,255,0.4)" },
+  avatarText:      { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 },
+  walletAddr:      { color: "rgba(255,255,255,0.75)", fontSize: 12, marginBottom: 12, letterSpacing: 0.8, fontFamily: "monospace" },
+  balLabel:        { color: "#8896AB", fontSize: 11, fontWeight: "600", marginBottom: 4, letterSpacing: 1, textTransform: "uppercase" },
+  balAmount:       { color: "#0F1729", fontSize: 44, fontWeight: "800", letterSpacing: -2 },
+  balMeta:         { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 },
+  balNative:       { color: "#8896AB", fontSize: 13, fontWeight: "500" },
+  changePill:      { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
   changeText:      { fontSize: 12, fontWeight: "700" },
-  networkBadge:    { backgroundColor: "rgba(255,255,255,0.12)", paddingVertical: 6, paddingHorizontal: 18, borderRadius: 24, borderWidth: 1, borderColor: "rgba(255,255,255,0.18)" },
-  networkBadgeText:{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
-  errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: "#FEF2F2", borderRadius: 14, borderWidth: 1, borderColor: "#FECACA", padding: 13 },
-  errorText:       { color: "#DC2626", fontSize: 13, textAlign: "center", fontWeight: "500" },
-  actions:         { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 20, marginBottom: 32 },
-  actionItem:      { alignItems: "center", gap: 10 },
-  actionBtn:       { width: 62, height: 62, borderRadius: 20, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: "#EEF2FF", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
+  networkBadge:    { flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1 },
+  networkDot:      { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4ADE80" },
+  networkBadgeText:{ color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: "700" },
+  networkEncrypted:{ color: "rgba(255,255,255,0.55)", fontSize: 11 },
+  errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: "#FEF0F2", borderRadius: 14, borderWidth: 1, borderColor: "#FECDD3", padding: 13 },
+  errorText:       { color: "#F6465D", fontSize: 13, textAlign: "center", fontWeight: "500" },
+  actions:         { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 16, marginBottom: 32 },
+  actionItem:      { alignItems: "center", gap: 8 },
+  actionBtn:       { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1.5, shadowOffset: { width: 0, height: 6 }, shadowRadius: 14, elevation: 5 },
   actionIcon:      { fontSize: 16, fontWeight: "800" },
-  actionLabel:     { color: "#64748B", fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
+  actionLabel:     { color: "#4A5568", fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
   section:         { paddingHorizontal: 20, marginBottom: 28 },
   sectionHeader:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  sectionTitle:    { color: "#1E1B4B", fontSize: 17, fontWeight: "800", marginBottom: 16, letterSpacing: -0.3 },
-  viewAll:         { fontSize: 13, fontWeight: "700", color: "#6366F1" },
-  loadBox:         { backgroundColor: "#fff", borderRadius: 18, padding: 28, alignItems: "center", gap: 12, borderWidth: 1, borderColor: "#F1F5F9" },
-  loadText:        { color: "#94A3B8", fontSize: 13 },
-  emptyBox:        { backgroundColor: "#fff", borderRadius: 20, padding: 28, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0" },
+  sectionTitle:    { color: "#0F1729", fontSize: 17, fontWeight: "800", marginBottom: 16, letterSpacing: -0.3 },
+  viewAll:         { fontSize: 13, fontWeight: "700" },
+  loadBox:         { backgroundColor: "#fff", borderRadius: 18, padding: 28, alignItems: "center", gap: 12, borderWidth: 1, borderColor: "#DDE6FF" },
+  loadText:        { color: "#8896AB", fontSize: 13 },
+  emptyBox:        { backgroundColor: "#fff", borderRadius: 20, padding: 28, alignItems: "center", borderWidth: 1, borderColor: "#DDE6FF" },
   emptyIcon:       { fontSize: 36, marginBottom: 10 },
-  emptyTitle:      { color: "#1E1B4B", fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  emptySub:        { color: "#94A3B8", fontSize: 13, textAlign: "center" },
-  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 20, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: "#F1F5F9", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
-  assetIcon:       { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", marginRight: 14 },
+  emptyTitle:      { color: "#0F1729", fontSize: 15, fontWeight: "700", marginBottom: 4 },
+  emptySub:        { color: "#8896AB", fontSize: 13, textAlign: "center" },
+  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 },
+  assetIcon:       { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center", marginRight: 14 },
   assetIconText:   { fontSize: 18, fontWeight: "800" },
   assetMid:        { flex: 1 },
-  assetName:       { color: "#1E1B4B", fontSize: 14, fontWeight: "700", marginBottom: 2 },
-  assetBal:        { color: "#94A3B8", fontSize: 12, marginTop: 3 },
+  assetName:       { color: "#0F1729", fontSize: 14, fontWeight: "700", marginBottom: 2 },
+  assetBal:        { color: "#8896AB", fontSize: 12, marginTop: 2 },
   assetRight:      { alignItems: "flex-end" },
-  assetValue:      { color: "#1E1B4B", fontSize: 15, fontWeight: "800" },
+  assetValue:      { color: "#0F1729", fontSize: 15, fontWeight: "800" },
   assetChange:     { fontSize: 12, fontWeight: "700", marginTop: 3 },
-  txRow:           { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 18, padding: 16, marginBottom: 8, borderWidth: 1, borderColor: "#F1F5F9", shadowColor: "#6366F1", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  txIcon:          { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 14 },
+  txRow:           { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 8, shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
+  txIcon:          { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", marginRight: 14 },
   txMid:           { flex: 1 },
-  txLabel:         { color: "#1E1B4B", fontSize: 14, fontWeight: "700" },
-  txAddr:          { color: "#94A3B8", fontSize: 11, marginTop: 2 },
-  txTime:          { color: "#CBD5E1", fontSize: 11, marginTop: 1 },
+  txLabel:         { color: "#0F1729", fontSize: 14, fontWeight: "700" },
+  txAddr:          { color: "#8896AB", fontSize: 11, marginTop: 2 },
+  txTime:          { color: "#B8C4D4", fontSize: 11, marginTop: 1 },
   txAmt:           { fontSize: 14, fontWeight: "800" },
 })
 

@@ -7,11 +7,16 @@ import {
   KeyboardAvoidingView, ScrollView,
 } from "react-native";
 import { router } from "expo-router";
-import { useSignIn, useSignUp } from "@clerk/expo";
+import { useSignIn, useSignUp } from "@clerk/expo/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
-WebBrowser.maybeCompleteAuthSession();
+// Only needed on native — on web Clerk handles its own popup/redirect completion.
+// Calling this unconditionally on web can swallow the OAuth callback before
+// Clerk finishes reading it, which silently breaks Google & Discord login.
+if (Platform.OS !== "web") {
+  WebBrowser.maybeCompleteAuthSession();
+}
 
 const { width, height } = Dimensions.get("window")
 const TEAL   = "#0D2E2E"
@@ -28,9 +33,11 @@ function useOAuthFlow(strategy: "oauth_google" | "oauth_discord") {
   const { startSSOFlow } = useSSO();
   return useCallback(async (onSuccess: () => Promise<void>) => {
     if (Platform.OS === "web") {
-      // Let Clerk open its own popup - do NOT call window.open() manually first.
-      // Opening "about:blank" before startSSOFlow was causing the double-popup bug.
-      const redirectUrl = window.location.origin + "/"
+      // redirectUrl must be registered in Clerk dashboard under "Allowed redirect URLs".
+      // window.location.origin automatically resolves to:
+      //   http://localhost:8081  (dev)   or   https://kypra.xyz  (production)
+      // so no manual env-switching is needed here.
+      const redirectUrl = window.location.origin + "/sso-callback"
       try {
         const result = await startSSOFlow({ strategy, redirectUrl })
         const { createdSessionId, setActive } = result
@@ -445,18 +452,18 @@ const s = StyleSheet.create({
   bgCircle3:    { position: "absolute", top: "40%", left: "30%", width: 200, height: 200, borderRadius: 100, backgroundColor: "#00D4AA", opacity: 0.04 },
   center:       { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 40, paddingHorizontal: 20 },
   logoWrap:     { alignItems: "center", marginBottom: 32, gap: 8 },
-  logoIcon:     { width: 72, height: 72, borderRadius: 20, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", shadowColor: ACCENT, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 12 },
+  logoIcon:     { width: 72, height: 72, borderRadius: 20, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", elevation: 12, ...Platform.select({ web: { boxShadow: `0px 8px 20px rgba(0,212,170,0.5)` }, default: { shadowColor: ACCENT, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 20 } }) },
   logoIconText: { fontSize: 36, fontWeight: "900", color: "#0D2E2E" },
   logoTitle:    { fontSize: 28, fontWeight: "900", color: "#fff", letterSpacing: -0.5 },
   logoTagline:  { fontSize: 14, color: ACCENT, fontWeight: "500", letterSpacing: 0.5 },
-  card:         { width: "100%", maxWidth: 420, backgroundColor: "rgba(255,255,255,0.97)", borderRadius: 28, padding: 28, shadowColor: "#000", shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.3, shadowRadius: 40, elevation: 20 },
+  card:         { width: "100%", maxWidth: 420, backgroundColor: "rgba(255,255,255,0.97)", borderRadius: 28, padding: 28, elevation: 20, ...Platform.select({ web: { boxShadow: "0px 20px 40px rgba(0,0,0,0.3)" }, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.3, shadowRadius: 40 } }) },
   cardTitle:    { fontSize: 24, fontWeight: "800", color: "#1E1B4B", textAlign: "center", marginBottom: 6 },
   cardSub:      { fontSize: 14, color: "#64748B", textAlign: "center", marginBottom: 24, lineHeight: 20 },
-  googleBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  googleBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fff", borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: "#E2E8F0", marginBottom: 10, elevation: 2, ...Platform.select({ web: { boxShadow: "0px 2px 8px rgba(0,0,0,0.06)" }, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 } }) },
   googleIconWrap:{ width: 24, height: 24, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
   googleIconG:  { fontSize: 16, fontWeight: "900", color: "#4285F4" },
   googleBtnText:{ fontSize: 15, fontWeight: "700", color: "#1E1B4B", flex: 1, textAlign: "center" },
-  discordBtn:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#5865F2", borderRadius: 14, padding: 14, marginBottom: 20, shadowColor: "#5865F2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 4 },
+  discordBtn:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#5865F2", borderRadius: 14, padding: 14, marginBottom: 20, elevation: 4, ...Platform.select({ web: { boxShadow: "0px 4px 12px rgba(88,101,242,0.3)" }, default: { shadowColor: "#5865F2", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 } }) },
   discordBtnText:{ fontSize: 15, fontWeight: "700", color: "#fff", flex: 1, textAlign: "center" },
   divider:      { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 },
   dividerLine:  { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
@@ -466,7 +473,7 @@ const s = StyleSheet.create({
   input:        { flex: 1, fontSize: 15, color: "#1E1B4B", paddingVertical: 14 },
   errorBox:     { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
   errorText:    { color: "#EF4444", fontSize: 13, fontWeight: "500", flex: 1 },
-  accentBtn:    { backgroundColor: ACCENT, borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 16, shadowColor: ACCENT, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6 },
+  accentBtn:    { backgroundColor: ACCENT, borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 16, elevation: 6, ...Platform.select({ web: { boxShadow: "0px 6px 16px rgba(0,212,170,0.35)" }, default: { shadowColor: ACCENT, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16 } }) },
   accentBtnText:{ fontSize: 16, fontWeight: "800", color: "#0D2E2E" },
   badgeRow:     { flexDirection: "row", justifyContent: "center", gap: 8, flexWrap: "wrap" },
   badge:        { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#F0FDF9", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: "#A7F3D0" },

@@ -267,3 +267,72 @@ export async function sendSecurityAlert(message: string): Promise<void> {
 export function getStoredPushToken(): string | null {
   return loadToken()
 }
+
+/**
+ * Polls the address for new incoming transfers and fires local push notifications.
+ * Returns a cleanup function to stop polling.
+ */
+export function startTxWatcher(
+  address: string,
+  _chainId: number,
+  symbol: string,
+  onNewTx?: (count: number) => void,
+): () => void {
+  if (!address || Platform.OS === 'web') return () => {}
+
+  let cancelled = false
+  let lastSeen = 0
+
+  const poll = async () => {
+    if (cancelled) return
+    try {
+      const ak = process.env.EXPO_PUBLIC_ALCHEMY_KEY
+      if (!ak) return
+      const url = `https://eth-mainnet.g.alchemy.com/v2/${ak}`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'alchemy_getAssetTransfers',
+          params: [{
+            fromBlock: '0x0',
+            toAddress: address,
+            category: ['external', 'erc20'],
+            maxCount: '0x5',
+            order: 'desc',
+          }],
+        }),
+      })
+      const data = await res.json()
+      const transfers = data?.result?.transfers ?? []
+      const fresh = transfers.filter(
+        (t: { blockNum?: string }) => parseInt(t.blockNum ?? '0', 16) > lastSeen,
+      )
+      if (fresh.length > 0) {
+        const newest = Math.max(...fresh.map((t: { blockNum?: string }) => parseInt(t.blockNum ?? '0', 16)))
+        if (lastSeen > 0) {
+          for (const t of fresh) {
+            const val = t.value ?? '?'
+            const asset = t.asset ?? symbol
+            await sendTxNotification('received', String(val), asset, 'Ethereum', t.hash ?? '')
+          }
+          onNewTx?.(fresh.length)
+        }
+        lastSeen = newest
+      } else if (transfers.length > 0 && lastSeen === 0) {
+        lastSeen = parseInt(transfers[0].blockNum ?? '0', 16)
+      }
+    } catch {
+      // polling is best-effort
+    }
+  }
+
+  void poll()
+  const id = setInterval(poll, 30_000)
+  return () => {
+    cancelled = true
+    clearInterval(id)
+  }
+}

@@ -2,17 +2,9 @@ import { create } from 'zustand'
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { saveEncryptedWallet, loadEncryptedWallet, deleteEncryptedWallet } from '../utils/webVault'
+import { CHAINS, type Chain } from '../utils/chains'
 
-export interface Chain {
-  id:          number
-  name:        string
-  nativeName:  string
-  symbol:      string
-  icon:        string
-  color:       string
-  rpc:         string
-  explorer:    string
-}
+export type { Chain }
 
 export interface WalletData {
   address: string
@@ -44,16 +36,7 @@ interface WalletState {
   initFromStorage:      () => Promise<void>
 }
 
-const DEFAULT_CHAIN: Chain = {
-  id:         1,
-  name:       'Ethereum',
-  nativeName: 'Ether',
-  symbol:     'ETH',
-  icon:       'E',
-  color:      '#627EEA',
-  rpc:        "https://eth-mainnet.g.alchemy.com/v2/" + (process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? "t7T7fcsMA4rqQYH70YRV3"),
-  explorer:   'https://etherscan.io',
-}
+const DEFAULT_CHAIN: Chain = CHAINS[0]
 
 const STORAGE_KEY = 'kryptonow_wallet'
 const CHAIN_KEY   = 'kryptonow_chain'

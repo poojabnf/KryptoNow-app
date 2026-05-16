@@ -15,9 +15,13 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kryptonow.app",
+      "buildNumber": "1",
+      "minimumOsVersion": "16.0",
       "infoPlist": {
         "NSCameraUsageDescription": "KryptoNow uses your camera to scan WalletConnect QR codes.",
         "NSFaceIDUsageDescription": "KryptoNow uses Face ID to protect your wallet.",
+        "NSPhotoLibraryUsageDescription": "KryptoNow needs photo library access to import QR code images.",
+        "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
@@ -25,7 +29,10 @@
             ]
           }
         ]
-      }
+      },
+      "associatedDomains": [
+        "applinks:kryptonow.xyz"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -35,13 +42,16 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.kryptonow.app",
+      "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.INTERNET",
         "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ],
       "intentFilters": [
         {
@@ -50,6 +60,10 @@
           "data": [
             {
               "scheme": "kryptonow"
+            },
+            {
+              "scheme": "https",
+              "host": "kryptonow.xyz"
             }
           ],
           "category": [
@@ -66,11 +80,11 @@
     },
     "extra": {
       "eas": {
-        "projectId": "5c22ca6d-6705-4f70-bd37-c37207cc140a"
+        "projectId": "3e0e9648-5e02-41b6-b5ba-fa1aff3ce88b"
       },
       "website": "https://kryptonow.xyz"
     },
-    "owner": "poojaya2k19",
+    "owner": "kryptonow-inc",
     "plugins": [
       "expo-web-browser",
       "expo-router",
@@ -88,7 +102,27 @@
           "color": "#6366F1",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "KryptoNow uses Face ID to protect your wallet."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          },
+          "android": {
+            "minSdkVersion": 26,
+            "targetSdkVersion": 35,
+            "compileSdkVersion": 35
+          }
+        }
+      ],
+      "expo-font"
     ]
   }
 }

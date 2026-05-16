@@ -443,3 +443,11 @@ export async function migrateToSecureEnclave(
 ): Promise<SecureStoreResult<void>> {
   return storePrivateKey(plaintextPrivKey, meta);
 }
+
+/** Alias used by eip1193 / useAA — defaults to account index 0. */
+export async function loadPrivateKeyFromEnclave(
+  reason = 'Authenticate to sign',
+  accountIndex = 0,
+): Promise<SecureStoreResult<string>> {
+  return retrievePrivateKey(accountIndex, reason);
+}

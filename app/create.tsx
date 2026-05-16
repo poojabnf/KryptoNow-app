@@ -16,7 +16,7 @@ type Step = "choice" | "create_show" | "import_input"
 export default function Create() {
   const { signOut } = useAuth()
   const [step,         setStep]         = useState<Step>("choice")
-  const [wallet,       setWallet]       = useState<ethers.Wallet | null>(null)
+  const [wallet,       setWallet]       = useState<ethers.HDNodeWallet | null>(null)
   const [imported,     setImported]     = useState("")
   const [copied,       setCopied]       = useState(false)
   const [loading,      setLoading]      = useState(false)
@@ -121,7 +121,7 @@ export default function Create() {
           <Text style={s.warningT}>[!] Never share these words. Anyone with them controls your funds.</Text>
         </View>
         <View style={s.phraseGrid}>
-          {words.map((word, i) => (
+          {words.map((word: string, i: number) => (
             <View key={i} style={s.wordBox}>
               <Text style={s.wordNum}>{i + 1}</Text>
               <Text style={s.wordT}>{word}</Text>

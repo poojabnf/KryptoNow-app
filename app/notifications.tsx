@@ -430,7 +430,7 @@ export default function Notifications() {
                 Alert.alert("Sent!", "Check your notifications inbox.")
               }}
             >
-              <Text style={s.testBtnT}>[>] Send Test Notification</Text>
+              <Text style={s.testBtnT}>{'[>]'} Send Test Notification</Text>
             </TouchableOpacity>
           </View>
 
