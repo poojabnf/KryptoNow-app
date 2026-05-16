@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as LocalAuthentication from 'expo-local-authentication'
 import { Platform } from 'react-native'
-import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 
 const PIN_KEY      = 'Kryptonow_pin_hash'
@@ -39,9 +38,6 @@ export function useLock() {
         setBiometricType('Fingerprint')
       }
 
-      if (Platform.OS === 'web') { setLockState('unlocked'); return; }
-      if (Platform.OS === 'web') { setLockState('unlocked'); return; }
-      if (Platform.OS === 'web') { setLockState('unlocked'); return; }
       if (Platform.OS === 'web') { setLockState('unlocked'); return; }
       const storedPin = await SecureStore.getItemAsync(PIN_KEY)
       if (!storedPin) {

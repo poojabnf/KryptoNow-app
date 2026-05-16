@@ -6,5 +6,27 @@
     "paths": {
       "@/*": ["./*"]
     }
-  }
+  },
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "context/**/*.ts",
+    "context/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "store/**/*.ts",
+    "utils/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".claude/**",
+    "kryptonow-extension/**",
+    "kryptonow-backend/**",
+    "subgraph/**",
+    "hooks/usePushNotifications.ts",
+    "components/PortfolioAnalytics.tsx",
+    "components/PriceChart.tsx"
+  ]
 }

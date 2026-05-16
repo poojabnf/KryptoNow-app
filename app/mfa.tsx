@@ -2,11 +2,15 @@ import { useState, useEffect } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet,
   ScrollView, TextInput, ActivityIndicator, Alert, Image,
+  Modal, FlatList,
 } from "react-native"
 import { router } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
 import { useUser } from "@clerk/expo"
 import { useWalletStore } from "../store/walletStore"
+import { COUNTRY_CODES } from "../utils/countryCodes"
+
+type CountryCode = (typeof COUNTRY_CODES)[number]
 
 type MFAStep = "overview" | "totp_setup" | "totp_verify" | "sms_setup" | "sms_verify" | "backup_codes"
 type MFAMethod = { type: string; enabled: boolean; id?: string }
@@ -27,6 +31,12 @@ export default function MFASetup() {
   const [methods,     setMethods]    = useState<MFAMethod[]>([])
   const [totpResource, setTotpResource] = useState<any>(null)
   const [phoneResource, setPhoneResource] = useState<any>(null)
+  const [voiceMode, setVoiceMode] = useState(false)
+  const [showPicker, setShowPicker] = useState(false)
+  const [countrySearch, setCountrySearch] = useState("")
+  const [countryCode, setCountryCode] = useState<CountryCode>(
+    COUNTRY_CODES.find(c => c.code === "US") ?? COUNTRY_CODES[0],
+  )
 
   useEffect(() => {
     if (!isLoaded || !user) return
@@ -77,7 +87,8 @@ export default function MFASetup() {
     if (!phone || phone.length < 8) return setError("Enter a valid phone number")
     setLoading(true); setError("")
     try {
-      const phoneNum = await (user as any).createPhoneNumber({ phoneNumber: phone })
+      const fullPhone = `${countryCode.dial}${phone.replace(/\D/g, "")}`
+      const phoneNum = await (user as any).createPhoneNumber({ phoneNumber: fullPhone })
       await phoneNum.prepareVerification()
       setPhoneResource(phoneNum)
       setStep("sms_verify")
@@ -555,4 +566,34 @@ const s = StyleSheet.create({
   secondaryBtn:   { padding: 14, alignItems: "center" },
   secondaryBtnText:{ color: "#64748B", fontWeight: "600" },
   errorText:      { color: "#EF4444", fontSize: 13, textAlign: "center", marginBottom: 10 },
+  subtitle:       { fontSize: 12, color: "#94A3B8", marginTop: 2 },
+  toggleRow:      { flexDirection: "row", gap: 8, marginBottom: 16 },
+  toggleBtn:      { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 12, backgroundColor: "#F1F5F9" },
+  toggleText:     { fontSize: 13, fontWeight: "600", color: "#64748B" },
+  phoneRow:       { flexDirection: "row", gap: 8, marginBottom: 16 },
+  countryBtn:     { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 14, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#E2E8F0" },
+  countryFlag:    { fontSize: 16 },
+  countryDial:    { fontSize: 14, fontWeight: "600", color: "#1E1B4B" },
+  phoneInput:     { flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 14, fontSize: 16, borderWidth: 1.5, borderColor: "#E2E8F0" },
+  infoBanner:     { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 16 },
+  infoBannerText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  btnRow:         { flexDirection: "row", alignItems: "center", gap: 8 },
+  verifyInfo:     { alignItems: "center", marginBottom: 24, gap: 8 },
+  verifyTitle:    { fontSize: 18, fontWeight: "700", color: "#1E1B4B" },
+  verifySub:      { fontSize: 14, color: "#64748B", textAlign: "center" },
+  resendBox:      { marginTop: 24, alignItems: "center", gap: 12 },
+  resendTitle:    { fontSize: 14, fontWeight: "600", color: "#64748B" },
+  resendRow:      { flexDirection: "row", gap: 10 },
+  resendBtn:      { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5 },
+  resendBtnText:  { fontSize: 13, fontWeight: "600" },
+  changePhone:    { marginTop: 8, padding: 8 },
+  changePhoneText:{ color: "#6366F1", fontSize: 14, fontWeight: "600" },
+  pickerModal:    { flex: 1, backgroundColor: "#fff", paddingTop: 48 },
+  pickerHeader:   { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 12 },
+  pickerTitle:    { fontSize: 18, fontWeight: "700", color: "#1E1B4B" },
+  pickerSearch:   { marginHorizontal: 16, marginBottom: 8, backgroundColor: "#F8FAFC", borderRadius: 12, padding: 12, fontSize: 15, borderWidth: 1, borderColor: "#E2E8F0" },
+  pickerItem:     { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 20, gap: 12, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
+  pickerFlag:     { fontSize: 18, width: 28 },
+  pickerName:     { flex: 1, fontSize: 15, color: "#1E1B4B" },
+  pickerDial:     { fontSize: 14, color: "#64748B", fontWeight: "600" },
 })

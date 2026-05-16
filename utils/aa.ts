@@ -37,6 +37,7 @@ export interface SmartAccountInfo {
   address:    string
   isDeployed: boolean
   chainId:    number
+  gasless?:   boolean
 }
 
 //  Chain support check 

@@ -51,6 +51,11 @@ export async function deletePrivateKey(): Promise<void> {
   }
 }
 
+/** Save private key (and optionally derive address from mnemonic elsewhere). */
+export async function saveWalletKeys(privateKey: string, _mnemonic?: string): Promise<void> {
+  await savePrivateKey(privateKey)
+}
+
 // Alias for backwards compat
 export const saveVault  = savePrivateKey
 export const loadVault  = loadPrivateKey

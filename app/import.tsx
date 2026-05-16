@@ -11,8 +11,6 @@ import { saveWalletKeys } from '../store/keyStore'
 export default function Import() {
   const [phrase,   setPhrase]   = useState('')
   const [importing, setImporting] = useState(false)
-  const setWallet = useWalletStore(s => s.setWallet)
-
   const words    = phrase.trim() === '' ? 0 : phrase.trim().split(/\s+/).length
   const isValid  = validateMnemonic(phrase)   // real BIP-39 checksum validation
   const hasWords = words === 12 || words === 24
@@ -43,8 +41,7 @@ export default function Import() {
       // Store private key + mnemonic in Secure Enclave
       await saveWalletKeys(wallet.privateKey, trimmed)
 
-      // Only store the public address in Zustand
-      setWallet(wallet.address)
+      useWalletStore.getState().setWallet({ address: wallet.address, phrase: '' })
 
       router.replace('/dashboard')
     } catch (e: any) {

@@ -102,9 +102,9 @@ async function fetchGasData(
     })(),
   ])
 
-  const baseFeeWei  = feeData.lastBaseFeePerGas ?? feeData.gasPrice ?? 0n
+  const baseFeeWei  = feeData.maxFeePerGas ?? feeData.gasPrice ?? 0n
   const gasPriceWei = feeData.gasPrice ?? 0n
-  const isEIP1559   = feeData.lastBaseFeePerGas != null
+  const isEIP1559   = feeData.maxFeePerGas != null
   const baseFeeGwei = Number(baseFeeWei) / 1e9
 
   const buildTier = (

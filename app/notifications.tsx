@@ -487,6 +487,13 @@ const s = StyleSheet.create({
   infoText:        { flex: 1, color: "#64748B", fontSize: 13, lineHeight: 20 },
   testBtn:         { backgroundColor: "#EEF2FF", borderRadius: 16, paddingVertical: 16, alignItems: "center", borderWidth: 1.5, borderColor: "#C7D2FE" },
   testBtnT:        { color: "#6366F1", fontSize: 15, fontWeight: "700" },
+  permBanner:      { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, borderWidth: 1 },
+  permGranted:     { backgroundColor: "#ECFDF5", borderColor: "#86EFAC" },
+  permDenied:      { backgroundColor: "#FEF2F2", borderColor: "#FECACA" },
+  permDefault:     { backgroundColor: "#FFFBEB", borderColor: "#FDE68A" },
+  permIcon:        { fontSize: 16, fontWeight: "700" },
+  permTitle:       { fontSize: 14, fontWeight: "700", color: "#1E1B4B", marginBottom: 2 },
+  permSub:         { fontSize: 12, color: "#64748B", lineHeight: 18 },
 })
 
 const n = StyleSheet.create({
