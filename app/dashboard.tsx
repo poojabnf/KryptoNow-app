@@ -207,6 +207,8 @@ const ACTIONS = [
 export default function Dashboard() {
   const { theme, mode } = useTheme()
   const addr           = useWalletStore(s => s.address)
+  const isWalletLoaded = useWalletStore(s => s.isLoaded)
+  const initFromStorage = useWalletStore(s => s.initFromStorage)
   const activeChain    = useWalletStore(s => s.activeChain)
   const setActiveChain = useWalletStore(s => s.setActiveChain)
   const setChainCache  = useWalletStore(s => s.setChainCache)
@@ -253,8 +255,27 @@ export default function Dashboard() {
     }
   }, [addr, activeChain])
 
+  const zeroBalanceState = useCallback(() => {
+    const nativeRow: TokenRow = {
+      symbol: activeChain.symbol,
+      name: activeChain.nativeName,
+      balance: '0.000000',
+      price: 0,
+      change24h: 0,
+      valueUSD: 0,
+      isNative: true,
+    }
+    setTokens([nativeRow])
+    setTotalUSD(0)
+    setLoading(false)
+    setRefreshing(false)
+  }, [activeChain])
+
   const fetchBalances = useCallback(async (force = false) => {
-    if (!addr) return
+    if (!addr) {
+      zeroBalanceState()
+      return
+    }
     const cached = getChainCache(activeChain.id)
     if (cached && !force) {
       const nativeRow: TokenRow = {
@@ -331,18 +352,28 @@ export default function Dashboard() {
         nativeBalance: nativeBal.toFixed(6), nativeUSD,
         tokens: tokenRows, lastFetch: Date.now(),
       })
-    } catch (e: any) {
+    } catch {
       setError(true)
+      zeroBalanceState()
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [addr, activeChain])
+  }, [addr, activeChain, zeroBalanceState])
 
   useEffect(() => {
-    setLoading(true); setTokens([]); setTotalUSD(0)
-    fetchBalances(false); refreshTxns()
-  }, [activeChain.id])
+    if (!isWalletLoaded) initFromStorage()
+  }, [isWalletLoaded, initFromStorage])
+
+  useEffect(() => {
+    if (!isWalletLoaded) return
+    setLoading(true)
+    setError(false)
+    setTokens([])
+    setTotalUSD(0)
+    fetchBalances(false)
+    refreshTxns()
+  }, [activeChain.id, addr, isWalletLoaded])
 
   useEffect(() => {
     setUnreadCount(getUnreadCount())
@@ -405,12 +436,14 @@ export default function Dashboard() {
             ? <ActivityIndicator color={activeChain.color} size="large" style={{ marginVertical: 12 }} />
             : <Text style={s.balAmount}>{fmt(totalUSD)}</Text>
           }
-          {!loading && tokens[0] && (
+          {!loading && (
             <View style={s.balMeta}>
-              <Text style={s.balNative}>{parseFloat(tokens[0].balance).toFixed(4)} {activeChain.symbol}</Text>
-              <View style={[s.changePill, { backgroundColor: tokens[0].change24h >= 0 ? "#E6FBF3" : "#FEF0F2" }]}>
-                <Text style={[s.changeText, { color: tokens[0].change24h >= 0 ? "#0ECB81" : "#F6465D" }]}>
-                  {tokens[0].change24h >= 0 ? "▲" : "▼"} {Math.abs(tokens[0].change24h).toFixed(2)}%
+              <Text style={s.balNative}>
+                {parseFloat(tokens[0]?.balance ?? '0').toFixed(4)} {activeChain.symbol}
+              </Text>
+              <View style={[s.changePill, { backgroundColor: (tokens[0]?.change24h ?? 0) >= 0 ? "#E6FBF3" : "#FEF0F2" }]}>
+                <Text style={[s.changeText, { color: (tokens[0]?.change24h ?? 0) >= 0 ? "#0ECB81" : "#F6465D" }]}>
+                  {(tokens[0]?.change24h ?? 0) >= 0 ? "▲" : "▼"} {Math.abs(tokens[0]?.change24h ?? 0).toFixed(2)}%
                 </Text>
               </View>
             </View>

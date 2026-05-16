@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, Platform } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
@@ -35,7 +36,7 @@ export default function Receive() {
   return (
     <View style={s.c}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Receive</Text>

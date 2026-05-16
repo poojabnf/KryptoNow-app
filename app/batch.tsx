@@ -4,6 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
 import { useWalletStore } from "../store/walletStore"
@@ -200,7 +201,7 @@ export default function BatchSend() {
     return (
       <ScrollView style={s.container} contentContainerStyle={s.content}>
         <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
           </TouchableOpacity>
           <Text style={s.title}>Batch Results</Text>
@@ -267,7 +268,7 @@ export default function BatchSend() {
     <ScrollView style={s.container} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <View>

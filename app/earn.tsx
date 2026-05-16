@@ -4,6 +4,7 @@ import {
   TextInput, Alert, SafeAreaView,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 
 //  Data 
@@ -132,7 +133,7 @@ export default function EarnScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()} activeOpacity={0.7}>
           <Text style={s.backT}>←</Text>
         </TouchableOpacity>
         <Text style={s.title}>Earn Yield</Text>

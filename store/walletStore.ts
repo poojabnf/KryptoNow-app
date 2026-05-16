@@ -41,10 +41,24 @@ const DEFAULT_CHAIN: Chain = CHAINS[0]
 const STORAGE_KEY = 'kryptonow_wallet'
 const CHAIN_KEY   = 'kryptonow_chain'
 
-// Sync load for web (initial state)
+// Sync load for web (initial state) — encrypted vault is async; use address key as fallback
 function loadWalletSync(): WalletData | null {
   if (Platform.OS !== 'web') return null
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null } catch { return null }
+  try {
+    const legacyAddr = localStorage.getItem('kryptonow_address')
+    if (legacyAddr?.startsWith('0x')) {
+      return { address: legacyAddr, phrase: '' }
+    }
+    const r = localStorage.getItem(STORAGE_KEY)
+    if (!r) return null
+    const parsed = JSON.parse(r) as { address?: string; ct?: string }
+    if (parsed.address && !parsed.ct) {
+      return { address: parsed.address, phrase: '', name: undefined }
+    }
+    return null
+  } catch {
+    return null
+  }
 }
 function loadChainSync(): Chain {
   if (Platform.OS !== 'web') return DEFAULT_CHAIN
@@ -82,11 +96,14 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   initFromStorage: async () => {
     try {
       if (Platform.OS === 'web') {
-        // Web: decrypt vault + load chain
-        const [wallet, chainRaw] = await Promise.all([
+        const [vaultWallet, chainRaw] = await Promise.all([
           loadEncryptedWallet(),
           Promise.resolve(localStorage.getItem(CHAIN_KEY)),
         ])
+        const legacyAddr = localStorage.getItem('kryptonow_address')
+        const wallet =
+          vaultWallet ??
+          (legacyAddr?.startsWith('0x') ? { address: legacyAddr, phrase: '' } : null)
         const chain = chainRaw ? JSON.parse(chainRaw) : DEFAULT_CHAIN
         set({ wallet, address: wallet?.address ?? null, activeChain: chain, isLoaded: true })
         return

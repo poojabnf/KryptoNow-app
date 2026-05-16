@@ -4,6 +4,7 @@ import {
   ActivityIndicator, TextInput, Alert, Modal,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { loadPrivateKey } from "../store/keyStore"
@@ -405,7 +406,7 @@ export default function Options() {
     <View style={s.container}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <View>

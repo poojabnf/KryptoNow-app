@@ -4,6 +4,7 @@ import {
   FlatList, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 import { useTransactions, Tx, TxType } from '../hooks/useTransactions'
 
@@ -172,7 +173,7 @@ export default function Analytics() {
   return (
     <View style={s.c}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>{'<'}</Text>
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Transaction Analytics</Text>

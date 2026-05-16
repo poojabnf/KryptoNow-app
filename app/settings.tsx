@@ -4,6 +4,7 @@ import {
   ScrollView, Switch, Alert, Platform,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { useTheme, ThemeMode } from "../context/ThemeContext"
 import { useLockContext } from "../context/LockContext"
 import { Ionicons } from "@expo/vector-icons"
@@ -202,7 +203,7 @@ export default function Settings() {
   return (
     <View style={[st.c, { backgroundColor: theme.bgApp }]}>
       <View style={[st.header, { backgroundColor: theme.bgApp }]}>
-        <TouchableOpacity style={st.back} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={st.back} onPress={() => goBack()} activeOpacity={0.7}>
           <Text style={[st.backT, { color: theme.accent }]}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={[st.title, { color: theme.textPrimary }]}>Settings</Text>

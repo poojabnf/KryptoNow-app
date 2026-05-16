@@ -5,6 +5,7 @@ import {
   ScrollView, KeyboardAvoidingView, Platform,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import {
   PriceAlert, AlertCondition, AlertFrequency,
   ALERT_TOKENS, loadPriceAlerts, addPriceAlert,
@@ -365,7 +366,7 @@ export default function PriceAlertsScreen() {
     <View style={s.c}>
       {/* Header */}
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Price Alerts</Text>

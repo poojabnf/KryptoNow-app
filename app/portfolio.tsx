@@ -8,6 +8,7 @@ import { usePortfolioHistory, TimeRange } from "../hooks/usePortfolioHistory"
 import DonutChart from "../components/DonutChart"
 import { useWalletStore } from "../store/walletStore"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import Svg, { Path, Defs, LinearGradient, Stop, Line, Text as SvgText } from "react-native-svg"
 
 const RANGES: { label: string; value: TimeRange }[] = [
@@ -152,7 +153,7 @@ export default function PortfolioScreen() {
     <View style={st.c}>
       {/* Header */}
       <View style={st.hdr}>
-        <TouchableOpacity style={st.back} onPress={() => router.back()}>
+        <TouchableOpacity style={st.back} onPress={() => goBack()}>
           <Text style={st.backT}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={st.hdrTitle}>Portfolio</Text>

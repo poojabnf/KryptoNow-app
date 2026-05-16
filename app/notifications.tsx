@@ -5,6 +5,7 @@ import {
   ScrollView, Switch, Alert, FlatList, RefreshControl,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import {
   loadNotifPrefs, saveNotifPrefs, loadNotifHistory, markAllRead,
   markOneRead, clearAllNotifications, getUnreadCount,
@@ -199,7 +200,7 @@ export default function Notifications() {
 
       {/* Header */}
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>{"<"}</Text>
         </TouchableOpacity>
         <View style={s.hdrCenter}>

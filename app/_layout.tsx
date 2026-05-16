@@ -6,7 +6,9 @@ applyWebShadowPatch();
 import { ClerkProvider } from "@clerk/expo";
 import { Stack } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { useEffect } from "react";
 import { Platform } from "react-native";
+import { useWalletStore } from "../store/walletStore";
 
 // expo-secure-store (used by @clerk/expo/token-cache) is NOT available on web.
 // Passing tokenCache={undefined} on web lets Clerk use cookie-based sessions,
@@ -24,12 +26,21 @@ if (Platform.OS !== "web") {
   WebBrowser.maybeCompleteAuthSession();
 }
 
+function WalletBootstrap() {
+  const initFromStorage = useWalletStore(s => s.initFromStorage)
+  useEffect(() => {
+    initFromStorage()
+  }, [initFromStorage])
+  return null
+}
+
 export default function RootLayout() {
   return (
     <ClerkProvider
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       tokenCache={getTokenCache()}
     >
+      <WalletBootstrap />
       <Stack screenOptions={{ headerShown: false }} />
     </ClerkProvider>
   );

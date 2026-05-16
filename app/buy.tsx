@@ -4,6 +4,7 @@ import {
   Linking, Alert, SafeAreaView, TextInput,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
@@ -203,7 +204,7 @@ const s = StyleSheet.create({
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.header}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.title}>Buy Crypto</Text>

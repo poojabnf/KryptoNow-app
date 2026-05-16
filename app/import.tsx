@@ -4,6 +4,7 @@ import {
   Alert, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 import { validateMnemonic, deriveWallet } from '../utils/crypto'
 import { saveWalletKeys } from '../store/keyStore'
@@ -63,7 +64,7 @@ export default function Import() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>←</Text>
         </TouchableOpacity>
       </View>

@@ -5,6 +5,7 @@ import {
   FlatList, Platform, Linking,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { ethers } from "ethers"
@@ -454,7 +455,7 @@ export default function Swap() {
   return (
     <View style={s.c}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Swap</Text>

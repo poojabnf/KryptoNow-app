@@ -4,6 +4,7 @@ import {
   TextInput, Alert, ActivityIndicator, Modal, Platform,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { Ionicons } from '@expo/vector-icons'
 import { useWalletStore } from '../store/walletStore'
 import { loadPrivateKey } from '../store/keyStore'
@@ -200,7 +201,7 @@ export default function SocialRecoveryScreen() {
     <View style={s.c}>
       {/* Header */}
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Ionicons name='arrow-back' size={22} color='#1E1B4B' />
         </TouchableOpacity>
         <Text style={s.title}>Social Recovery</Text>

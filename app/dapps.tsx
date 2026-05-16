@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 import { getConnectedDApps, disconnectDApp, DAppSession } from '../utils/eip1193'
 
@@ -40,7 +41,7 @@ export default function ConnectedDApps() {
     >
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <Text style={s.title}>Connected dApps</Text>

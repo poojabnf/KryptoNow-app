@@ -1,4 +1,5 @@
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useTheme } from '../context/ThemeContext'
 import { useState, useEffect, useRef, useCallback } from "react"
 import {
@@ -489,7 +490,7 @@ export default function Send() {
   return (
     <KeyboardAvoidingView style={s.c} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Send</Text>

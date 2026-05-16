@@ -5,6 +5,7 @@ import {
   Platform, ActivityIndicator,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import * as Clipboard from "expo-clipboard"
 import { ethers } from "ethers"
 
@@ -337,7 +338,7 @@ export default function AddressBook() {
     <View style={s.c}>
       {/* Header */}
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Text style={s.backT}>{"<"}</Text>
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Address Book</Text>

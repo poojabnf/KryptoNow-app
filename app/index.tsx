@@ -98,7 +98,10 @@ export default function Index() {
 
       const { useWalletStore } = require("../store/walletStore")
       const store = useWalletStore.getState()
-      if (!store.address) store.setWallet({ address, phrase: "" })
+      await store.initFromStorage()
+      if (!store.address && address) {
+        useWalletStore.getState().setWallet({ address, phrase: "" })
+      }
 
       const profileRaw = await getItem("kryptonow_profile")
       const profile    = profileRaw ? JSON.parse(profileRaw) : null

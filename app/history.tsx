@@ -5,6 +5,7 @@ import {
   Linking, Platform, RefreshControl,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { useTheme } from "../context/ThemeContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
@@ -322,7 +323,7 @@ const s = StyleSheet.create({
 
       {/* Header */}
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>Transaction History</Text>

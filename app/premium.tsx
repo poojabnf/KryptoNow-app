@@ -4,6 +4,7 @@ import {
   Alert, SafeAreaView,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 
 // --- Data ---------------------------------------------------------------------
@@ -59,7 +60,7 @@ export default function PremiumScreen() {
     Alert.alert(
       '🎉 Welcome to Kryptonow Premium!',
       'All features are now unlocked. Thank you for your support!',
-      [{ text: 'Start Exploring', onPress: () => router.back() }]
+      [{ text: 'Start Exploring', onPress: () => goBack() }]
     )
   }
 
@@ -74,7 +75,7 @@ export default function PremiumScreen() {
         <Text style={s.premSub}>All features unlocked. Thank you for supporting Kryptonow.</Text>
         <TouchableOpacity
           style={[s.mainBtn, { backgroundColor: activeChain.color, marginTop: 32 }]}
-          onPress={() => router.back()} activeOpacity={0.85}
+          onPress={() => goBack()} activeOpacity={0.85}
         >
           <Text style={s.mainBtnT}>Back to Wallet →</Text>
         </TouchableOpacity>
@@ -86,7 +87,7 @@ export default function PremiumScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()} activeOpacity={0.7}>
           <Text style={s.backT}>←</Text>
         </TouchableOpacity>
         <Text style={s.title}>Kryptonow Premium</Text>

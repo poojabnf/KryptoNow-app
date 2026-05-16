@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import { getProvider } from '../utils/chains'
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, ScrollView, TextInput } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 import { loadPrivateKey } from '../store/keyStore'
 
@@ -202,7 +203,7 @@ export default function WalletConnectScreen() {
 
   return (
     <View style={s.c}>
-      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>router.back()}><Ionicons name="arrow-back" size={22} color="#6366F1" /></TouchableOpacity><Text style={s.title}>WalletConnect</Text><View style={{width:38}}/></View>
+      <View style={s.hdr}><TouchableOpacity style={s.back} onPress={()=>goBack()}><Ionicons name="arrow-back" size={22} color="#6366F1" /></TouchableOpacity><Text style={s.title}>WalletConnect</Text><View style={{width:38}}/></View>
       {initError ? <View style={s.center}><Text style={{color:'#EF4444',textAlign:'center'}}>{initError}</Text></View>
        : !wcReady ? <View style={s.center}><ActivityIndicator color="#6366F1"/><Text style={s.sub}>Initializing...</Text></View>
        : <>

@@ -5,6 +5,7 @@ import {
   Modal, FlatList,
 } from "react-native"
 import { router } from "expo-router"
+import { goBack } from "../utils/navigation"
 import { Ionicons } from "@expo/vector-icons"
 import { useUser } from "@clerk/expo"
 import { useWalletStore } from "../store/walletStore"
@@ -417,7 +418,7 @@ export default function MFASetup() {
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
       <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => goBack()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E1B4B" />
         </TouchableOpacity>
         <Text style={s.title}>Two-Factor Auth</Text>

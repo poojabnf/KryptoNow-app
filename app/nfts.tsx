@@ -12,6 +12,7 @@ import {
   ScrollView, Linking, Dimensions, Alert, TextInput,
 } from 'react-native'
 import { router } from 'expo-router'
+import { goBack } from '../utils/navigation'
 import { Ionicons } from '@expo/vector-icons'
 import { ethers } from 'ethers'
 import { useWalletStore } from '../store/walletStore'
@@ -369,7 +370,7 @@ export default function NFTGallery() {
   return (
     <View style={s.c}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => goBack()}>
           <Ionicons name="arrow-back" size={22} color="#6366F1" />
         </TouchableOpacity>
         <Text style={s.hdrTitle}>NFT Gallery</Text>
