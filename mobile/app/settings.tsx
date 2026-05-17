@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Switch, Alert, Platform,
+  ScrollView, Switch, Alert, Platform, Modal, TextInput, ActivityIndicator,
 } from "react-native"
 import { router } from "expo-router"
 import { goBack } from "../utils/navigation"
@@ -10,17 +10,27 @@ import { useLockContext } from "../context/LockContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useWalletStore } from "../store/walletStore"
 import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
-import { retrievePrivateKey } from "../store/SecureKeyStore"
+import { retrievePrivateKey, retrieveMnemonic, storePrivateKey, deletePrivateKey as deleteEnclaveKey, listAllAccounts } from "../store/SecureKeyStore"
 import { CHAINS } from "../utils/chains"
 import { useAuth } from "@clerk/expo"
 import * as Clipboard from "expo-clipboard"
+import { ethers } from "ethers"
 
 export default function Settings() {
-  const addr        = useWalletStore(s => s.address)
+  const addr                  = useWalletStore(s => s.address)
+  const accounts                = useWalletStore(s => s.accounts)
+  const activeAccountIndex      = useWalletStore(s => s.activeAccountIndex)
+  const setActiveAccountIndex   = useWalletStore(s => s.setActiveAccountIndex)
+  const setAccounts             = useWalletStore(s => s.setAccounts)
   const activeChain = useWalletStore(s => s.activeChain)
   const clearWallet = useWalletStore(s => s.clearWallet)
   const { signOut } = useAuth()
   const { theme, mode, setMode } = useTheme()
+
+  // Wallet manager modal state
+  const [showWalletManager, setShowWalletManager] = useState(false)
+  const [showImportModal, setShowImportModal]     = useState(false)
+  const [importKeyInput, setImportKeyInput]       = useState("")
   const { hasPin, lockState, lock, clearPin } = useLockContext()
 
   const [biometrics,    setBiometrics]    = useState(false)
@@ -46,7 +56,7 @@ export default function Settings() {
   useEffect(() => {
     if (Platform.OS === 'web' || !addr || !chainSupportsAA(activeChain.id)) return
     setAaLoading(true)
-    retrievePrivateKey(0, 'Authenticate to load smart account info')
+    retrievePrivateKey(activeAccountIndex, 'Authenticate to load smart account info')
       .then(async res => {
         if (!res.ok || !res.data) return
         const info = await getSmartAccountAddress(res.data, activeChain.id)
@@ -54,7 +64,7 @@ export default function Settings() {
       })
       .catch(() => {})
       .finally(() => setAaLoading(false))
-  }, [addr, activeChain.id])
+  }, [addr, activeChain.id, activeAccountIndex])
 
   const copyAAAddress = async () => {
     if (aaInfo?.address) {
@@ -104,6 +114,157 @@ export default function Settings() {
     )
   }
 
+  // Wallet management actions
+  const handleCreateNewAccount = async () => {
+    setAaLoading(true)
+    try {
+      const mnemoRes = await retrieveMnemonic(0, 'Authenticate to derive new account')
+      if (!mnemoRes.ok || !mnemoRes.data) {
+        Alert.alert('Error', mnemoRes.error ?? 'Authentication required to access seed phrase.')
+        return
+      }
+      
+      const mnemonic = mnemoRes.data
+      const nextIndex = accounts.length
+      const path = `m/44'/60'/0'/0/${nextIndex}`
+      
+      const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic, undefined, path)
+      const privKeyHex = hdNode.privateKey.replace('0x', '')
+      
+      const storeRes = await storePrivateKey(privKeyHex, {
+        accountIndex: nextIndex,
+        address: hdNode.address,
+        derivationPath: path
+      })
+      
+      if (!storeRes.ok) {
+        Alert.alert('Error', storeRes.error ?? 'Failed to store new account key in Enclave.')
+        return
+      }
+      
+      const updatedAccountsRes = await listAllAccounts()
+      if (updatedAccountsRes.ok && updatedAccountsRes.data) {
+        setAccounts(updatedAccountsRes.data)
+        Alert.alert('Success', `Successfully created and derived Account #${nextIndex + 1}!`)
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Unknown error creating account.')
+    } finally {
+      setAaLoading(false)
+    }
+  }
+
+  const handleImportConfirm = async () => {
+    const cleanKey = importKeyInput.trim().replace('0x', '')
+    if (cleanKey.length !== 64) {
+      Alert.alert('Error', 'Please enter a valid 64-character hex private key.')
+      return
+    }
+    
+    setAaLoading(true)
+    try {
+      const nextIndex = accounts.length
+      const w = new ethers.Wallet('0x' + cleanKey)
+      const storeRes = await storePrivateKey(cleanKey, {
+        accountIndex: nextIndex,
+        address: w.address,
+        derivationPath: 'imported'
+      })
+      
+      if (!storeRes.ok) {
+        Alert.alert('Error', storeRes.error ?? 'Failed to store imported key in Enclave.')
+        return
+      }
+      
+      const updatedAccountsRes = await listAllAccounts()
+      if (updatedAccountsRes.ok && updatedAccountsRes.data) {
+        setAccounts(updatedAccountsRes.data)
+        Alert.alert('Success', `Successfully imported Private Key as Account #${nextIndex + 1}!`)
+        setShowImportModal(false)
+        setImportKeyInput("")
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Invalid private key format.')
+    } finally {
+      setAaLoading(false)
+    }
+  }
+
+  const handleExportSeedPhrase = async (idx: number) => {
+    const mnemoRes = await retrieveMnemonic(idx, 'Authenticate to reveal seed phrase')
+    if (mnemoRes.ok && mnemoRes.data) {
+      Alert.alert(
+        'Recovery Seed Phrase',
+        `YOUR SEED PHRASE:\n\n${mnemoRes.data}\n\nWARNING: Keep this secret and store it offline. Anyone with these words can steal all your funds.`,
+        [
+          { text: 'Copy to Clipboard', onPress: async () => {
+            await Clipboard.setStringAsync(mnemoRes.data!)
+            Alert.alert('Copied!', 'Seed phrase copied to clipboard.')
+          }},
+          { text: 'Close', style: 'cancel' }
+        ]
+      )
+    } else {
+      Alert.alert('Failed', mnemoRes.error ?? 'Authentication failed.')
+    }
+  }
+
+  const handleExportPrivateKey = async (idx: number) => {
+    const keyRes = await retrievePrivateKey(idx, 'Authenticate to reveal private key')
+    if (keyRes.ok && keyRes.data) {
+      Alert.alert(
+        'Private Key',
+        `YOUR PRIVATE KEY:\n\n0x${keyRes.data}\n\nWARNING: Never share your private key. Anyone with it controls your address.`,
+        [
+          { text: 'Copy to Clipboard', onPress: async () => {
+            await Clipboard.setStringAsync('0x' + keyRes.data!)
+            Alert.alert('Copied!', 'Private key copied to clipboard.')
+          }},
+          { text: 'Close', style: 'cancel' }
+        ]
+      )
+    } else {
+      Alert.alert('Failed', keyRes.error ?? 'Authentication failed.')
+    }
+  }
+
+  const handleDeleteAccount = async (idx: number) => {
+    if (idx === 0) {
+      Alert.alert('Protected', 'The primary master wallet (Account #1) cannot be deleted. You can wipe the whole wallet in Settings Danger Zone instead.')
+      return
+    }
+    
+    Alert.alert(
+      'Remove Wallet',
+      'Are you sure you want to permanently remove this account from your enclave? Make sure you have backed up any keys.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: async () => {
+          setAaLoading(true)
+          try {
+            const delRes = await deleteEnclaveKey(idx)
+            if (delRes.ok) {
+              const updatedAccountsRes = await listAllAccounts()
+              if (updatedAccountsRes.ok && updatedAccountsRes.data) {
+                setAccounts(updatedAccountsRes.data)
+                if (activeAccountIndex === idx) {
+                  await setActiveAccountIndex(0)
+                }
+                Alert.alert('Success', 'Account successfully removed.')
+              }
+            } else {
+              Alert.alert('Error', delRes.error ?? 'Failed to delete account.')
+            }
+          } catch (e: any) {
+            Alert.alert('Error', e?.message ?? 'Unknown error.')
+          } finally {
+            setAaLoading(false)
+          }
+        }}
+      ]
+    )
+  }
+
   // Wipe: clears everything including wallet data
   const confirmWipe = () => {
     Alert.alert(
@@ -144,10 +305,11 @@ export default function Settings() {
     {
       title: "WALLET",
       items: [
+        { icon: "W", iconBg: "#EEF2FF", label: "Manage Wallets",      sublabel: `${accounts.length} active wallets`, type: "nav", onPress: () => setShowWalletManager(true) },
         { icon: "#", iconBg: "#EEF2FF", label: "Wallet Address",     sublabel: short,                          type: "action", onPress: copyAddress },
-        { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => Alert.alert("Security Notice", "Never share your private key.") },
+        { icon: "*", iconBg: "#FFF7ED", label: "Export Private Key",  sublabel: "Tap to reveal (keep secret)", type: "nav",    onPress: () => handleExportPrivateKey(activeAccountIndex) },
         { icon: "2", iconBg: "#EEF2FF", label: "Two-Factor Auth",     sublabel: "Authenticator, SMS, Backup codes", type: "nav",    onPress: () => router.push("/mfa" as any) },
-        { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => Alert.alert("Backup", "Write down your 12-word seed phrase safely.") },
+        { icon: "S", iconBg: "#ECFDF5", label: "Backup Seed Phrase",  sublabel: "Verify your recovery words",  type: "nav",    onPress: () => handleExportSeedPhrase(activeAccountIndex) },
         { icon: "N", iconBg: "#F0F9FF", label: "Active Network",      sublabel: activeChain.name,              type: "info" },
         { icon: "SR", iconBg: "#D1FAE5", label: "Social Recovery", sublabel: "Manage guardians", type: "nav", onPress: () => router.push("/recovery" as any) },
         { icon: "AA", iconBg: "#EEF2FF", label: "Smart Account",
@@ -301,6 +463,118 @@ export default function Settings() {
         </View>
 
       </ScrollView>
+
+      {/* Sleek Wallet Manager Modal */}
+      <Modal visible={showWalletManager} animationType="slide" transparent>
+        <View style={st.modalOverlay}>
+          <View style={[st.modalContent, { backgroundColor: theme.bgCard }]}>
+            <View style={st.modalHeader}>
+              <Text style={[st.modalTitle, { color: theme.textPrimary }]}>Manage Wallets</Text>
+              <TouchableOpacity onPress={() => setShowWalletManager(false)}>
+                <Ionicons name="close" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={st.modalScroll} showsVerticalScrollIndicator={false}>
+              {aaLoading && (
+                <View style={st.loadingOverlay}>
+                  <ActivityIndicator size="large" color={activeChain.color} />
+                  <Text style={[st.loadingOverlayT, { color: theme.textSecondary }]}>Processing enclave operation...</Text>
+                </View>
+              )}
+
+              {accounts.map((acc, index) => (
+                <View key={index} style={[
+                  st.walletItem,
+                  { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : theme.borderLight }
+                ]}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={[st.walletItemNum, { color: theme.textPrimary }]}>Account #{acc.accountIndex + 1}</Text>
+                      {activeAccountIndex === acc.accountIndex && (
+                        <View style={[st.activeBadge, { backgroundColor: activeChain.color }]}>
+                          <Text style={st.activeBadgeT}>Active</Text>
+                        </View>
+                      )}
+                    </View>
+                    <TouchableOpacity onPress={() => {
+                      setActiveAccountIndex(acc.accountIndex)
+                      setShowWalletManager(false)
+                    }}>
+                      <Text style={[st.switchBtnT, { color: activeChain.color }]}>
+                        {activeAccountIndex === acc.accountIndex ? "" : "Select"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={[st.walletItemAddr, { color: theme.textMuted }]}>{acc.address}</Text>
+
+                  {/* Wallet Controls */}
+                  <View style={st.walletControls}>
+                    <TouchableOpacity style={st.controlBtn} onPress={() => handleExportPrivateKey(acc.accountIndex)}>
+                      <Ionicons name="key" size={14} color="#6366F1" />
+                      <Text style={st.controlBtnT}>Private Key</Text>
+                    </TouchableOpacity>
+                    {acc.accountIndex === 0 && (
+                      <TouchableOpacity style={st.controlBtn} onPress={() => handleExportSeedPhrase(acc.accountIndex)}>
+                        <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                        <Text style={st.controlBtnT}>Seed Phrase</Text>
+                      </TouchableOpacity>
+                    )}
+                    {acc.accountIndex > 0 && (
+                      <TouchableOpacity style={[st.controlBtn, { borderColor: "#FECDD3" }]} onPress={() => handleDeleteAccount(acc.accountIndex)}>
+                        <Ionicons name="trash" size={14} color="#EF4444" />
+                        <Text style={[st.controlBtnT, { color: "#EF4444" }]}>Delete</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* Manager Buttons */}
+            <View style={st.modalActions}>
+              <TouchableOpacity style={[st.actionBtnOutline, { borderColor: activeChain.color }]} onPress={handleCreateNewAccount}>
+                <Ionicons name="add" size={20} color={activeChain.color} />
+                <Text style={[st.actionBtnOutlineT, { color: activeChain.color }]}>Derive Wallet</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[st.actionBtnSolid, { backgroundColor: activeChain.color }]} onPress={() => setShowImportModal(true)}>
+                <Ionicons name="download-outline" size={18} color="#fff" />
+                <Text style={st.actionBtnSolidT}>Import Key</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Private Key Import Modal */}
+      <Modal visible={showImportModal} animationType="fade" transparent>
+        <View style={st.popupOverlay}>
+          <View style={[st.popupContent, { backgroundColor: theme.bgCard }]}>
+            <Text style={[st.popupTitle, { color: theme.textPrimary }]}>Import Private Key</Text>
+            <Text style={[st.popupSub, { color: theme.textMuted }]}>Enter your 64-character hex private key. It will be secured in the enclave.</Text>
+            
+            <TextInput
+              style={[st.popupInput, { color: theme.textPrimary, borderColor: theme.border }]}
+              placeholder="0x..."
+              placeholderTextColor="#94A3B8"
+              value={importKeyInput}
+              onChangeText={setImportKeyInput}
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+            />
+
+            <View style={st.popupActions}>
+              <TouchableOpacity style={st.popupBtnCancel} onPress={() => setShowImportModal(false)}>
+                <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: activeChain.color }]} onPress={handleImportConfirm}>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>Import</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -333,4 +607,40 @@ const st = StyleSheet.create({
   logoutBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#FFF1F2", borderRadius: 16, paddingVertical: 16, borderWidth: 1.5, borderColor: "#FECDD3" },
   logoutIcon:   { color: "#F43F5E", fontSize: 16, fontWeight: "800" },
   logoutT:      { color: "#F43F5E", fontSize: 16, fontWeight: "700" },
+
+  // Wallet manager modal styling
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "flex-end" },
+  modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: "85%" },
+  modalHeader:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  modalTitle:   { fontSize: 20, fontWeight: "800" },
+  modalScroll:  { paddingBottom: 24 },
+  loadingOverlay: { padding: 20, alignItems: "center", justifyContent: "center", gap: 8 },
+  loadingOverlayT: { fontSize: 13, fontWeight: "600" },
+  
+  walletItem:   { borderRadius: 20, padding: 16, borderWidth: 1.5, marginBottom: 14, backgroundColor: "rgba(248, 250, 252, 0.5)" },
+  walletItemNum: { fontSize: 15, fontWeight: "700" },
+  activeBadge:  { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  activeBadgeT: { color: "#fff", fontSize: 10, fontWeight: "800" },
+  switchBtnT:   { fontSize: 13, fontWeight: "700" },
+  walletItemAddr: { fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', marginTop: 4 },
+  
+  walletControls: { flexDirection: "row", gap: 10, marginTop: 12 },
+  controlBtn:   { flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#E2E8F0", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12 },
+  controlBtnT:  { fontSize: 11, fontWeight: "600", color: "#64748B" },
+  
+  modalActions: { flexDirection: "row", gap: 12, marginTop: 16, paddingBottom: Platform.OS === 'ios' ? 20 : 0 },
+  actionBtnOutline: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 2, paddingVertical: 14, borderRadius: 16 },
+  actionBtnOutlineT: { fontSize: 14, fontWeight: "700" },
+  actionBtnSolid: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14, borderRadius: 16 },
+  actionBtnSolidT: { color: "#fff", fontSize: 14, fontWeight: "700" },
+
+  // Import Popup Modals
+  popupOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)", justifyContent: "center", alignItems: "center", padding: 24 },
+  popupContent: { width: "100%", maxWidth: 360, borderRadius: 24, padding: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 8 },
+  popupTitle:   { fontSize: 18, fontWeight: "800", marginBottom: 8 },
+  popupSub:     { fontSize: 12, lineHeight: 18, marginBottom: 16 },
+  popupInput:   { borderWidth: 1.5, borderRadius: 14, padding: 14, fontSize: 14, marginBottom: 20 },
+  popupActions: { flexDirection: "row", gap: 12 },
+  popupBtnCancel: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0" },
+  popupBtnConfirm: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: "center" },
 })

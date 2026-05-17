@@ -80,12 +80,15 @@ const NAV_ITEMS = [
 
 // --- Sidebar (web only) ---
 function Sidebar({
-  activeChain, addr, unreadCount, onSignOut,
+  activeChain, addr, unreadCount, onSignOut, accounts, activeAccountIndex, onSwitchClick,
 }: {
   activeChain: Chain
   addr: string | null
   unreadCount: number
   onSignOut: () => void
+  accounts: any[]
+  activeAccountIndex: number
+  onSwitchClick: () => void
 }) {
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
   return (
@@ -102,18 +105,22 @@ function Sidebar({
       </View>
 
       {/* Wallet info */}
-      <View style={[sb.walletCard, { backgroundColor: activeChain.color + "15", borderColor: activeChain.color + "30" }]}>
+      <TouchableOpacity
+        style={[sb.walletCard, { backgroundColor: activeChain.color + "15", borderColor: activeChain.color + "30" }]}
+        onPress={onSwitchClick}
+        activeOpacity={0.7}
+      >
         <View style={[sb.walletAvatar, { backgroundColor: activeChain.color }]}>
           <Text style={sb.walletAvatarT}>{addr ? addr.slice(2,4).toUpperCase() : "KN"}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={sb.walletAddr}>{short}</Text>
-          <View style={sb.chainBadge}>
-            <View style={[sb.chainDot, { backgroundColor: activeChain.color }]} />
-            <Text style={[sb.chainName, { color: activeChain.color }]}>{activeChain.name}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Text style={[sb.walletAddr, { fontWeight: "700" }]}>Account #{activeAccountIndex + 1}</Text>
+            <Ionicons name="chevron-down" size={12} color={activeChain.color} />
           </View>
+          <Text style={[sb.walletAddr, { fontSize: 11, opacity: 0.6, marginTop: 1 }]}>{short}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Nav links */}
       <ScrollView style={sb.navScroll} showsVerticalScrollIndicator={false}>
@@ -206,14 +213,17 @@ const ACTIONS = [
 
 export default function Dashboard() {
   const { theme, mode } = useTheme()
-  const addr           = useWalletStore(s => s.address)
-  const isWalletLoaded = useWalletStore(s => s.isLoaded)
-  const initFromStorage = useWalletStore(s => s.initFromStorage)
-  const activeChain    = useWalletStore(s => s.activeChain)
-  const setActiveChain = useWalletStore(s => s.setActiveChain)
-  const setChainCache  = useWalletStore(s => s.setChainCache)
-  const getChainCache  = useWalletStore(s => s.getChainCache)
-  const { signOut }    = useAuth()
+  const addr                  = useWalletStore(s => s.address)
+  const isWalletLoaded        = useWalletStore(s => s.isLoaded)
+  const initFromStorage       = useWalletStore(s => s.initFromStorage)
+  const activeChain           = useWalletStore(s => s.activeChain)
+  const setActiveChain        = useWalletStore(s => s.setActiveChain)
+  const setChainCache         = useWalletStore(s => s.setChainCache)
+  const getChainCache         = useWalletStore(s => s.getChainCache)
+  const accounts              = useWalletStore(s => s.accounts)
+  const activeAccountIndex    = useWalletStore(s => s.activeAccountIndex)
+  const setActiveAccountIndex = useWalletStore(s => s.setActiveAccountIndex)
+  const { signOut }           = useAuth()
 
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
   const isWeb = Platform.OS === "web"
@@ -226,6 +236,7 @@ export default function Dashboard() {
   const [refreshing,  setRefreshing]  = useState(false)
   const [error,       setError]       = useState(false)
   const [chainModal,  setChainModal]  = useState(false)
+  const [walletSwitcherOpen, setWalletSwitcherOpen] = useState(false)
   const [fundSheet,   setFundSheet]   = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [drawerOpen,   setDrawerOpen]   = useState(false)
@@ -581,6 +592,9 @@ export default function Dashboard() {
             addr={addr}
             unreadCount={unreadCount}
             onSignOut={handleSignOut}
+            accounts={accounts}
+            activeAccountIndex={activeAccountIndex}
+            onSwitchClick={() => setWalletSwitcherOpen(true)}
           />
           <View style={s.webMain}>
             {/* Web top bar */}
@@ -640,6 +654,9 @@ export default function Dashboard() {
                   addr={addr}
                   unreadCount={unreadCount}
                   onSignOut={() => { closeDrawer(); handleSignOut() }}
+                  accounts={accounts}
+                  activeAccountIndex={activeAccountIndex}
+                  onSwitchClick={() => setWalletSwitcherOpen(true)}
                 />
               </Animated.View>
             </>
@@ -731,6 +748,66 @@ export default function Dashboard() {
         onSelect={setActiveChain}
         onClose={() => setChainModal(false)}
       />
+
+      {/* Sleek 1-Tap Wallet Switcher Modal */}
+      <Modal visible={walletSwitcherOpen} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={[s.modalContent, { backgroundColor: theme.bgCard }]}>
+            <View style={s.modalHeader}>
+              <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Switch Wallet</Text>
+              <TouchableOpacity onPress={() => setWalletSwitcherOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={s.modalScroll} showsVerticalScrollIndicator={false}>
+              {accounts.map((acc, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    s.walletSelectorItem,
+                    { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : theme.borderLight }
+                  ]}
+                  onPress={async () => {
+                    await setActiveAccountIndex(acc.accountIndex)
+                    setWalletSwitcherOpen(false)
+                    closeDrawer()
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <View style={[s.walletAvatarSmall, { backgroundColor: activeChain.color }]}>
+                        <Text style={s.walletAvatarSmallT}>{acc.address ? acc.address.slice(2,4).toUpperCase() : "KN"}</Text>
+                      </View>
+                      <View>
+                        <Text style={[s.walletItemNum, { color: theme.textPrimary }]}>Account #{acc.accountIndex + 1}</Text>
+                        <Text style={[s.walletItemAddr, { color: theme.textMuted }]}>
+                          {acc.address ? `${acc.address.slice(0, 10)}...${acc.address.slice(-8)}` : ""}
+                        </Text>
+                      </View>
+                    </View>
+                    {activeAccountIndex === acc.accountIndex && (
+                      <Ionicons name="checkmark-circle" size={24} color={activeChain.color} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[s.manageBtn, { borderColor: activeChain.color }]}
+              onPress={() => {
+                setWalletSwitcherOpen(false)
+                closeDrawer()
+                router.push("/settings" as any)
+              }}
+            >
+              <Text style={[s.manageBtnT, { color: activeChain.color }]}>Manage All Wallets</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -834,6 +911,20 @@ const s = StyleSheet.create({
   txAddr:          { color: "#8896AB", fontSize: 11, marginTop: 2 },
   txTime:          { color: "#B8C4D4", fontSize: 11, marginTop: 1 },
   txAmt:           { fontSize: 14, fontWeight: "800" },
+
+  // Wallet Switcher Modal styles
+  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "flex-end" },
+  modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: "80%" },
+  modalHeader:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  modalTitle:   { fontSize: 20, fontWeight: "800" },
+  modalScroll:  { paddingBottom: 20 },
+  walletSelectorItem: { borderRadius: 18, padding: 14, borderWidth: 1.5, marginBottom: 12, backgroundColor: "rgba(248, 250, 252, 0.5)" },
+  walletAvatarSmall: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  walletAvatarSmallT: { color: "#fff", fontSize: 11, fontWeight: "800" },
+  walletItemNum: { fontSize: 14, fontWeight: "700" },
+  walletItemAddr: { fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', marginTop: 2 },
+  manageBtn: { width: "100%", paddingVertical: 14, borderRadius: 16, borderWidth: 2, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  manageBtnT: { fontSize: 14, fontWeight: "700" },
 })
 
 const m = StyleSheet.create({

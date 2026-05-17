@@ -530,6 +530,7 @@ export default function Swap() {
           <View style={s.quoteBox}>
             {[
               { l:"Rate",         v:`1 ${fromToken.symbol} ~ ${(parseFloat(quote.toAmountHuman)/parseFloat(fromAmount)).toFixed(4)} ${toToken.symbol}` },
+              { l:"Min received", v:`${(parseFloat(quote.toAmountHuman) * (1 - slippage / 100)).toFixed(4)} ${toToken.symbol}` },
               { l:"Price impact", v:`${quote.priceImpact.toFixed(2)}%`, color: priceImpactColor },
               { l:"Est. gas",     v:`~${quote.gas.toLocaleString()} units` },
             ].map(row => (
@@ -540,6 +541,30 @@ export default function Swap() {
             ))}
           </View>
         ) : null}
+
+        {/* Price impact warning banner */}
+        {quote && quote.priceImpact >= 1 && (
+          <View style={[
+            s.impactBanner,
+            { backgroundColor: quote.priceImpact >= 3 ? '#FEF2F2' : '#FFF7ED',
+              borderColor:      quote.priceImpact >= 3 ? '#FECACA' : '#FED7AA' }
+          ]}>
+            <Ionicons
+              name={quote.priceImpact >= 3 ? 'warning' : 'information-circle'}
+              size={16}
+              color={quote.priceImpact >= 3 ? '#EF4444' : '#F59E0B'}
+            />
+            <Text style={[
+              s.impactBannerT,
+              { color: quote.priceImpact >= 3 ? '#B91C1C' : '#92400E' }
+            ]}>
+              {quote.priceImpact >= 3
+                ? `High price impact (${quote.priceImpact.toFixed(2)}%) — you may receive significantly less than expected.`
+                : `Moderate price impact (${quote.priceImpact.toFixed(2)}%) — consider swapping a smaller amount.`
+              }
+            </Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={[s.swapBtn, { backgroundColor: activeChain.color }, (!quote || quoting) && { opacity: 0.4 }]}
@@ -599,6 +624,8 @@ const s = StyleSheet.create({
   quoteV:          { color:"#1E1B4B", fontSize:13, fontWeight:"600" },
   errorBox:        { backgroundColor:"#FEF2F2", borderRadius:12, padding:14, marginTop:12, borderWidth:1, borderColor:"#FECACA" },
   errorT:          { color:"#EF4444", fontSize:13 },
+  impactBanner:    { flexDirection:"row", alignItems:"flex-start", gap:8, borderRadius:12, padding:13, marginTop:8, borderWidth:1.5 },
+  impactBannerT:   { flex:1, fontSize:13, lineHeight:19, fontWeight:"500" },
   swapBtn:         { borderRadius:16, paddingVertical:16, alignItems:"center", marginTop:16 },
   swapBtnT:        { color:"#fff", fontSize:16, fontWeight:"700" },
   swapCard:        { backgroundColor:"#fff", borderRadius:20, borderWidth:1, borderColor:"#E2E8F0", padding:20, marginBottom:16 },

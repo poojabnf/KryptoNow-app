@@ -188,6 +188,9 @@ export default function Send() {
   const [showPicker,    setShowPicker]    = useState(false)
   const [showTokenSearch, setShowTokenSearch] = useState(false)
   const [toAddress,     setToAddress]     = useState("")
+  const [ensName,       setEnsName]       = useState("")
+  const [ensLoading,    setEnsLoading]    = useState(false)
+  const [nativeBal,     setNativeBal]     = useState("0")
   const [amount,        setAmount]        = useState("")
   const [nativePrice,   setNativePrice]   = useState(0)
   const [sending,       setSending]       = useState(false)
@@ -195,6 +198,45 @@ export default function Send() {
   const [txHash,        setTxHash]        = useState("")
   const [simResult,     setSimResult]     = useState<SimulationResult | null>(null)
   const [simLoading,    setSimLoading]    = useState(false)
+
+  // Fetch native balance for Max button
+  useEffect(() => {
+    if (!addr) return
+    getProvider(activeChain).getBalance(addr)
+      .then(wei => setNativeBal(parseFloat(ethers.formatEther(wei)).toFixed(8)))
+      .catch(() => {})
+  }, [addr, activeChain])
+
+  // ENS resolution
+  async function resolveENS(input: string) {
+    if (!input.endsWith('.eth')) { setEnsName(''); return }
+    setEnsLoading(true)
+    try {
+      const mainnet = new ethers.JsonRpcProvider('https://eth.llamarpc.com')
+      const resolved = await mainnet.resolveName(input)
+      setEnsName(resolved ?? '')
+    } catch { setEnsName('') }
+    finally { setEnsLoading(false) }
+  }
+
+  function handleAddressChange(text: string) {
+    setToAddress(text)
+    resolveENS(text.trim())
+  }
+
+  function handleMax() {
+    if (!selectedToken.contract) {
+      // Native: leave a buffer for gas
+      const gasBuffer = selectedTier ? parseFloat(selectedTier.costETH) * 1.2 : 0.002
+      const max = Math.max(0, parseFloat(nativeBal) - gasBuffer)
+      setAmount(max > 0 ? max.toFixed(8) : '0')
+    } else {
+      // ERC20: no gas deduction needed
+      setAmount(nativeBal)
+    }
+  }
+
+  const effectiveToAddress = ensName || toAddress
 
   // Gas estimator state
   const [gasData,       setGasData]       = useState<GasData | null>(null)
@@ -205,7 +247,7 @@ export default function Send() {
 
   const selectedTier = gasData?.tiers.find(t => t.speed === selectedSpeed) ?? null
 
-  const addrValid  = isValidAddress(toAddress)
+  const addrValid  = isValidAddress(effectiveToAddress)
   const amtValid   = !isNaN(parseFloat(amount)) && parseFloat(amount) > 0
   const canProceed = addrValid && amtValid
 
@@ -570,24 +612,35 @@ export default function Send() {
 
         {/* To address */}
         <Text style={s.fieldLabel}>To Address</Text>
-        <View style={[s.inputWrap, addrValid && s.inputValid, toAddress.length > 0 && !addrValid && s.inputError]}>
+        <View style={[s.inputWrap, addrValid && s.inputValid, toAddress.length > 0 && !addrValid && !ensName && s.inputError]}>
           <TextInput
             style={s.input}
             value={toAddress}
-            onChangeText={setToAddress}
-            placeholder="0x..."
+            onChangeText={handleAddressChange}
+            placeholder="0x... or name.eth"
             placeholderTextColor="#CBD5E1"
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {addrValid && <Ionicons name="checkmark-circle" size={18} color="#10B981" />}
+          {ensLoading && <ActivityIndicator size="small" color="#6366F1" />}
+          {addrValid && !ensLoading && <Ionicons name="checkmark-circle" size={18} color="#10B981" />}
         </View>
-        {toAddress.length > 0 && !addrValid && (
-          <Text style={s.errorMsg}>Invalid Ethereum address</Text>
+        {ensName ? (
+          <View style={s.ensResolved}>
+            <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+            <Text style={s.ensResolvedT}>{ensName.slice(0,8)}...{ensName.slice(-6)}</Text>
+          </View>
+        ) : toAddress.length > 0 && !addrValid && !ensLoading && (
+          <Text style={s.errorMsg}>Invalid Ethereum address or ENS name</Text>
         )}
 
         {/* Amount */}
-        <Text style={s.fieldLabel}>Amount ({selectedToken.symbol})</Text>
+        <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+          <Text style={[s.fieldLabel, { marginBottom:0, marginTop:16 }]}>Amount ({selectedToken.symbol})</Text>
+          <TouchableOpacity style={s.maxBtn} onPress={handleMax}>
+            <Text style={s.maxBtnT}>MAX</Text>
+          </TouchableOpacity>
+        </View>
         <View style={[s.inputWrap, amtValid && s.inputValid]}>
           <TextInput
             style={s.input}
@@ -766,6 +819,10 @@ const s = StyleSheet.create({
   inputSuffix:        { color:"#94A3B8", fontSize:14, fontWeight:"600" },
   validMark:          { color:"#10B981", fontSize:13, fontWeight:"700" },
   errorMsg:           { color:"#EF4444", fontSize:12, marginTop:4, marginLeft:4 },
+  ensResolved:        { flexDirection:"row", alignItems:"center", gap:4, marginTop:4, marginLeft:4 },
+  ensResolvedT:       { color:"#10B981", fontSize:12, fontWeight:"600", fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
+  maxBtn:             { marginTop:16, backgroundColor:"#EEF2FF", borderRadius:8, paddingVertical:4, paddingHorizontal:10, borderWidth:1, borderColor:"#C7D2FE" },
+  maxBtnT:            { color:"#6366F1", fontSize:12, fontWeight:"700", letterSpacing:0.5 },
 
   // AA toggle
   aaToggleRow:        { flexDirection:"row", alignItems:"center", justifyContent:"space-between", backgroundColor:"#F5F3FF", borderRadius:14, padding:14, marginTop:16, borderWidth:1, borderColor:"#DDD6FE" },

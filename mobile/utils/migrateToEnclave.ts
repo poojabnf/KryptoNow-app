@@ -13,7 +13,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { migrateToSecureEnclave } from './SecureKeyStore';
+import { migrateToSecureEnclave } from '../store/SecureKeyStore';
 import QuickCrypto from 'react-native-quick-crypto';
 
 // Keys used by the OLD storage system — update these to match your actual keys

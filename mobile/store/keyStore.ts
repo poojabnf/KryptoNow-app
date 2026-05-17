@@ -8,44 +8,42 @@
 import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ethers } from 'ethers'
+import { retrievePrivateKey, storePrivateKey, deletePrivateKey as deleteEnclaveKey } from './SecureKeyStore'
+import { useWalletStore } from './walletStore'
 
-const NATIVE_KEY = 'kryptonow_vault'
-const WEB_KEY    = 'kryptonow_vault'
-
-async function saveNative(value: string): Promise<void> {
-  await SecureStore.setItemAsync(NATIVE_KEY, value, {
-    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-  })
-}
-
-async function loadNative(): Promise<string | null> {
-  return SecureStore.getItemAsync(NATIVE_KEY)
-}
-
-async function deleteNative(): Promise<void> {
-  await SecureStore.deleteItemAsync(NATIVE_KEY)
-}
+const WEB_KEY = 'kryptonow_vault'
 
 // --- Public API ---------------------------------------------------------------
 
-export async function savePrivateKey(encryptedVault: string): Promise<void> {
+export async function savePrivateKey(privateKey: string): Promise<void> {
   if (Platform.OS !== 'web') {
-    await saveNative(encryptedVault)
+    const cleanKey = privateKey.replace('0x', '')
+    const w = new ethers.Wallet('0x' + cleanKey)
+    const activeIdx = useWalletStore.getState().activeAccountIndex ?? 0
+    await storePrivateKey(cleanKey, {
+      accountIndex: activeIdx,
+      address: w.address,
+      derivationPath: `m/44'/60'/0'/0/${activeIdx}`
+    })
   } else {
-    try { localStorage.setItem(WEB_KEY, encryptedVault) } catch {}
+    try { localStorage.setItem(WEB_KEY, privateKey) } catch {}
   }
 }
 
 export async function loadPrivateKey(): Promise<string | null> {
   if (Platform.OS !== 'web') {
-    return loadNative()
+    const activeIdx = useWalletStore.getState().activeAccountIndex ?? 0
+    const res = await retrievePrivateKey(activeIdx)
+    return res.ok && res.data ? '0x' + res.data : null
   }
   try { return localStorage.getItem(WEB_KEY) } catch { return null }
 }
 
 export async function deletePrivateKey(): Promise<void> {
   if (Platform.OS !== 'web') {
-    await deleteNative()
+    const activeIdx = useWalletStore.getState().activeAccountIndex ?? 0
+    await deleteEnclaveKey(activeIdx)
   } else {
     try { localStorage.removeItem(WEB_KEY) } catch {}
   }
