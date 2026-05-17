@@ -290,6 +290,8 @@ export default function App() {
             <button 
               style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", alignItems: "center" }}
               onClick={() => setIsLocked(true)}
+              title="Lock Wallet"
+              aria-label="Lock Wallet"
             >
               <Lock size={14} />
             </button>
@@ -545,6 +547,8 @@ export default function App() {
                           e.stopPropagation()
                           setRevealKeyIndex(revealKeyIndex === w.index ? null : w.index)
                         }}
+                        title={revealKeyIndex === w.index ? "Hide Private Key" : "Show Private Key"}
+                        aria-label={revealKeyIndex === w.index ? "Hide Private Key" : "Show Private Key"}
                       >
                         {revealKeyIndex === w.index ? <EyeOff size={12} /> : <Eye size={12} />}
                       </button>
