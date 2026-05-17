@@ -169,16 +169,6 @@ export default function Swap() {
   const isRenderReady = useDeferredRender(300)
   const addr        = useWalletStore(s => s.address)
 
-  if (!isRenderReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
-        <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
-          Preparing Swap Interface...
-        </Text>
-      </View>
-    )
-  }
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
   const defaults    = TOP_TOKENS[activeChain.id] ?? TOP_TOKENS[1]
@@ -249,6 +239,17 @@ export default function Swap() {
       .catch(() => setNeedsApproval(false))
       .finally(() => setCheckingAllowance(false))
   }, [quote, fromToken.address, addr, activeChain.id])
+
+  if (!isRenderReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
+          Preparing Swap Interface...
+        </Text>
+      </View>
+    )
+  }
 
   function flipTokens() {
     setFromToken(toToken)

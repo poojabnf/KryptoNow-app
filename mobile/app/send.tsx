@@ -158,16 +158,6 @@ export default function Send() {
   const isRenderReady = useDeferredRender(300)
   const addr        = useWalletStore(s => s.address)
 
-  if (!isRenderReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
-        <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
-          Preparing Secure Interface...
-        </Text>
-      </View>
-    )
-  }
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
 
@@ -312,6 +302,17 @@ export default function Send() {
     gasTimer.current = setInterval(() => refreshGas(), 15000)
     return () => { if (gasTimer.current) clearInterval(gasTimer.current) }
   }, [refreshGas])
+
+  if (!isRenderReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
+          Preparing Secure Interface...
+        </Text>
+      </View>
+    )
+  }
 
   async function handleSend() {
     // Tenderly pre-sign simulation
