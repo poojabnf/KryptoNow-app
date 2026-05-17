@@ -1,4 +1,4 @@
-﻿import { useSSO } from "@clerk/expo";
+import { useSSO } from "@clerk/expo";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useState, useRef } from "react";
 import {
@@ -352,8 +352,17 @@ export default function SignIn() {
       ))}
       <ScrollView contentContainerStyle={s.center} keyboardShouldPersistTaps="handled">
         <Animated.View style={[s.logoWrap, { transform: [{ scale: logoScale }], opacity: logoOpacity }]}>
-          <View style={s.logoIcon}>
-            <Text style={s.logoIconText}>K</Text>
+          <View style={[s.logoIcon, { position: "relative", backgroundColor: "transparent", width: 80, height: 80, alignItems: "center", justifyContent: "center" }]}>
+            {/* Shield Diamond */}
+            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: ACCENT, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center", position: "absolute" }}>
+              {/* Internal diagonal accent */}
+              <View style={{ width: 30, height: 30, borderRadius: 6, backgroundColor: TEAL, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" }}>
+                {/* Core Sphere */}
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: "#fff" }} />
+              </View>
+            </View>
+            {/* Orbital Ring */}
+            <View style={{ position: "absolute", width: 62, height: 22, borderRadius: 11, borderWidth: 3, borderColor: ACCENT2, transform: [{ rotate: "-15deg" }], zIndex: 10 }} />
           </View>
           <Text style={s.logoTitle}>KryptoNow</Text>
           <Text style={s.logoTagline}>Your keys. Your crypto.</Text>

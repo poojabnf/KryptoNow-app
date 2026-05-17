@@ -440,6 +440,59 @@ export default function App() {
           border-color: rgba(99,102,241,0.3);
           transform: translateY(-1px);
         }
+
+        /* Brand Logo Design */
+        .brand-logo-container {
+          position: relative;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 4px;
+        }
+        .brand-logo-shield {
+          position: absolute;
+          width: 15px;
+          height: 15px;
+          background: linear-gradient(135deg, #6366f1 0%, #10b981 100%);
+          border-radius: 4px;
+          transform: rotate(45deg);
+          box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        .brand-logo-shield::after {
+          content: "";
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, transparent 60%);
+          transform: rotate(-45deg);
+        }
+        .brand-logo-core {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          background: #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 0 6px #ffffff, 0 0 12px #6366f1;
+          z-index: 2;
+        }
+        .brand-logo-ring {
+          position: absolute;
+          width: 25px;
+          height: 9px;
+          border: 1.5px solid rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          transform: rotate(-15deg);
+          box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+          z-index: 3;
+        }
       ` }} />
       {/* Curved background orbs */}
       <div style={{ position: "absolute", top: -80, left: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)", zIndex: 0 }} />
@@ -448,8 +501,10 @@ export default function App() {
       {/* Header Bar */}
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "linear-gradient(135deg, #6366f1 0%, #10b981 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "14px" }}>
-            K
+          <div className="brand-logo-container">
+            <div className="brand-logo-shield" />
+            <div className="brand-logo-ring" />
+            <div className="brand-logo-core" />
           </div>
           <span style={{ fontSize: "16px", fontWeight: "bold", letterSpacing: "0.5px" }}>KryptoNow</span>
         </div>

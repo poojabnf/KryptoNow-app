@@ -236,7 +236,11 @@ export default function App() {
             <header className="nav-header">
               <div className="nav-container">
                 <div className="brand">
-                  <div className="brand-icon">K</div>
+                  <div className="brand-logo-container">
+                    <div className="brand-logo-shield" />
+                    <div className="brand-logo-ring" />
+                    <div className="brand-logo-core" />
+                  </div>
                   KryptoNow
                 </div>
                 <nav className="nav-links">
@@ -454,7 +458,11 @@ export default function App() {
           {/* Dashboard Sidebar */}
           <aside className="portal-sidebar">
             <div className="brand">
-              <div className="brand-icon">K</div>
+              <div className="brand-logo-container">
+                <div className="brand-logo-shield" />
+                <div className="brand-logo-ring" />
+                <div className="brand-logo-core" />
+              </div>
               KryptoNow
             </div>
 
