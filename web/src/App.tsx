@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { 
-  SignedIn, 
-  SignedOut, 
   SignIn, 
   SignUp, 
   useUser, 
@@ -39,6 +37,20 @@ const NETWORKS = [
 export default function App() {
   const { user } = useUser()
   const { signOut } = useAuth()
+  const { isSignedIn } = useAuth()
+
+  const [showDashboard, setShowDashboard] = useState(false)
+
+  useEffect(() => {
+    if (isSignedIn) {
+      const timer = setTimeout(() => {
+        setShowDashboard(true)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      setShowDashboard(false)
+    }
+  }, [isSignedIn])
 
   // State hooks
   const [activeTab, setActiveTab] = useState<"dashboard" | "sandbox" | "transfers" | "alerts">("dashboard")
@@ -75,6 +87,11 @@ export default function App() {
       const randBytes = ethers.randomBytes(16)
       const mnemonic = ethers.Mnemonic.entropyToPhrase(randBytes)
       setSandboxMnemonic(mnemonic)
+
+      if (user) {
+        localStorage.setItem(`kryptonow_mnemonic_${user.id}`, mnemonic)
+        localStorage.setItem(`kryptonow_wallet_count_${user.id}`, "1")
+      }
       
       const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic)
       setSandboxWallets([{
@@ -91,19 +108,21 @@ export default function App() {
 
   // Derive next index inside web sandbox
   const deriveNextSandboxWallet = () => {
-    if (!sandboxMnemonic) return
+    if (!sandboxMnemonic || !user) return
     const nextIndex = sandboxWallets.length
     const path = `m/44'/60'/0'/0/${nextIndex}`
     const hdNode = ethers.HDNodeWallet.fromPhrase(sandboxMnemonic, undefined, path)
     
-    setSandboxWallets([
+    const updated = [
       ...sandboxWallets,
       {
         index: nextIndex,
         address: hdNode.address,
         privateKey: hdNode.privateKey
       }
-    ])
+    ]
+    setSandboxWallets(updated)
+    localStorage.setItem(`kryptonow_wallet_count_${user.id}`, String(updated.length))
   }
 
   // Simulated copy address
@@ -149,12 +168,56 @@ export default function App() {
     setAlerts(alerts.filter(a => a.id !== id))
   }
 
-  // Set default sandbox key on load
+  // Load or generate sandbox key associated with the Clerk logged-in user
   useEffect(() => {
-    if (sandboxWallets.length === 0) {
-      generateSandboxMnemonic()
+    if (!user) {
+      setSandboxMnemonic("")
+      setSandboxWallets([])
+      return
     }
-  }, [])
+
+    const key = `kryptonow_mnemonic_${user.id}`
+    const stored = localStorage.getItem(key)
+    if (stored) {
+      setSandboxMnemonic(stored)
+      // Re-derive all previously derived wallets
+      const countRaw = localStorage.getItem(`kryptonow_wallet_count_${user.id}`)
+      const count = countRaw ? parseInt(countRaw, 10) : 1
+      const wallets = []
+      for (let i = 0; i < count; i++) {
+        const path = `m/44'/60'/0'/0/${i}`
+        const hdNode = ethers.HDNodeWallet.fromPhrase(stored, undefined, path)
+        wallets.push({
+          index: i,
+          address: hdNode.address,
+          privateKey: hdNode.privateKey
+        })
+      }
+      setSandboxWallets(wallets)
+      setActiveSandboxIndex(0)
+      setRevealKeyIndex(null)
+    } else {
+      // Generate a fresh one and save it
+      try {
+        const randBytes = ethers.randomBytes(16)
+        const mnemonic = ethers.Mnemonic.entropyToPhrase(randBytes)
+        setSandboxMnemonic(mnemonic)
+        localStorage.setItem(key, mnemonic)
+        localStorage.setItem(`kryptonow_wallet_count_${user.id}`, "1")
+        
+        const hdNode = ethers.HDNodeWallet.fromPhrase(mnemonic)
+        setSandboxWallets([{
+          index: 0,
+          address: hdNode.address,
+          privateKey: hdNode.privateKey
+        }])
+        setActiveSandboxIndex(0)
+        setRevealKeyIndex(null)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }, [user])
 
   const currentAddress = sandboxWallets[activeSandboxIndex]?.address ?? "0x0000000000000000000000000000000000000000"
   const shortAddress = `${currentAddress.slice(0, 8)}...${currentAddress.slice(-6)}`
@@ -166,8 +229,8 @@ export default function App() {
         <div className="ambient-orb-2"></div>
       </div>
 
-      <SignedOut>
-        {authView === "landing" ? (
+      {!showDashboard ? (
+        authView === "landing" ? (
           <>
             {/* Landing Navigation Header */}
             <header className="nav-header">
@@ -385,11 +448,8 @@ export default function App() {
               <SignUp routing="virtual" />
             </div>
           </div>
-        )}
-      </SignedOut>
-
-      <SignedIn>
-        {/* Web Wallet Portal Dashboard */}
+        )
+      ) : (
         <div className="portal-layout">
           {/* Dashboard Sidebar */}
           <aside className="portal-sidebar">
@@ -773,7 +833,7 @@ export default function App() {
             )}
           </main>
         </div>
-      </SignedIn>
+      )}
     </>
   )
 }
