@@ -14,6 +14,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { migrateToSecureEnclave } from './SecureKeyStore';
+import QuickCrypto from 'react-native-quick-crypto';
 
 // Keys used by the OLD storage system — update these to match your actual keys
 const OLD_ENCRYPTED_KEY = 'kn_encrypted_privkey'; // the AES-256-GCM ciphertext
@@ -22,20 +23,46 @@ const OLD_DERIV_PATH_KEY = 'kn_deriv_path';
 const MIGRATION_DONE_KEY = 'kn_enclave_migrated_v1';
 
 /**
- * Your existing AES-256-GCM decryption function.
- * Replace this stub with your actual implementation.
+ * Decrypts an AES-256-GCM ciphertext that was encrypted with a PBKDF2-derived key.
+ *
+ * Expected encryptedHex format (hex-encoded, concatenated):
+ *   [16 bytes salt][12 bytes IV][N bytes ciphertext][16 bytes auth tag]
+ *
+ * This mirrors the KryptoNow encryption convention used in security.ts / keyStore.ts.
  */
 async function decryptOldKey(
   encryptedHex: string,
   userPin: string,
 ): Promise<string> {
-  // TODO: replace with your real decryption logic
-  // e.g. using expo-crypto or react-native-quick-crypto
-  //
-  // const key = await deriveKeyFromPin(userPin);
-  // const plaintext = await aesGcmDecrypt(encryptedHex, key);
-  // return plaintext;
-  throw new Error('decryptOldKey() not implemented — wire in your AES decrypt here');
+  const buf = Buffer.from(encryptedHex, 'hex');
+
+  const salt       = buf.slice(0, 16);
+  const iv         = buf.slice(16, 28);
+  const authTag    = buf.slice(buf.length - 16);
+  const ciphertext = buf.slice(28, buf.length - 16);
+
+  // Derive 256-bit key from PIN via PBKDF2-SHA512 (100,000 iterations)
+  const keyBuf = await new Promise<Buffer>((resolve, reject) => {
+    QuickCrypto.pbkdf2(
+      userPin,
+      salt,
+      100_000,
+      32,
+      'sha512',
+      (err: Error | null, key: Buffer) => (err ? reject(err) : resolve(key)),
+    );
+  });
+
+  // AES-256-GCM decrypt
+  const decipher = QuickCrypto.createDecipheriv('aes-256-gcm', keyBuf, iv) as any;
+  decipher.setAuthTag(authTag);
+
+  const decrypted = Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final(),
+  ]);
+
+  return decrypted.toString('utf8');
 }
 
 export async function isMigrationNeeded(): Promise<boolean> {
