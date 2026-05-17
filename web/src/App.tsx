@@ -373,7 +373,7 @@ export default function App() {
               <button style={{ position: "absolute", top: "24px", right: "24px", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }} onClick={() => setAuthView("landing")}>
                 Close
               </button>
-              <SignIn routing="hash" signUpUrl="" />
+              <SignIn routing="virtual" />
             </div>
           </div>
         ) : (
@@ -382,7 +382,7 @@ export default function App() {
               <button style={{ position: "absolute", top: "24px", right: "24px", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }} onClick={() => setAuthView("landing")}>
                 Close
               </button>
-              <SignUp routing="hash" signInUrl="" />
+              <SignUp routing="virtual" />
             </div>
           </div>
         )}
