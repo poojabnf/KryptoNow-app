@@ -16,6 +16,66 @@ import { useAuth } from "@clerk/expo"
 import * as Clipboard from "expo-clipboard"
 import { ethers } from "ethers"
 
+async function encryptData(plainText: string, userPin: string): Promise<string> {
+  if (Platform.OS === 'web') return "";
+  const QuickCrypto = require('react-native-quick-crypto').default || require('react-native-quick-crypto');
+  const salt = QuickCrypto.randomBytes(16);
+  const iv = QuickCrypto.randomBytes(12);
+
+  const keyBuf = await new Promise<Buffer>((resolve, reject) => {
+    QuickCrypto.pbkdf2(
+      userPin,
+      salt,
+      100_000,
+      32,
+      'sha512',
+      (err: Error | null, key: Buffer) => (err ? reject(err) : resolve(key))
+    );
+  });
+
+  const cipher = QuickCrypto.createCipheriv('aes-256-gcm', keyBuf, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(Buffer.from(plainText, 'utf8')),
+    cipher.final()
+  ]);
+  const authTag = cipher.getAuthTag();
+
+  const finalBuf = Buffer.concat([salt, iv, encrypted, authTag]);
+  return finalBuf.toString('hex');
+}
+
+async function decryptData(encryptedHex: string, userPin: string): Promise<string> {
+  if (Platform.OS === 'web') return "";
+  const QuickCrypto = require('react-native-quick-crypto').default || require('react-native-quick-crypto');
+  const buf = Buffer.from(encryptedHex, 'hex');
+
+  const salt       = buf.slice(0, 16);
+  const iv         = buf.slice(16, 28);
+  const authTag    = buf.slice(buf.length - 16);
+  const ciphertext = buf.slice(28, buf.length - 16);
+
+  const keyBuf = await new Promise<Buffer>((resolve, reject) => {
+    QuickCrypto.pbkdf2(
+      userPin,
+      salt,
+      100_000,
+      32,
+      'sha512',
+      (err: Error | null, key: Buffer) => (err ? reject(err) : resolve(key))
+    );
+  });
+
+  const decipher = QuickCrypto.createDecipheriv('aes-256-gcm', keyBuf, iv);
+  decipher.setAuthTag(authTag);
+
+  const decrypted = Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final()
+  ]);
+
+  return decrypted.toString('utf8');
+}
+
 export default function Settings() {
   const addr                  = useWalletStore(s => s.address)
   const accounts                = useWalletStore(s => s.accounts)
@@ -31,6 +91,12 @@ export default function Settings() {
   const [showWalletManager, setShowWalletManager] = useState(false)
   const [showImportModal, setShowImportModal]     = useState(false)
   const [importKeyInput, setImportKeyInput]       = useState("")
+  const [showBackupModal, setShowBackupModal]     = useState(false)
+  const [backupPassword, setBackupPassword]       = useState("")
+  const [backupHexOutput, setBackupHexOutput]     = useState("")
+  const [showRestoreModal, setShowRestoreModal]   = useState(false)
+  const [restorePayloadInput, setRestorePayloadInput] = useState("")
+  const [restorePasswordInput, setRestorePasswordInput] = useState("")
   const { hasPin, lockState, lock, clearPin } = useLockContext()
 
   const [biometrics,    setBiometrics]    = useState(false)
@@ -228,6 +294,152 @@ export default function Settings() {
     }
   }
 
+  // cloud backup helper functions
+  const handleInitiateBackup = () => {
+    setBackupPassword("")
+    setBackupHexOutput("")
+    setShowBackupModal(true)
+  }
+
+  const handleBackupConfirm = async () => {
+    if (!backupPassword.trim()) {
+      Alert.alert("Password required", "Please enter a passcode to secure your backup.")
+      return
+    }
+    setAaLoading(true)
+    try {
+      const mnemoRes = await retrieveMnemonic(0, 'Authenticate to backup your master seed phrase')
+      if (!mnemoRes.ok || !mnemoRes.data) {
+        Alert.alert('Error', mnemoRes.error ?? 'Authentication required.')
+        return
+      }
+
+      const backupObj = {
+        mnemonic: mnemoRes.data,
+        accounts: accounts.map(a => ({
+          index: a.accountIndex,
+          address: a.address,
+          derivationPath: a.derivationPath
+        })),
+        createdAt: Date.now()
+      }
+
+      const encrypted = await encryptData(JSON.stringify(backupObj), backupPassword.trim())
+      setBackupHexOutput(encrypted)
+      Alert.alert("Success", "Backup generated! Copy your encrypted payload or export the file below.")
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Encryption failed.")
+    } finally {
+      setAaLoading(false)
+    }
+  }
+
+  const handleExportBackupShare = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert("Not supported", "File sharing is only supported on mobile devices.")
+      return
+    }
+    if (!backupHexOutput) {
+      Alert.alert("Error", "Please generate backup first.")
+      return
+    }
+    try {
+      const FileSystem = require('expo-file-system')
+      const Sharing = require('expo-sharing')
+      
+      const fileUri = `${FileSystem.documentDirectory}kryptonow_backup_${Date.now()}.json`
+      const backupEnvelope = {
+        version: 1,
+        payload: backupHexOutput,
+        timestamp: Date.now()
+      }
+      
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backupEnvelope))
+      await Sharing.shareAsync(fileUri, { mimeType: 'application/json', dialogTitle: 'Export Cloud Backup' })
+    } catch (e: any) {
+      Alert.alert("Error", e.message)
+    }
+  }
+
+  const handleInitiateRestore = () => {
+    setRestorePayloadInput("")
+    setRestorePasswordInput("")
+    setShowRestoreModal(true)
+  }
+
+  const handleRestoreBackupConfirm = async () => {
+    if (!restorePayloadInput.trim() || !restorePasswordInput.trim()) {
+      Alert.alert("Error", "Please fill in both fields.")
+      return
+    }
+    setAaLoading(true)
+    try {
+      let payloadStr = restorePayloadInput.trim()
+      // If user imported the full JSON file, extract the payload field
+      try {
+        const jsonParsed = JSON.parse(payloadStr)
+        if (jsonParsed.payload) {
+          payloadStr = jsonParsed.payload
+        }
+      } catch {}
+
+      let decryptedStr = ""
+      try {
+        decryptedStr = await decryptData(payloadStr, restorePasswordInput.trim())
+      } catch {
+        Alert.alert("Error", "Decryption failed. Please verify your password.")
+        return
+      }
+
+      const backupObj = JSON.parse(decryptedStr)
+      if (!backupObj.mnemonic) {
+        Alert.alert("Error", "Invalid backup format.")
+        return
+      }
+
+      const w = ethers.Wallet.fromPhrase(backupObj.mnemonic)
+      const storeRes = await storePrivateKey(w.privateKey.replace('0x', ''), {
+        accountIndex: 0,
+        address: w.address,
+        derivationPath: "m/44'/60'/0'/0/0"
+      })
+
+      if (!storeRes.ok) {
+        Alert.alert("Error", storeRes.error ?? "Failed to save restored wallet.")
+        return
+      }
+
+      if (backupObj.accounts && backupObj.accounts.length > 0) {
+        for (const acc of backupObj.accounts) {
+          if (acc.index === 0) continue
+          const path = acc.derivationPath || `m/44'/60'/0'/0/${acc.index}`
+          if (path === 'imported') continue
+          
+          const hdNode = ethers.HDNodeWallet.fromPhrase(backupObj.mnemonic, undefined, path)
+          await storePrivateKey(hdNode.privateKey.replace('0x', ''), {
+            accountIndex: acc.index,
+            address: hdNode.address,
+            derivationPath: path
+          })
+        }
+      }
+
+      const updatedAccountsRes = await listAllAccounts()
+      if (updatedAccountsRes.ok && updatedAccountsRes.data) {
+        setAccounts(updatedAccountsRes.data)
+        await setActiveAccountIndex(0)
+        Alert.alert("Success", "Wallet successfully restored from cloud backup!")
+        setShowRestoreModal(false)
+        setRestorePayloadInput("")
+        setRestorePasswordInput("")
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to restore backup.")
+    } finally {
+      setAaLoading(false)
+    }
+  }
+
   const handleDeleteAccount = async (idx: number) => {
     if (idx === 0) {
       Alert.alert('Protected', 'The primary master wallet (Account #1) cannot be deleted. You can wipe the whole wallet in Settings Danger Zone instead.')
@@ -315,14 +527,21 @@ export default function Settings() {
         { icon: "AA", iconBg: "#EEF2FF", label: "Smart Account",
           sublabel: aaLoading ? "Loading..." : aaInfo ? aaInfo.address.slice(0,10) + "..." + aaInfo.address.slice(-8) : Platform.OS === "web" ? "Native only" : !chainSupportsAA(activeChain.id) ? "Not supported on " + activeChain.name : "Tap to load",
           type: "action", onPress: aaInfo ? copyAAAddress : undefined },
-        { icon: aaInfo?.isDeployed ? "" : "", iconBg: aaInfo?.isDeployed ? "#ECFDF5" : "#F8FAFF",
+        { icon: aaInfo?.isDeployed ? "D" : "N", iconBg: aaInfo?.isDeployed ? "#ECFDF5" : "#F8FAFF",
           label: "Account Status",
           sublabel: aaLoading ? "Checking..." : aaInfo?.isDeployed ? "Deployed on-chain" : aaInfo ? "Not yet deployed (deploys on first tx)" : "",
           type: "info" },
-        { icon: "", iconBg: "#FFFBEB", label: "Gas Sponsorship",
+        { icon: "G", iconBg: "#FFFBEB", label: "Gas Sponsorship",
           sublabel: aaInfo?.gasless ? "Gasless  Pimlico sponsors gas" : "Standard gas (add Pimlico key for gasless)",
           type: "info" },
       ],
+    },
+    {
+      title: "CLOUD BACKUP & RECOVERY",
+      items: [
+        { icon: "☁️", iconBg: "#E0F2FE", label: "Backup to Cloud", sublabel: "AES-256 Encrypted Backup", type: "nav", onPress: handleInitiateBackup },
+        { icon: "🔄", iconBg: "#FFEDD5", label: "Restore from Cloud", sublabel: "Restore wallet parameters", type: "nav", onPress: handleInitiateRestore },
+      ]
     },
     {
       title: "APPEARANCE",
@@ -454,14 +673,12 @@ export default function Settings() {
           </View>
         ))}
 
-        {/* Logout button at bottom */}
         <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
           <TouchableOpacity style={[st.logoutBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={confirmLogout} activeOpacity={0.85}>
             <Text style={[st.logoutIcon, { color: theme.error }]}>O</Text>
             <Text style={[st.logoutT, { color: theme.textSecondary }]}>Log Out</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
 
       {/* Sleek Wallet Manager Modal */}
@@ -570,6 +787,107 @@ export default function Settings() {
               </TouchableOpacity>
               <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: activeChain.color }]} onPress={handleImportConfirm}>
                 <Text style={{ color: "#fff", fontWeight: "700" }}>Import</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cloud Backup Modal */}
+      <Modal visible={showBackupModal} animationType="fade" transparent>
+        <View style={st.popupOverlay}>
+          <View style={[st.popupContent, { backgroundColor: theme.bgCard }]}>
+            <Text style={[st.popupTitle, { color: theme.textPrimary }]}>Cloud Backup</Text>
+            <Text style={[st.popupSub, { color: theme.textMuted }]}>Create an encrypted backup passcode. This passcode is required to decrypt your recovery parameters.</Text>
+            
+            {!backupHexOutput ? (
+              <>
+                <TextInput
+                  style={[st.popupInput, { color: theme.textPrimary, borderColor: theme.border }]}
+                  placeholder="Enter secure passcode"
+                  placeholderTextColor="#94A3B8"
+                  value={backupPassword}
+                  onChangeText={setBackupPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry
+                />
+                <View style={st.popupActions}>
+                  <TouchableOpacity style={st.popupBtnCancel} onPress={() => setShowBackupModal(false)}>
+                    <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: activeChain.color }]} onPress={handleBackupConfirm}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>Encrypt</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={[st.popupSub, { color: "#10B981", fontWeight: "700", marginBottom: 12 }]}>✓ AES-256 encrypted backup envelope generated!</Text>
+                <TextInput
+                  style={[st.popupInput, { color: theme.textPrimary, borderColor: theme.border, height: 80, fontSize: 10 }]}
+                  multiline
+                  editable={false}
+                  value={backupHexOutput}
+                />
+                <View style={{ flexDirection: "column", gap: 10 }}>
+                  <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: "#6366F1", width: '100%' }]} onPress={async () => {
+                    await Clipboard.setStringAsync(backupHexOutput)
+                    Alert.alert("Copied!", "Encrypted string payload copied to clipboard.")
+                  }}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>Copy Payload</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: "#10B981", width: '100%' }]} onPress={handleExportBackupShare}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>Export Backup File (.json)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[st.popupBtnCancel, { width: '100%' }]} onPress={() => {
+                    setShowBackupModal(false)
+                    setBackupHexOutput("")
+                  }}>
+                    <Text style={{ color: theme.textSecondary, fontWeight: "700" }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cloud Restore Modal */}
+      <Modal visible={showRestoreModal} animationType="fade" transparent>
+        <View style={st.popupOverlay}>
+          <View style={[st.popupContent, { backgroundColor: theme.bgCard }]}>
+            <Text style={[st.popupTitle, { color: theme.textPrimary }]}>Restore from Cloud</Text>
+            <Text style={[st.popupSub, { color: theme.textMuted }]}>Paste your encrypted backup payload string or complete backup file content below, then enter your secure passcode.</Text>
+            
+            <TextInput
+              style={[st.popupInput, { color: theme.textPrimary, borderColor: theme.border, height: 80, fontSize: 11 }]}
+              placeholder="Paste encrypted payload string..."
+              placeholderTextColor="#94A3B8"
+              value={restorePayloadInput}
+              onChangeText={setRestorePayloadInput}
+              multiline
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <TextInput
+              style={[st.popupInput, { color: theme.textPrimary, borderColor: theme.border }]}
+              placeholder="Passcode used for encryption"
+              placeholderTextColor="#94A3B8"
+              value={restorePasswordInput}
+              onChangeText={setRestorePasswordInput}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <View style={st.popupActions}>
+              <TouchableOpacity style={st.popupBtnCancel} onPress={() => setShowRestoreModal(false)}>
+                <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[st.popupBtnConfirm, { backgroundColor: activeChain.color }]} onPress={handleRestoreBackupConfirm}>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>Decrypt & Restore</Text>
               </TouchableOpacity>
             </View>
           </View>
