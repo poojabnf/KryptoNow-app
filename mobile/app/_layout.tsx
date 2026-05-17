@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { Platform } from "react-native";
 import { useWalletStore } from "../store/walletStore";
 import Purchases from "react-native-purchases";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 // expo-secure-store (used by @clerk/expo/token-cache) is NOT available on web.
 // Passing tokenCache={undefined} on web lets Clerk use cookie-based sessions,
@@ -47,7 +48,9 @@ export default function RootLayout() {
       tokenCache={getTokenCache()}
     >
       <WalletBootstrap />
-      <Stack screenOptions={{ headerShown: false }} />
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ErrorBoundary>
     </ClerkProvider>
   );
 }

@@ -13,6 +13,7 @@ export const getLedgerTransport = async () => {
     return await TransportWebHID.create();
   } else {
     console.log(` ${Platform.OS} detected: Initializing Ledger via Bluetooth (BLE)...`);
+    // @ts-ignore
     const TransportBLE = (await import('@ledgerhq/react-native-hw-transport-ble')).default;
     
     // In production, you would scan for devices here. 

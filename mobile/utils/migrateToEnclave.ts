@@ -49,7 +49,11 @@ async function decryptOldKey(
       100_000,
       32,
       'sha512',
-      (err: Error | null, key: Buffer) => (err ? reject(err) : resolve(key)),
+      (err: Error | null, key?: any) => {
+        if (err) reject(err);
+        else if (!key) reject(new Error('No key derived'));
+        else resolve(key);
+      },
     );
   });
 

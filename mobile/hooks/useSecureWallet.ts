@@ -170,7 +170,7 @@ export function useSecureWallet(): UseSecureWalletReturn {
         derivationPath: path,
       });
 
-      if (!res.ok) { setError(res.error ?? null); return res; }
+      if (!res.ok) { setError(res.error ?? null); return { ok: false, error: res.error }; }
 
       const account: WalletAccount = {
         index: accountIndex,
@@ -215,7 +215,7 @@ export function useSecureWallet(): UseSecureWalletReturn {
         derivationPath: 'imported',
       });
 
-      if (!res.ok) { setError(res.error ?? null); return res; }
+      if (!res.ok) { setError(res.error ?? null); return { ok: false, error: res.error }; }
 
       const account: WalletAccount = {
         index: accountIndex,

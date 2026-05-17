@@ -8,12 +8,12 @@ export function usePriceChart(coinId: string, range: Range) {
   const [data, setData]       = useState<PricePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
-  const cache = useRef<Record<string, PricePoint[]>>({});
+  const cache = useRef<Record<string, { points: PricePoint[]; fetchedAt: number }>>({});
 
   useEffect(() => {
     const key = `${coinId}-${range}`;
     if (cache.current[key]) {
-      setData(cache.current[key]);
+      setData(cache.current[key].points);
       setLoading(false);
       return;
     }

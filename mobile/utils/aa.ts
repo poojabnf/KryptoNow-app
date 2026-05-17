@@ -1,4 +1,4 @@
-﻿/**
+/**
  * utils/aa.ts   v2.0.0
  *
  * ERC-4337 Account Abstraction for KryptoNow
@@ -51,29 +51,35 @@ export function chainSupportsAA(chainId: number): boolean {
 
 async function loadAALibs() {
   const [
-    { createPublicClient, createWalletClient, http },
-    { mainnet, polygon, arbitrum, optimism, base },
-    { privateKeyToAccount },
-    { createSmartAccountClient, walletClientToSmartAccountSigner, ENTRYPOINT_ADDRESS_V06 },
-    { signerToLightSmartAccount },
+    viem,
+    viemChains,
+    viemAccounts,
+    permissionless,
+    permissionlessAccounts,
   ] = await Promise.all([
-    import('viem'),
-    import('viem/chains'),
-    import('viem/accounts'),
-    import('permissionless'),
-    import('permissionless/accounts'),
+    import('viem') as Promise<any>,
+    import('viem/chains') as Promise<any>,
+    import('viem/accounts') as Promise<any>,
+    import('permissionless') as Promise<any>,
+    import('permissionless/accounts') as Promise<any>,
   ])
 
   return {
-    createPublicClient,
-    createWalletClient,
-    http,
-    chains: { mainnet, polygon, arbitrum, optimism, base } as Record<number, any>,
-    privateKeyToAccount,
-    createSmartAccountClient,
-    walletClientToSmartAccountSigner,
-    ENTRYPOINT_ADDRESS_V06,
-    signerToLightSmartAccount,
+    createPublicClient: viem.createPublicClient,
+    createWalletClient: viem.createWalletClient,
+    http: viem.http,
+    chains: {
+      mainnet: viemChains.mainnet,
+      polygon: viemChains.polygon,
+      arbitrum: viemChains.arbitrum,
+      optimism: viemChains.optimism,
+      base: viemChains.base,
+    } as Record<string, any>,
+    privateKeyToAccount: viemAccounts.privateKeyToAccount,
+    createSmartAccountClient: permissionless.createSmartAccountClient,
+    walletClientToSmartAccountSigner: permissionless.walletClientToSmartAccountSigner,
+    ENTRYPOINT_ADDRESS_V06: permissionless.ENTRYPOINT_ADDRESS_V06,
+    signerToLightSmartAccount: permissionlessAccounts.signerToLightSmartAccount,
   }
 }
 
@@ -125,7 +131,7 @@ export async function createAAClient(privateKeyHex: string, chainId: number) {
     middleware: {
       gasPrice: async () => (await publicClient.estimateFeesPerGas()),
     },
-  })
+  } as any)
 
   return { smartAccountClient, smartAccount, publicClient }
 }

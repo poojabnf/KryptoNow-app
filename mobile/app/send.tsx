@@ -17,6 +17,7 @@ import { getTxUrl, getProvider, Chain, AA_SUPPORTED_CHAINS } from "../utils/chai
 import TokenSearchModal from "../components/TokenSearchModal"
 import { CustomToken, loadCustomTokens } from "../utils/tokenSearch"
 import { useAA } from "../hooks/useAA"
+import { useDeferredRender } from "../hooks/useDeferredRender"
 
 const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
@@ -154,7 +155,19 @@ async function fetchGasData(
 type Step = "form" | "confirm" | "success"
 
 export default function Send() {
+  const isRenderReady = useDeferredRender(300)
   const addr        = useWalletStore(s => s.address)
+
+  if (!isRenderReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
+          Preparing Secure Interface...
+        </Text>
+      </View>
+    )
+  }
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
 

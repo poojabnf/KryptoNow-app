@@ -224,7 +224,7 @@ export async function executeRecovery(
     const hash = await client.sendTransaction({
       to:   smartAccountAddr as `0x${string}`,
       data: calldata,
-    })
+    } as any)
 
     await publicClient.waitForTransactionReceipt({ hash })
 

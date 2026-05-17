@@ -27,7 +27,7 @@ export function useGoogleAuth() {
       }
     } catch (err) {
       console.log("Auth error:", JSON.stringify(err, null, 2))
-      Alert.alert("Sign in failed", err.message || "Something went wrong")
+      Alert.alert("Sign in failed", (err as any)?.message || "Something went wrong")
     }
   }, [startOAuthFlow])
 

@@ -245,6 +245,7 @@ function SendNFTModal({
   const activeChain = useWalletStore(s => s.activeChain)
 
   if (!nft) return null
+  const activeNft = nft
 
   async function handleSend() {
     if (!toAddress || !toAddress.startsWith('0x') || toAddress.length !== 42) {
@@ -259,19 +260,19 @@ function SendNFTModal({
       const provider = getProvider(activeChain)
       const wallet   = new ethers.Wallet(pk, provider)
 
-      const ABI = nft.tokenType === 'ERC721'
+      const ABI = activeNft.tokenType === 'ERC721'
         ? ['function transferFrom(address from, address to, uint256 tokenId)']
         : ['function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)']
 
-      const contract = new ethers.Contract(nft.contractAddress, ABI, wallet)
+      const contract = new ethers.Contract(activeNft.contractAddress, ABI, wallet)
       let tx
-      if (nft.tokenType === 'ERC721') {
-        tx = await contract.transferFrom(addr, toAddress, BigInt(nft.tokenId))
+      if (activeNft.tokenType === 'ERC721') {
+        tx = await contract.transferFrom(addr, toAddress, BigInt(activeNft.tokenId))
       } else {
-        tx = await contract.safeTransferFrom(addr, toAddress, BigInt(nft.tokenId), 1n, '0x')
+        tx = await contract.safeTransferFrom(addr, toAddress, BigInt(activeNft.tokenId), 1n, '0x')
       }
       await tx.wait(1)
-      Alert.alert('NFT Sent!', `${nft.name} sent to ${toAddress.slice(0, 8)}...`)
+      Alert.alert('NFT Sent!', `${activeNft.name} sent to ${toAddress.slice(0, 8)}...`)
       onClose()
     } catch (e: any) {
       Alert.alert('Send failed', e.reason ?? e.message)
@@ -288,7 +289,7 @@ function SendNFTModal({
             <View style={sn.handle} />
             <TouchableOpacity onPress={onClose}><Text style={{ color: '#64748B', fontSize: 13 }}>Cancel</Text></TouchableOpacity>
           </View>
-          <Text style={sn.title}>Send {nft.name}</Text>
+          <Text style={sn.title}>Send {activeNft.name}</Text>
           <Text style={sn.label}>Recipient Address</Text>
           <View style={sn.inputWrap}>
             <Text style={sn.inputHex}>0x</Text>

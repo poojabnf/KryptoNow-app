@@ -17,6 +17,7 @@ import {
   getQuote, getSwapData, getAllowance, getApproveData,
   isNativeToken, toWei, ONEINCH_API_KEY,
 } from "../utils/oneInch"
+import { useDeferredRender } from "../hooks/useDeferredRender"
 
 const TOKEN_COLORS: Record<string, string> = {
   ETH:"#6366F1", BNB:"#F0B90B", POL:"#8247E5",
@@ -165,7 +166,19 @@ function SlippageModal({
 type SwapStep = "form" | "confirm" | "approving" | "swapping" | "success"
 
 export default function Swap() {
+  const isRenderReady = useDeferredRender(300)
   const addr        = useWalletStore(s => s.address)
+
+  if (!isRenderReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFF" }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={{ marginTop: 12, color: "#94A3B8", fontSize: 13, fontWeight: "600" }}>
+          Preparing Swap Interface...
+        </Text>
+      </View>
+    )
+  }
   const { theme, mode } = useTheme()
   const activeChain = useWalletStore(s => s.activeChain)
   const defaults    = TOP_TOKENS[activeChain.id] ?? TOP_TOKENS[1]

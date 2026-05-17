@@ -1,4 +1,4 @@
-﻿/**
+/**
  * utils/webVault.ts   v2.1.0
  *
  * AES-256-GCM encryption for wallet data stored in localStorage on web.
@@ -60,7 +60,7 @@ async function deriveKey(salt: Uint8Array): Promise<CryptoKey> {
     ['deriveKey'],
   )
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations: 100_000, hash: 'SHA-256' },
     keyMat,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -145,7 +145,7 @@ export async function loadEncryptedWallet(): Promise<VaultPayload | null> {
     const key        = await deriveKey(salt)
     const iv         = base64ToBuf(parsed.iv)
     const cipherBuf  = base64ToBuf(parsed.ct)
-    const plainBuf   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBuf)
+    const plainBuf   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, cipherBuf as BufferSource)
     const plainText  = new TextDecoder().decode(plainBuf)
 
     return JSON.parse(plainText) as VaultPayload

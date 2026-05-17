@@ -8,10 +8,10 @@ export function applyWebShadowPatch(): void {
   if (Platform.OS !== 'web') return
 
   const originalCreate = StyleSheet.create.bind(StyleSheet)
-  StyleSheet.create = ((styles: Parameters<typeof StyleSheet.create>[0]) => {
+  StyleSheet.create = ((styles: any) => {
     const patched: Record<string, object> = {}
     for (const [key, style] of Object.entries(styles)) {
-      const s = { ...style } as Record<string, unknown>
+      const s = { ...(style as any) } as Record<string, unknown>
       const color = s.shadowColor as string | undefined
       const opacity = (s.shadowOpacity as number | undefined) ?? 0
       const radius = (s.shadowRadius as number | undefined) ?? 0
@@ -29,6 +29,6 @@ export function applyWebShadowPatch(): void {
       }
       patched[key] = s
     }
-    return originalCreate(patched as Parameters<typeof StyleSheet.create>[0])
-  }) as typeof StyleSheet.create
+    return originalCreate(patched as any)
+  }) as any
 }
