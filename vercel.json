@@ -18,7 +18,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; connect-src *;"
+          "value": "default-src 'self' * 'unsafe-inline' data: blob:; frame-src 'self' *; connect-src 'self' https://*.clerk.accounts.dev https://clerk.kryptonow.xyz https://*.clerk.com https://*.infura.io https://*.etherscan.io https://*.alchemy.com https://*.alchemyapi.io https://*.walletconnect.com wss://*.walletconnect.org https://api.1inch.dev https://api.coingecko.com;"
         }
       ]
     }

@@ -50,11 +50,12 @@ async function getOrCreateSalt(): Promise<Uint8Array> {
   return salt
 }
 
-async function deriveKey(salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(salt: Uint8Array, password?: string): Promise<CryptoKey> {
   const enc     = new TextEncoder()
+  const secretMaterial = password ? (password + APP_SECRET) : APP_SECRET
   const keyMat  = await crypto.subtle.importKey(
     'raw',
-    enc.encode(APP_SECRET),
+    enc.encode(secretMaterial),
     'PBKDF2',
     false,
     ['deriveKey'],
@@ -74,13 +75,14 @@ export type VaultPayload = {
   address: string
   phrase:  string
   name?:   string
+  privateKey?: string
 }
 
 /**
  * Encrypt and save wallet data to localStorage.
  * Replaces plain JSON.stringify(wallet) in walletStore.
  */
-export async function saveEncryptedWallet(payload: VaultPayload): Promise<void> {
+export async function saveEncryptedWallet(payload: VaultPayload, password?: string): Promise<void> {
   if (typeof window === 'undefined' || !window.crypto?.subtle) {
     // Fallback for environments without SubtleCrypto (should not happen in browsers)
     localStorage.setItem(WALLET_KEY, JSON.stringify(payload))
@@ -89,7 +91,7 @@ export async function saveEncryptedWallet(payload: VaultPayload): Promise<void> 
 
   try {
     const salt      = await getOrCreateSalt()
-    const key       = await deriveKey(salt)
+    const key       = await deriveKey(salt, password)
     const iv        = crypto.getRandomValues(new Uint8Array(12))
     const encoded   = new TextEncoder().encode(JSON.stringify(payload))
     const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded)
@@ -112,7 +114,7 @@ export async function saveEncryptedWallet(payload: VaultPayload): Promise<void> 
  * Returns null if no wallet stored.
  * Falls back gracefully if data is legacy plaintext.
  */
-export async function loadEncryptedWallet(): Promise<VaultPayload | null> {
+export async function loadEncryptedWallet(password?: string): Promise<VaultPayload | null> {
   if (typeof window === 'undefined') return null
 
   const raw = localStorage.getItem(WALLET_KEY)
@@ -130,7 +132,7 @@ export async function loadEncryptedWallet(): Promise<VaultPayload | null> {
         phrase:  parsed.phrase ?? '',
         name:    parsed.name,
       }
-      await saveEncryptedWallet(payload)
+      await saveEncryptedWallet(payload, password)
       return payload
     }
 
@@ -142,7 +144,7 @@ export async function loadEncryptedWallet(): Promise<VaultPayload | null> {
     }
 
     const salt       = await getOrCreateSalt()
-    const key        = await deriveKey(salt)
+    const key        = await deriveKey(salt, password)
     const iv         = base64ToBuf(parsed.iv)
     const cipherBuf  = base64ToBuf(parsed.ct)
     const plainBuf   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, cipherBuf as BufferSource)

@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ethers } from 'ethers'
 import { retrievePrivateKey, storePrivateKey, deletePrivateKey as deleteEnclaveKey } from './SecureKeyStore'
 import { useWalletStore } from './walletStore'
+import { saveEncryptedWallet, loadEncryptedWallet, deleteEncryptedWallet } from '../utils/webVault'
 
 const WEB_KEY = 'kryptonow_vault'
 
@@ -27,7 +28,17 @@ export async function savePrivateKey(privateKey: string): Promise<void> {
       derivationPath: `m/44'/60'/0'/0/${activeIdx}`
     })
   } else {
-    try { localStorage.setItem(WEB_KEY, privateKey) } catch {}
+    try {
+      const cleanKey = privateKey.replace('0x', '')
+      const w = new ethers.Wallet('0x' + cleanKey)
+      await saveEncryptedWallet({
+        address: w.address,
+        phrase: '',
+        privateKey: cleanKey
+      })
+    } catch (e) {
+      console.error('[KryptoNow] savePrivateKey failed:', e)
+    }
   }
 }
 
@@ -37,7 +48,12 @@ export async function loadPrivateKey(): Promise<string | null> {
     const res = await retrievePrivateKey(activeIdx)
     return res.ok && res.data ? '0x' + res.data : null
   }
-  try { return localStorage.getItem(WEB_KEY) } catch { return null }
+  try {
+    const vault = await loadEncryptedWallet()
+    return vault?.privateKey ? '0x' + vault.privateKey : null
+  } catch {
+    return null
+  }
 }
 
 export async function deletePrivateKey(): Promise<void> {
@@ -45,7 +61,9 @@ export async function deletePrivateKey(): Promise<void> {
     const activeIdx = useWalletStore.getState().activeAccountIndex ?? 0
     await deleteEnclaveKey(activeIdx)
   } else {
-    try { localStorage.removeItem(WEB_KEY) } catch {}
+    try {
+      deleteEncryptedWallet()
+    } catch {}
   }
 }
 
