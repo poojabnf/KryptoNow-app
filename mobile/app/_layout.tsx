@@ -9,6 +9,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import { useWalletStore } from "../store/walletStore";
+import Purchases from "react-native-purchases";
 
 // expo-secure-store (used by @clerk/expo/token-cache) is NOT available on web.
 // Passing tokenCache={undefined} on web lets Clerk use cookie-based sessions,
@@ -30,6 +31,11 @@ function WalletBootstrap() {
   const initFromStorage = useWalletStore(s => s.initFromStorage)
   useEffect(() => {
     initFromStorage()
+    // Initialise RevenueCat on native platforms only
+    if (Platform.OS !== 'web') {
+      const rcKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY
+      if (rcKey) Purchases.configure({ apiKey: rcKey })
+    }
   }, [initFromStorage])
   return null
 }
