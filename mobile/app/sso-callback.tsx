@@ -14,13 +14,43 @@ export default function SSOCallback() {
           const address = await AsyncStorage.getItem("kryptonow_address")
           const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
           const profile = profileRaw ? JSON.parse(profileRaw) : null
-          if (!address) window.location.href = "/create"
-          else if (!profile?.onboarded) window.location.href = "/onboarding"
-          else window.location.href = "/dashboard"
+          
+          let dest = "/create"
+          if (address) {
+            if (!profile?.onboarded) dest = "/onboarding"
+            else dest = "/dashboard"
+          }
+
+          // Check if we are running inside an OAuth popup window
+          if (typeof window !== "undefined" && window.opener && window.opener !== window) {
+            try {
+              window.opener.location.href = dest
+            } catch {
+              // Fallback postMessage
+              window.opener.postMessage({ type: "KRYPTONOW_AUTH_SUCCESS", dest }, "*")
+            }
+            // Close popup after brief delay
+            setTimeout(() => {
+              window.close()
+            }, 300)
+          } else {
+            // Normal fallback redirect
+            window.location.href = dest
+          }
         } else {
-          window.location.href = "/sign-in"
+          if (typeof window !== "undefined" && window.opener && window.opener !== window) {
+            window.close()
+          } else {
+            window.location.href = "/sign-in"
+          }
         }
-      } catch { window.location.href = "/create" }
+      } catch {
+        if (typeof window !== "undefined" && window.opener && window.opener !== window) {
+          window.close()
+        } else {
+          window.location.href = "/create"
+        }
+      }
     }
     redirect()
   }, [isLoaded, isSignedIn])
