@@ -269,6 +269,178 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", position: "relative" }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .btn-lock {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.6);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+        .btn-lock:hover {
+          background: rgba(239, 68, 68, 0.12);
+          border-color: rgba(239, 68, 68, 0.35);
+          color: #ef4444;
+          transform: scale(1.08);
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+        }
+        
+        .btn-copy {
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          padding: 6px 12px;
+          color: #fff;
+          font-family: monospace;
+          font-size: 11px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-copy:hover {
+          background: rgba(99, 102, 241, 0.15);
+          border-color: rgba(99, 102, 241, 0.35);
+          color: #818cf8;
+          box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn-derive {
+          background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(16,185,129,0.06) 100%);
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          color: #818cf8;
+          border-radius: 8px;
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          transition: all 0.2s ease;
+        }
+        .btn-derive:hover {
+          border-color: rgba(99, 102, 241, 0.45);
+          background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(16,185,129,0.12) 100%);
+          color: #a5b4fc;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-action-primary {
+          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+          border: none;
+          border-radius: 10px;
+          color: #fff;
+          font-weight: bold;
+          cursor: pointer;
+          padding: 12px;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .btn-action-primary:hover {
+          background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-action-success {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          border: none;
+          border-radius: 10px;
+          color: #fff;
+          font-weight: bold;
+          cursor: pointer;
+          padding: 12px;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-action-success:hover {
+          background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-action-secondary {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 10px;
+          color: #fff;
+          cursor: pointer;
+          padding: 12px;
+          transition: all 0.2s ease;
+        }
+        .btn-action-secondary:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-reveal-key {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          color: rgba(255, 255, 255, 0.4);
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        .btn-reveal-key:hover {
+          background: rgba(99, 102, 241, 0.12);
+          border-color: rgba(99, 102, 241, 0.35);
+          color: #818cf8;
+          transform: scale(1.1);
+        }
+
+        .asset-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 10px;
+          transition: all 0.2s ease;
+        }
+        .asset-row:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.08);
+          transform: translateX(2px);
+        }
+
+        .account-row {
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          padding: 8px 12px; 
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: 1px solid transparent;
+        }
+        .account-row.active {
+          background: rgba(99,102,241,0.06);
+          border-color: rgba(99,102,241,0.25);
+        }
+        .account-row.inactive {
+          background: rgba(255,255,255,0.01);
+          border-color: rgba(255,255,255,0.03);
+        }
+        .account-row:hover {
+          background: rgba(99,102,241,0.1);
+          border-color: rgba(99,102,241,0.3);
+          transform: translateY(-1px);
+        }
+      ` }} />
       {/* Curved background orbs */}
       <div style={{ position: "absolute", top: -80, left: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)", zIndex: 0 }} />
       <div style={{ position: "absolute", bottom: -80, right: -60, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)", zIndex: 0 }} />
@@ -288,7 +460,7 @@ export default function App() {
               <Shield size={10} /> Mainnet
             </div>
             <button 
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", alignItems: "center" }}
+              className="btn-lock"
               onClick={() => setIsLocked(true)}
               title="Lock Wallet"
               aria-label="Lock Wallet"
@@ -329,7 +501,7 @@ export default function App() {
 
               <button 
                 type="submit" 
-                style={{ width: "100%", padding: "12px", background: "#6366f1", border: "none", borderRadius: "10px", color: "#fff", fontWeight: "bold", cursor: "pointer", transition: "background 0.2s" }}
+                className="btn-action-primary"
               >
                 Unlock Extension
               </button>
@@ -371,7 +543,7 @@ export default function App() {
 
               <button 
                 type="submit" 
-                style={{ width: "100%", padding: "12px", background: "#10b981", border: "none", borderRadius: "8px", color: "#fff", fontWeight: "bold", cursor: "pointer" }}
+                className="btn-action-success"
               >
                 Create Mnemonic & Crypt Vault
               </button>
@@ -403,13 +575,15 @@ export default function App() {
 
             <div style={{ display: "flex", gap: "12px", marginTop: "auto" }}>
               <button 
-                style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", color: "#fff", cursor: "pointer" }}
+                className="btn-action-secondary"
+                style={{ flex: 1 }}
                 onClick={() => window.close()}
               >
                 Cancel
               </button>
               <button 
-                style={{ flex: 1, padding: "12px", background: "#6366f1", border: "none", borderRadius: "10px", color: "#fff", fontWeight: "bold", cursor: "pointer" }}
+                className="btn-action-primary"
+                style={{ flex: 1 }}
                 onClick={handleApproveConnection}
               >
                 Approve
@@ -442,14 +616,16 @@ export default function App() {
 
             <div style={{ display: "flex", gap: "12px", marginTop: "auto" }}>
               <button 
-                style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", color: "#fff", cursor: "pointer" }}
+                className="btn-action-secondary"
+                style={{ flex: 1 }}
                 onClick={handleRejectSignature}
                 disabled={signing}
               >
                 Reject
               </button>
               <button 
-                style={{ flex: 1, padding: "12px", background: "#10b981", border: "none", borderRadius: "10px", color: "#fff", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                className="btn-action-success"
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
                 onClick={handleApproveSignature}
                 disabled={signing}
               >
@@ -468,7 +644,7 @@ export default function App() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>Address:</span>
                 <button 
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", padding: "4px 8px", color: "#fff", fontFamily: "monospace", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}
+                  className="btn-copy"
                   onClick={() => copyToClipboard(activeAddress)}
                 >
                   {shortAddress} <Copy size={10} />
@@ -486,7 +662,7 @@ export default function App() {
                 { symbol: "USDC", name: "USD Coin", balance: "1,542.50 USDC", price: "$1,542.50", color: "#2775ca" },
                 { symbol: "LINK", name: "Chainlink Token", balance: "24.50 LINK", price: "$446.88", color: "#375bd2" }
               ].map((a, idx) => (
-                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "10px" }}>
+                <div key={idx} className="asset-row">
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: `${a.color}15`, color: a.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "12px" }}>
                       {a.symbol.slice(0,2)}
@@ -506,7 +682,7 @@ export default function App() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h3 style={{ fontSize: "14px", margin: 0 }}>Derived Accounts ({derivedWallets.length})</h3>
                 <button 
-                  style={{ background: "none", border: "none", color: "#6366f1", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "bold" }}
+                  className="btn-derive"
                   onClick={deriveNextAccount}
                 >
                   <Plus size={14} /> Derive Account
@@ -517,16 +693,7 @@ export default function App() {
                 {derivedWallets.map((w, idx) => (
                   <div 
                     key={idx} 
-                    style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      alignItems: "center", 
-                      padding: "8px 12px", 
-                      background: activeIdx === w.index ? "rgba(99,102,241,0.05)" : "rgba(255,255,255,0.01)", 
-                      border: activeIdx === w.index ? "1px solid rgba(99,102,241,0.2)" : "1px solid rgba(255,255,255,0.03)", 
-                      borderRadius: "8px",
-                      cursor: "pointer"
-                    }}
+                    className={`account-row ${activeIdx === w.index ? 'active' : 'inactive'}`}
                     onClick={() => {
                       setActiveIdx(w.index)
                       setRevealKeyIndex(null)
@@ -539,10 +706,10 @@ export default function App() {
                         <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{w.address.slice(0,6)}...{w.address.slice(-4)}</span>
                       </div>
                     </div>
-
+ 
                     <div style={{ display: "flex", gap: "6px" }}>
                       <button 
-                        style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: "4px" }}
+                        className="btn-reveal-key"
                         onClick={(e) => {
                           e.stopPropagation()
                           setRevealKeyIndex(revealKeyIndex === w.index ? null : w.index)
