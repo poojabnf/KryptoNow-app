@@ -24,11 +24,11 @@ type TokenRow = {
 }
 
 const TX_META: Record<TxType, { icon: string; color: string; bg: string; label: string }> = {
-  send:          { icon: "UP", label: "Sent",     color: "#EF4444", bg: "#FEF2F2" },
-  receive:       { icon: "DN", label: "Received", color: "#10B981", bg: "#D1FAE5" },
-  token_send:    { icon: "UP", label: "Sent",     color: "#F59E0B", bg: "#FEF3C7" },
-  token_receive: { icon: "DN", label: "Received", color: "#06B6D4", bg: "#CFFAFE" },
-  contract:      { icon: "FN", label: "Contract", color: "#8B5CF6", bg: "#EDE9FE" },
+  send:          { icon: "UP", label: "Sent",     color: "#EF4444", bg: "rgba(239, 68, 68, 0.12)" },
+  receive:       { icon: "DN", label: "Received", color: "#10B981", bg: "rgba(16, 185, 129, 0.12)" },
+  token_send:    { icon: "UP", label: "Sent",     color: "#F59E0B", bg: "rgba(245, 158, 11, 0.12)" },
+  token_receive: { icon: "DN", label: "Received", color: "#06B6D4", bg: "rgba(6, 182, 212, 0.12)" },
+  contract:      { icon: "FN", label: "Contract", color: "#8B5CF6", bg: "rgba(139, 92, 246, 0.12)" },
 }
 
 const NATIVE_CG: Record<number, string> = {
@@ -42,6 +42,12 @@ const NATIVE_BINANCE: Record<number, string> = {
 const NATIVE_CC: Record<number, string> = {
   1: "ETH", 137: "MATIC", 42161: "ETH", 10: "ETH", 56: "BNB", 8453: "ETH",
 }
+
+const TEAL   = "#0D2E2E"
+const ACCENT = "#00D4AA"
+const ACCENT2 = "#00B8FF"
+const BG_DARK = "#092020"
+const BG_SIDEBAR = "#061515"
 
 function relTime(ts: number) {
   const d = Math.floor(Date.now() / 1000) - ts
@@ -132,20 +138,27 @@ function Sidebar({
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
   return (
     <View style={sb.sidebar}>
-      {/* Logo */}
+      {/* Dynamic Brand Logo */}
       <View style={sb.logoWrap}>
-        <View style={[sb.logoIcon, { backgroundColor: activeChain.color }]}>
-          <Text style={sb.logoIconT}>KN</Text>
+        <View style={sb.logoIcon}>
+          {/* Shield Diamond */}
+          <View style={sb.logoShield}>
+            <View style={sb.logoShieldInner}>
+              <View style={sb.logoCore} />
+            </View>
+          </View>
+          {/* Orbital Ring */}
+          <View style={sb.logoRing} />
         </View>
         <View>
           <Text style={sb.logoTitle}>KryptoNow</Text>
-          <Text style={sb.logoSub}>Web3 Wallet</Text>
+          <Text style={sb.logoSub}>Cryptographic Vault</Text>
         </View>
       </View>
 
-      {/* Wallet info */}
+      {/* Wallet info card */}
       <TouchableOpacity
-        style={[sb.walletCard, { backgroundColor: activeChain.color + "15", borderColor: activeChain.color + "30" }]}
+        style={[sb.walletCard, { backgroundColor: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }]}
         onPress={onSwitchClick}
         activeOpacity={0.7}
       >
@@ -154,10 +167,10 @@ function Sidebar({
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Text style={[sb.walletAddr, { fontWeight: "700" }]}>Account #{activeAccountIndex + 1}</Text>
+            <Text style={sb.walletName}>Account #{activeAccountIndex + 1}</Text>
             <Ionicons name="chevron-down" size={12} color={activeChain.color} />
           </View>
-          <Text style={[sb.walletAddr, { fontSize: 11, opacity: 0.6, marginTop: 1 }]}>{short}</Text>
+          <Text style={sb.walletAddr}>{short}</Text>
         </View>
       </TouchableOpacity>
 
@@ -168,14 +181,14 @@ function Sidebar({
           return (
             <TouchableOpacity
               key={item.route}
-              style={[sb.navItem, item.active && { backgroundColor: activeChain.color + "15" }]}
+              style={[sb.navItem, item.active && { backgroundColor: "rgba(255,255,255,0.04)" }]}
               onPress={() => router.push(item.route as any)}
               activeOpacity={0.7}
             >
               <View style={[sb.navIcon, item.active && { backgroundColor: activeChain.color }]}>
-                <Ionicons name={item.icon as any} size={18} color={item.active ? "#fff" : "#64748B"} />
+                <Ionicons name={item.icon as any} size={16} color={item.active ? "#fff" : "rgba(255,255,255,0.5)"} />
               </View>
-              <Text style={[sb.navLabel, item.active && { color: activeChain.color, fontWeight: "700" }]}>
+              <Text style={[sb.navLabel, item.active && { color: "#fff", fontWeight: "700" }]}>
                 {item.label}
               </Text>
               {isNotif && unreadCount > 0 && (
@@ -192,7 +205,7 @@ function Sidebar({
       {/* Bottom actions */}
       <View style={sb.bottomWrap}>
         <TouchableOpacity style={sb.signOutBtn} onPress={onSignOut} activeOpacity={0.8}>
-          <Text style={sb.signOutIcon}>O</Text>
+          <Ionicons name="log-out-outline" size={18} color="#FF6B6B" style={{ marginRight: 6 }} />
           <Text style={sb.signOutT}>Log Out</Text>
         </TouchableOpacity>
       </View>
@@ -539,6 +552,10 @@ export default function Dashboard() {
       }
       contentContainerStyle={{ paddingBottom: 48 }}
     >
+      {/* Decorative Orbs inside main view */}
+      <View style={s.bgCircle1} />
+      <View style={s.bgCircle2} />
+
       {/* Balance Card */}
       <View style={s.balanceCard}>
         {/* Coloured header band */}
@@ -553,33 +570,33 @@ export default function Dashboard() {
             <Text style={s.networkEncrypted}>• Encrypted</Text>
           </View>
         </View>
-        {/* White body */}
+        {/* Body */}
         <View style={s.balCardBody}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <View style={{ flexDirection: "row", gap: 6 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", gap: 6, backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 3, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
               <TouchableOpacity
                 onPress={() => setPortfolioView("chain")}
                 style={{
-                  paddingVertical: 4,
+                  paddingVertical: 6,
                   paddingHorizontal: 12,
-                  borderRadius: 10,
-                  backgroundColor: portfolioView === "chain" ? activeChain.color + "15" : "transparent"
+                  borderRadius: 8,
+                  backgroundColor: portfolioView === "chain" ? "rgba(255,255,255,0.08)" : "transparent"
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "chain" ? activeChain.color : "#94A3B8" }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "chain" ? ACCENT : "rgba(255,255,255,0.5)" }}>
                   Active Chain
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setPortfolioView("portfolio")}
                 style={{
-                  paddingVertical: 4,
+                  paddingVertical: 6,
                   paddingHorizontal: 12,
-                  borderRadius: 10,
-                  backgroundColor: portfolioView === "portfolio" ? activeChain.color + "15" : "transparent"
+                  borderRadius: 8,
+                  backgroundColor: portfolioView === "portfolio" ? "rgba(255,255,255,0.08)" : "transparent"
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "portfolio" ? activeChain.color : "#94A3B8" }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "portfolio" ? ACCENT : "rgba(255,255,255,0.5)" }}>
                   All Chains
                 </Text>
               </TouchableOpacity>
@@ -606,8 +623,8 @@ export default function Dashboard() {
               <Text style={s.balNative}>
                 {parseFloat(tokens[0]?.balance ?? '0').toFixed(4)} {activeChain.symbol}
               </Text>
-              <View style={[s.changePill, { backgroundColor: (tokens[0]?.change24h ?? 0) >= 0 ? "#E6FBF3" : "#FEF0F2" }]}>
-                <Text style={[s.changeText, { color: (tokens[0]?.change24h ?? 0) >= 0 ? "#0ECB81" : "#F6465D" }]}>
+              <View style={[s.changePill, { backgroundColor: (tokens[0]?.change24h ?? 0) >= 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)" }]}>
+                <Text style={[s.changeText, { color: (tokens[0]?.change24h ?? 0) >= 0 ? "#10B981" : "#EF4444" }]}>
                   {(tokens[0]?.change24h ?? 0) >= 0 ? "▲" : "▼"} {Math.abs(tokens[0]?.change24h ?? 0).toFixed(2)}%
                 </Text>
               </View>
@@ -615,7 +632,7 @@ export default function Dashboard() {
           )}
 
           {portfolioView === "portfolio" && !loading && (
-            <View style={{ marginTop: 12, flexDirection: "row", gap: 3, height: 6, borderRadius: 3, overflow: "hidden", backgroundColor: "#E2E8F0" }}>
+            <View style={{ marginTop: 12, flexDirection: "row", gap: 3, height: 6, borderRadius: 3, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.06)", width: "100%" }}>
               {CHAINS.map(c => {
                 const chainVal = allChainsBalances[c.id]?.balanceUSD || 0
                 const totalVal = Object.values(allChainsBalances).reduce((sum, ch) => sum + ch.balanceUSD, 0) || 1
@@ -659,7 +676,7 @@ export default function Dashboard() {
                 s.actionBtn,
                 isPrimary
                   ? { backgroundColor: activeChain.color, borderColor: "transparent", shadowColor: activeChain.color, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8 }
-                  : { borderColor: theme.border }
+                  : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }
               ]}>
                 <Ionicons name={a.icon as any} size={22} color={isPrimary ? "#fff" : activeChain.color} />
               </View>
@@ -685,14 +702,14 @@ export default function Dashboard() {
             return (
               <TouchableOpacity
                 key={c.id}
-                style={[s.assetRow, isActive && { backgroundColor: c.color + "0d", borderColor: c.color + "30", borderWidth: 1.5 }]}
+                style={[s.assetRow, isActive && { backgroundColor: "rgba(255,255,255,0.04)", borderColor: c.color, borderWidth: 1.5 }]}
                 onPress={() => {
                   setActiveChain(c)
                   setPortfolioView("chain")
                 }}
                 activeOpacity={0.75}
               >
-                <View style={[s.assetIcon, { backgroundColor: c.color + "18" }]}>
+                <View style={[s.assetIcon, { backgroundColor: c.color + "22" }]}>
                   <Text style={[s.assetIconText, { color: c.color, fontSize: 13, fontWeight: "800" }]}>{c.icon}</Text>
                 </View>
                 <View style={s.assetMid}>
@@ -700,7 +717,6 @@ export default function Dashboard() {
                   <Text style={s.assetBal}>{parseFloat(bal).toFixed(4)} {c.symbol}</Text>
                 </View>
                 
-                {/* Micro Sparkline representation for native token */}
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
                   <Sparkline change24h={isActive && tokens[0] ? tokens[0].change24h : (c.id === 1 ? 1.4 : -0.8)} />
                 </View>
@@ -713,7 +729,7 @@ export default function Dashboard() {
                 
                 <View style={s.assetRight}>
                   <Text style={s.assetValue}>{fmt(val)}</Text>
-                  <Text style={[s.assetChange, { color: isActive ? c.color : "#94A3B8", fontWeight: "800", fontSize: 10 }]}>
+                  <Text style={[s.assetChange, { color: isActive ? c.color : "rgba(255,255,255,0.4)", fontWeight: "800", fontSize: 10 }]}>
                     {isActive ? "ACTIVE" : "SWITCH"}
                   </Text>
                 </View>
@@ -735,7 +751,7 @@ export default function Dashboard() {
           ) : (
             tokens.map((t, i) => (
               <View key={i} style={s.assetRow}>
-                <View style={[s.assetIcon, { backgroundColor: (t.color ?? activeChain.color) + "18" }]}>
+                <View style={[s.assetIcon, { backgroundColor: (t.color ?? activeChain.color) + "22" }]}>
                   <Text style={[s.assetIconText, { color: t.color ?? activeChain.color }]}>
                     {t.isNative ? activeChain.icon : (t.icon ?? t.symbol.slice(0, 2))}
                   </Text>
@@ -745,7 +761,6 @@ export default function Dashboard() {
                   <Text style={s.assetBal}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
                 </View>
                 
-                {/* Feature B: Animated deterministic sparkline price chart */}
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
                   <Sparkline change24h={t.change24h} />
                 </View>
@@ -789,7 +804,7 @@ export default function Dashboard() {
                 activeOpacity={0.7}
               >
                 <View style={[s.txIcon, { backgroundColor: meta.bg }]}>
-                  <Text style={{ fontSize: 12, fontWeight: "800", color: meta.color }}>
+                  <Text style={{ fontSize: 10, fontWeight: "900", color: meta.color }}>
                     {isSend ? "OUT" : "IN"}
                   </Text>
                 </View>
@@ -814,7 +829,7 @@ export default function Dashboard() {
   )
 
   return (
-    <View style={[s.c, { backgroundColor: theme.bgApp }]}>
+    <View style={s.c}>
       {/* WEB LAYOUT: sidebar + content */}
       {isLargeScreen ? (
         <View style={s.webLayout}>
@@ -836,8 +851,8 @@ export default function Dashboard() {
                 activeOpacity={0.7}
               >
                 <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-                <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
-                <Text style={s.chevron}>[v]</Text>
+                <Text style={s.chainName}>{activeChain.name}</Text>
+                <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
               </TouchableOpacity>
               <View style={s.headerRight}>
                 <TouchableOpacity
@@ -892,13 +907,13 @@ export default function Dashboard() {
               </Animated.View>
             </>
           )}
-          <View style={[s.header, { backgroundColor: theme.bgApp }]}>
+          <View style={s.header}>
             <TouchableOpacity
               style={s.hamburger}
               onPress={openDrawer}
               activeOpacity={0.7}
             >
-              <Ionicons name="menu-outline" size={24} color={theme.textPrimary} />
+              <Ionicons name="menu-outline" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity
               style={s.chainPill}
@@ -906,11 +921,11 @@ export default function Dashboard() {
               activeOpacity={0.7}
             >
               <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-              <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
-              <Text style={s.chevron}>[v]</Text>
+              <Text style={s.chainName}>{activeChain.name}</Text>
+              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
             <View style={s.headerRight}>
-              <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => setFundSheet(true)}>
+              <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
                 <Ionicons name="card-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
               <TouchableOpacity style={s.bellBtn} onPress={() => router.push("/notifications" as any)}>
@@ -940,7 +955,7 @@ export default function Dashboard() {
           <View style={m.handle} />
           <Text style={m.title}>Add Funds</Text>
           <Text style={m.fundSub}>Choose how to fund your wallet</Text>
-          <View style={[m.balCard, { backgroundColor: activeChain.color + "12", borderColor: activeChain.color + "30" }]}>
+          <View style={[m.balCard, { backgroundColor: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.05)" }]}>
             <View>
               <Text style={m.balCardLabel}>Wallet Balance</Text>
               <Text style={[m.balCardAmount, { color: activeChain.color }]}>{loading ? "..." : fmt(totalUSD)}</Text>
@@ -951,8 +966,8 @@ export default function Dashboard() {
             </View>
           </View>
           {[
-            { icon: "$", bg: "#EEF2FF", title: "Buy Crypto",    desc: "Purchase with card via MoonPay, Transak & more", route: "/buy"     },
-            { icon: "v", bg: "#FFF7ED", title: "Receive Crypto", desc: "Deposit from another wallet or exchange",       route: "/receive" },
+            { icon: "$", bg: "rgba(0, 212, 170, 0.1)", title: "Buy Crypto",    desc: "Purchase with card via MoonPay, Transak & more", route: "/buy"     },
+            { icon: "v", bg: "rgba(255, 255, 255, 0.05)", title: "Receive Crypto", desc: "Deposit from another wallet or exchange",       route: "/receive" },
           ].map(item => (
             <TouchableOpacity
               key={item.title}
@@ -961,13 +976,13 @@ export default function Dashboard() {
               onPress={() => { setFundSheet(false); router.push(item.route as any) }}
             >
               <View style={[m.fundIconWrap, { backgroundColor: item.bg }]}>
-                <Text style={m.fundIconText}>{item.icon}</Text>
+                <Text style={[m.fundIconText, { color: activeChain.color }]}>{item.icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={m.fundCardTitle}>{item.title}</Text>
                 <Text style={m.fundCardDesc}>{item.desc}</Text>
               </View>
-              <Text style={m.fundCardChevron}>{">"}</Text>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
             </TouchableOpacity>
           ))}
         </View>
@@ -983,11 +998,11 @@ export default function Dashboard() {
       {/* Sleek 1-Tap Wallet Switcher Modal */}
       <Modal visible={walletSwitcherOpen} animationType="slide" transparent>
         <View style={s.modalOverlay}>
-          <View style={[s.modalContent, { backgroundColor: theme.bgCard }]}>
+          <View style={s.modalContent}>
             <View style={s.modalHeader}>
-              <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Switch Wallet</Text>
+              <Text style={s.modalTitle}>Switch Wallet</Text>
               <TouchableOpacity onPress={() => setWalletSwitcherOpen(false)}>
-                <Ionicons name="close" size={24} color={theme.textPrimary} />
+                <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
 
@@ -997,7 +1012,7 @@ export default function Dashboard() {
                   key={index}
                   style={[
                     s.walletSelectorItem,
-                    { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : theme.borderLight }
+                    { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : "rgba(255, 255, 255, 0.05)" }
                   ]}
                   onPress={async () => {
                     await setActiveAccountIndex(acc.accountIndex)
@@ -1012,8 +1027,8 @@ export default function Dashboard() {
                         <Text style={s.walletAvatarSmallT}>{acc.address ? acc.address.slice(2,4).toUpperCase() : "KN"}</Text>
                       </View>
                       <View>
-                        <Text style={[s.walletItemNum, { color: theme.textPrimary }]}>Account #{acc.accountIndex + 1}</Text>
-                        <Text style={[s.walletItemAddr, { color: theme.textMuted }]}>
+                        <Text style={s.walletItemNum}>Account #{acc.accountIndex + 1}</Text>
+                        <Text style={s.walletItemAddr}>
                           {acc.address ? `${acc.address.slice(0, 10)}...${acc.address.slice(-8)}` : ""}
                         </Text>
                       </View>
@@ -1045,144 +1060,168 @@ export default function Dashboard() {
 
 // --- Sidebar Styles ---
 const sb = StyleSheet.create({
-  sidebar:       { width: 260, backgroundColor: "#fff", borderRightWidth: 1, borderRightColor: "#DDE6FF", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflow: "hidden" as any, flexShrink: 0 },
+  sidebar:       { width: 260, backgroundColor: BG_SIDEBAR, borderRightWidth: 1, borderRightColor: "rgba(255,255,255,0.05)", paddingTop: 24, paddingBottom: 16, flexDirection: "column", height: "100vh" as any, position: "sticky" as any, top: 0, overflow: "hidden" as any, flexShrink: 0 },
   logoWrap:      { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
-  logoIcon:      { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  logoIconT:     { color: "#fff", fontSize: 14, fontWeight: "800" },
-  logoTitle:     { color: "#0F1729", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
-  logoSub:       { color: "#8896AB", fontSize: 11 },
+  logoIcon:      { position: "relative", width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  logoShield:    { width: 20, height: 20, borderRadius: 5, backgroundColor: ACCENT, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center", position: "absolute" },
+  logoShieldInner: { width: 14, height: 14, borderRadius: 3, backgroundColor: BG_SIDEBAR, transform: [{ rotate: "45deg" }], alignItems: "center", justifyContent: "center" },
+  logoCore:      { width: 4, height: 4, borderRadius: 2, backgroundColor: "#ffffff" },
+  logoRing:      { position: "absolute", width: 32, height: 12, borderRadius: 6, borderWidth: 1.8, borderColor: ACCENT2, transform: [{ rotate: "-15deg" }], zIndex: 10 },
+  logoTitle:     { color: "#ffffff", fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  logoSub:       { color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "600" },
   walletCard:    { marginHorizontal: 16, marginBottom: 20, borderRadius: 14, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   walletAvatar:  { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   walletAvatarT: { color: "#fff", fontSize: 13, fontWeight: "800" },
-  walletAddr:    { color: "#1E1B4B", fontSize: 13, fontWeight: "600", marginBottom: 4 },
-  chainBadge:    { flexDirection: "row", alignItems: "center", gap: 4 },
-  chainDot:      { width: 6, height: 6, borderRadius: 3 },
-  chainName:     { fontSize: 11, fontWeight: "600" },
+  walletName:    { color: "#ffffff", fontSize: 13, fontWeight: "800" },
+  walletAddr:    { color: "rgba(255,255,255,0.4)", fontSize: 11, fontFamily: "monospace", marginTop: 2 },
   navScroll:     { flex: 1, paddingHorizontal: 12, overflow: "scroll" as any, maxHeight: "calc(100vh - 240px)" as any },
   navItem:       { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginBottom: 2, position: "relative" },
-  navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
-  navIconT:      { fontSize: 13, fontWeight: "700", color: "#64748B" },
-  navLabel:      { color: "#64748B", fontSize: 13, fontWeight: "500", flex: 1 },
+  navIcon:       { width: 32, height: 32, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.03)", alignItems: "center", justifyContent: "center" },
+  navLabel:      { color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "700", flex: 1 },
   notifBadge:    { backgroundColor: "#EF4444", borderRadius: 10, minWidth: 18, height: 18, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
   notifBadgeT:   { color: "#fff", fontSize: 10, fontWeight: "700" },
   activeBar:     { position: "absolute", right: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
-  bottomWrap:    { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#F1F5F9" },
-  signOutBtn:    { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 14, borderRadius: 14, backgroundColor: "#FFF1F2", borderWidth: 1.5, borderColor: "#FECDD3" },
-  signOutIcon:   { color: "#F43F5E", fontSize: 14, fontWeight: "800" },
-  signOutT:      { color: "#F43F5E", fontSize: 14, fontWeight: "600" },
+  bottomWrap:    { paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.05)" },
+  signOutBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 14, backgroundColor: "rgba(239, 68, 68, 0.08)", borderWidth: 1.5, borderColor: "rgba(239, 68, 68, 0.2)" },
+  signOutT:      { color: "#FF6B6B", fontSize: 14, fontWeight: "800" },
 })
 
 // --- Main Styles ---
 const s = StyleSheet.create({
-  c:               { flex: 1, backgroundColor: "#EBF0FF" },
+  c:               { flex: 1, backgroundColor: TEAL },
   webLayout:       { flex: 1, flexDirection: "row", height: "100vh" as any, overflow: "hidden" as any },
-  webLayoutMobile: { flex: 1, flexDirection: "column" },
   hamburger:       { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", marginRight: 4 },
-  drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: "#fff", shadowColor: "#1A3A8F", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 20 },
-  drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(8,16,40,0.5)", zIndex: 99 },
-  webMain:         { flex: 1, backgroundColor: "#EBF0FF", overflow: "scroll" as any, height: "100vh" as any },
-  webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingVertical: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#DDE6FF", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  drawer:          { position: "absolute", left: 0, top: 0, bottom: 0, width: 260, zIndex: 100, backgroundColor: BG_SIDEBAR, shadowColor: "#000", shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 20 },
+  drawerOverlay:   { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 99 },
+  webMain:         { flex: 1, backgroundColor: TEAL, overflow: "scroll" as any, height: "100vh" as any },
+  webTopBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingVertical: 16, backgroundColor: BG_SIDEBAR, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.05)" },
   header:          { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
-  chainPill:       { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1.5, borderColor: "#DDE6FF", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 2 },
+  chainPill:       { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(255,255,255,0.03)", paddingVertical: 9, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
   chainDot:        { width: 8, height: 8, borderRadius: 4 },
-  chainName:       { fontSize: 13, fontWeight: "700", color: "#0F1729" },
-  chevron:         { fontSize: 12, color: "#8896AB" },
+  chainName:       { fontSize: 13, fontWeight: "800", color: "#ffffff" },
   headerRight:     { flexDirection: "row", gap: 8 },
-  iconBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#DDE6FF", alignItems: "center", justifyContent: "center", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 },
-  iconBtnText:     { fontSize: 14, fontWeight: "700" },
-  bellBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#DDE6FF", alignItems: "center", justifyContent: "center", shadowColor: "#2D62ED", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 1 },
-  bellBadge:       { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#F6465D", alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: "#fff" },
+  iconBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center" },
+  bellBtn:         { width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.03)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center", position: "relative" },
+  bellBadge:       { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#F6465D", alignItems: "center", justifyContent: "center", paddingHorizontal: 3, borderWidth: 1.5, borderColor: BG_SIDEBAR },
   bellBadgeT:      { color: "#fff", fontSize: 9, fontWeight: "800" },
-  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 28, overflow: "hidden", backgroundColor: "#fff", shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 10 },
+  
+  /* Balance Card */
+  balanceCard:     { marginHorizontal: 20, marginBottom: 24, borderRadius: 28, overflow: "hidden", backgroundColor: BG_DARK, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)", shadowColor: "#000", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 10 },
   balCardBand:     { paddingTop: 24, paddingBottom: 20, paddingHorizontal: 24, alignItems: "center" },
-  balCardBody:     { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, alignItems: "center", backgroundColor: "#fff" },
+  balCardBody:     { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, alignItems: "center", backgroundColor: "transparent" },
   avatarWrap:      { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center", marginBottom: 10, borderWidth: 2, borderColor: "rgba(255,255,255,0.4)" },
   avatarText:      { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5 },
   walletAddr:      { color: "rgba(255,255,255,0.75)", fontSize: 12, marginBottom: 12, letterSpacing: 0.8, fontFamily: "monospace" },
-  balLabel:        { color: "#8896AB", fontSize: 11, fontWeight: "600", marginBottom: 4, letterSpacing: 1, textTransform: "uppercase" },
-  balAmount:       { color: "#0F1729", fontSize: 44, fontWeight: "800", letterSpacing: -2 },
+  balLabel:        { color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "700", marginBottom: 4, letterSpacing: 1, textTransform: "uppercase" },
+  balAmount:       { color: "#ffffff", fontSize: 44, fontWeight: "900", letterSpacing: -1.5 },
   balMeta:         { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 },
-  balNative:       { color: "#8896AB", fontSize: 13, fontWeight: "500" },
+  balNative:       { color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: "600" },
   changePill:      { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
-  changeText:      { fontSize: 12, fontWeight: "700" },
+  changeText:      { fontSize: 12, fontWeight: "800" },
   networkBadge:    { flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 5, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1 },
-  networkDot:      { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4ADE80" },
-  networkBadgeText:{ color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: "700" },
+  networkDot:      { width: 6, height: 6, borderRadius: 3, backgroundColor: "#00D4AA" },
+  networkBadgeText:{ color: "rgba(255,255,255,0.9)", fontSize: 11, fontWeight: "800" },
   networkEncrypted:{ color: "rgba(255,255,255,0.55)", fontSize: 11 },
-  errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: "#FEF0F2", borderRadius: 14, borderWidth: 1, borderColor: "#FECDD3", padding: 13 },
-  errorText:       { color: "#F6465D", fontSize: 13, textAlign: "center", fontWeight: "500" },
+  
+  errorBanner:     { marginHorizontal: 16, marginBottom: 12, backgroundColor: "rgba(239, 68, 68, 0.08)", borderRadius: 14, borderWidth: 1, borderColor: "rgba(239, 68, 68, 0.2)", padding: 13 },
+  errorText:       { color: "#F6465D", fontSize: 13, textAlign: "center", fontWeight: "600" },
   actions:         { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 16, marginBottom: 32 },
   actionItem:      { alignItems: "center", gap: 8 },
-  actionBtn:       { width: 60, height: 60, borderRadius: 30, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1.5, shadowOffset: { width: 0, height: 6 }, shadowRadius: 14, elevation: 5 },
-  actionIcon:      { fontSize: 16, fontWeight: "800" },
-  actionLabel:     { color: "#4A5568", fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
-  section:         { paddingHorizontal: 20, marginBottom: 28 },
+  actionBtn:       { width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(255,255,255,0.02)", alignItems: "center", justifyContent: "center", borderWidth: 1.5, shadowOffset: { width: 0, height: 6 }, shadowRadius: 14, elevation: 5 },
+  actionLabel:     { color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "800", letterSpacing: 0.2 },
+  
+  /* Section Elements */
+  section:         { paddingHorizontal: 20, marginBottom: 28, maxWidth: 680, alignSelf: "center", width: "100%" },
   sectionHeader:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  sectionTitle:    { color: "#0F1729", fontSize: 17, fontWeight: "800", marginBottom: 16, letterSpacing: -0.3 },
-  viewAll:         { fontSize: 13, fontWeight: "700" },
-  loadBox:         { backgroundColor: "#fff", borderRadius: 18, padding: 28, alignItems: "center", gap: 12, borderWidth: 1, borderColor: "#DDE6FF" },
-  loadText:        { color: "#8896AB", fontSize: 13 },
-  emptyBox:        { backgroundColor: "#fff", borderRadius: 20, padding: 28, alignItems: "center", borderWidth: 1, borderColor: "#DDE6FF" },
+  sectionTitle:    { color: "#ffffff", fontSize: 18, fontWeight: "900", marginBottom: 16, letterSpacing: -0.3 },
+  viewAll:         { fontSize: 13, fontWeight: "800" },
+  loadBox:         { backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 18, padding: 28, alignItems: "center", gap: 12, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
+  loadText:        { color: "rgba(255,255,255,0.4)", fontSize: 13 },
+  emptyBox:        { backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 20, padding: 28, alignItems: "center", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
   emptyIcon:       { fontSize: 36, marginBottom: 10 },
-  emptyTitle:      { color: "#0F1729", fontSize: 15, fontWeight: "700", marginBottom: 4 },
-  emptySub:        { color: "#8896AB", fontSize: 13, textAlign: "center" },
-  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 },
+  emptyTitle:      { color: "#ffffff", fontSize: 15, fontWeight: "800", marginBottom: 4 },
+  emptySub:        { color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center" },
+  
+  /* List Rows */
+  assetRow:        { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.04)", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
   assetIcon:       { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center", marginRight: 14 },
-  assetIconText:   { fontSize: 18, fontWeight: "800" },
+  assetIconText:   { fontSize: 18, fontWeight: "900" },
   assetMid:        { flex: 1 },
-  assetName:       { color: "#0F1729", fontSize: 14, fontWeight: "700", marginBottom: 2 },
-  assetBal:        { color: "#8896AB", fontSize: 12, marginTop: 2 },
+  assetName:       { color: "#ffffff", fontSize: 14, fontWeight: "800", marginBottom: 2 },
+  assetBal:        { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 },
   assetRight:      { alignItems: "flex-end" },
-  assetValue:      { color: "#0F1729", fontSize: 15, fontWeight: "800" },
-  assetChange:     { fontSize: 12, fontWeight: "700", marginTop: 3 },
-  txRow:           { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 8, shadowColor: "#1A3A8F", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
+  assetValue:      { color: "#ffffff", fontSize: 15, fontWeight: "900" },
+  assetChange:     { fontSize: 12, fontWeight: "800", marginTop: 3 },
+  
+  txRow:           { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 8, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.04)", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 1 },
   txIcon:          { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", marginRight: 14 },
   txMid:           { flex: 1 },
-  txLabel:         { color: "#0F1729", fontSize: 14, fontWeight: "700" },
-  txAddr:          { color: "#8896AB", fontSize: 11, marginTop: 2 },
-  txTime:          { color: "#B8C4D4", fontSize: 11, marginTop: 1 },
-  txAmt:           { fontSize: 14, fontWeight: "800" },
+  txLabel:         { color: "#ffffff", fontSize: 14, fontWeight: "800" },
+  txAddr:          { color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 2 },
+  txTime:          { color: "rgba(255,255,255,0.3)", fontSize: 11, marginTop: 1 },
+  txAmt:           { fontSize: 14, fontWeight: "900" },
+
+  /* Background Decorative Orbs */
+  bgCircle1: {
+    position: "absolute",
+    top: 40,
+    right: -40,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: ACCENT,
+    opacity: 0.04,
+  },
+  bgCircle2: {
+    position: "absolute",
+    top: "35%",
+    left: -60,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: ACCENT2,
+    opacity: 0.03,
+  },
 
   // Wallet Switcher Modal styles
-  modalOverlay: { flex: 1, backgroundColor: "rgba(15, 23, 42, 0.6)", justifyContent: "flex-end" },
-  modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: "80%" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)", justifyContent: "flex-end" },
+  modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: "80%", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
   modalHeader:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  modalTitle:   { fontSize: 20, fontWeight: "800" },
+  modalTitle:   { fontSize: 20, fontWeight: "900", color: "#ffffff" },
   modalScroll:  { paddingBottom: 20 },
-  walletSelectorItem: { borderRadius: 18, padding: 14, borderWidth: 1.5, marginBottom: 12, backgroundColor: "rgba(248, 250, 252, 0.5)" },
+  walletSelectorItem: { borderRadius: 18, padding: 14, borderWidth: 1.5, marginBottom: 12, backgroundColor: "rgba(255, 255, 255, 0.01)" },
   walletAvatarSmall: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   walletAvatarSmallT: { color: "#fff", fontSize: 11, fontWeight: "800" },
-  walletItemNum: { fontSize: 14, fontWeight: "700" },
-  walletItemAddr: { fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', marginTop: 2 },
+  walletItemNum: { fontSize: 14, fontWeight: "800", color: "#ffffff" },
+  walletItemAddr: { fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', marginTop: 2, color: "rgba(255,255,255,0.4)" },
   manageBtn: { width: "100%", paddingVertical: 14, borderRadius: 16, borderWidth: 2, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  manageBtnT: { fontSize: 14, fontWeight: "700" },
+  manageBtnT: { fontSize: 14, fontWeight: "800" },
 })
 
 const m = StyleSheet.create({
-  overlay:        { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15,23,42,0.6)" },
-  sheet:          { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff", borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 36 },
-  handle:         { width: 40, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 20 },
-  title:          { color: "#1E1B4B", fontSize: 18, fontWeight: "800", marginBottom: 4, paddingLeft: 4 },
-  row:            { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 16, marginBottom: 8, backgroundColor: "#F8FAFF" },
-  rowActive:      { backgroundColor: "#EEF2FF" },
+  overlay:        { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.7)" },
+  sheet:          { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: BG_DARK, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 36, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
+  handle:         { width: 40, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.1)", alignSelf: "center", marginBottom: 20 },
+  title:          { color: "#ffffff", fontSize: 18, fontWeight: "900", marginBottom: 4, paddingLeft: 4 },
+  row:            { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 16, marginBottom: 8, backgroundColor: "rgba(255,255,255,0.01)" },
+  rowActive:      { backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
   iconWrap:       { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 14 },
-  icon:           { fontSize: 18, fontWeight: "700" },
+  icon:           { fontSize: 18, fontWeight: "800" },
   mid:            { flex: 1 },
-  chainName:      { color: "#1E1B4B", fontSize: 15, fontWeight: "700" },
-  chainSymbol:    { color: "#94A3B8", fontSize: 12, marginTop: 2 },
+  chainName:      { color: "#ffffff", fontSize: 15, fontWeight: "800" },
+  chainSymbol:    { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 2 },
   activeDot:      { width: 10, height: 10, borderRadius: 5 },
-  fundSheet:      { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff", borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 44 },
-  fundSub:        { color: "#94A3B8", fontSize: 13, marginBottom: 20, paddingLeft: 4 },
-  balCard:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderRadius: 18, borderWidth: 1, padding: 18, marginBottom: 20 },
-  balCardLabel:   { color: "#64748B", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 },
-  balCardAmount:  { fontSize: 24, fontWeight: "800", letterSpacing: -0.5, marginBottom: 2 },
-  balCardSub:     { color: "#94A3B8", fontSize: 12 },
+  fundSheet:      { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: BG_DARK, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 12, paddingHorizontal: 16, paddingBottom: 44, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)" },
+  fundSub:        { color: "rgba(255,255,255,0.4)", fontSize: 13, marginBottom: 20, paddingLeft: 4 },
+  balCard:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderRadius: 18, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.05)", padding: 18, marginBottom: 20 },
+  balCardLabel:   { color: "rgba(255,255,255,0.4)", fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 },
+  balCardAmount:  { fontSize: 24, fontWeight: "900", letterSpacing: -0.5, marginBottom: 2 },
+  balCardSub:     { color: "rgba(255,255,255,0.4)", fontSize: 12 },
   balChainBadge:  { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   balChainIcon:   { fontSize: 22, color: "#fff" },
-  fundCard:       { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: "#F8FAFF", borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#E2E8F0" },
+  fundCard:       { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.04)" },
   fundIconWrap:   { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  fundIconText:   { fontSize: 22, fontWeight: "800", color: "#6366F1" },
-  fundCardTitle:  { color: "#1E1B4B", fontSize: 15, fontWeight: "700", marginBottom: 3 },
-  fundCardDesc:   { color: "#64748B", fontSize: 12, lineHeight: 18 },
-  fundCardChevron:{ fontSize: 18, color: "#CBD5E1", fontWeight: "700" },
+  fundIconText:   { fontSize: 22, fontWeight: "900" },
+  fundCardTitle:  { color: "#ffffff", fontSize: 15, fontWeight: "800", marginBottom: 3 },
+  fundCardDesc:   { color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 18 },
 })
