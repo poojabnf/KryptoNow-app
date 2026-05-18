@@ -615,60 +615,63 @@ export default function Settings() {
           <View key={sec.title} style={st.section}>
             <Text style={[st.sectionTitle, { color: theme.textMuted }]}>{sec.title}</Text>
             <View style={[st.card, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
-              {sec.items.map((item, idx) => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={[st.row, idx < sec.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.borderLight }]}
-                  onPress={item.type !== "toggle" && item.type !== "info" ? item.onPress : undefined}
-                  activeOpacity={item.type === "info" || item.type === "toggle" || item.type === "theme" ? 1 : 0.7}
-                >
-                  <View style={[st.iconWrap, { backgroundColor: item.color === "#EF4444" ? "#FEF2F2" : item.iconBg }]}>
-                    <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
-                  </View>
-                  <View style={st.rowMid}>
-                    <Text style={[st.rowLabel, { color: item.color ?? theme.textPrimary }]}>{item.label}</Text>
-                    {item.sublabel && item.type !== "info" && (
-                      <Text style={[st.rowSub, { color: theme.textMuted }]}>{item.sublabel}</Text>
-                    )}
-                  </View>
-                  {item.type === "theme" && (
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      {(["light", "dark", "pro"]).map((m) => (
-                        <TouchableOpacity
-                          key={m}
-                          onPress={() => setMode(m as any)}
-                          style={{
-                            paddingVertical: 5,
-                            paddingHorizontal: 12,
-                            borderRadius: 20,
-                            backgroundColor: mode === m ? activeChain.color : theme.bgCardAlt,
-                            borderWidth: 1.5,
-                            borderColor: mode === m ? activeChain.color : theme.border,
-                          }}
-                        >
-                          <Text style={{
-                            fontSize: 11, fontWeight: "700", textTransform: "capitalize",
-                            color: mode === m ? "#fff" : theme.textSecondary,
-                          }}>{m}</Text>
-                        </TouchableOpacity>
-                      ))}
+              {sec.items.map((item, idx) => {
+                const isClickable = item.type === "nav" || item.type === "action"
+                const RowWrapper = isClickable ? TouchableOpacity : View
+                return (
+                  <RowWrapper
+                    key={item.label}
+                    style={[st.row, idx < sec.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.borderLight }]}
+                    {...(isClickable ? { onPress: item.onPress, activeOpacity: 0.7 } : {})}
+                  >
+                    <View style={[st.iconWrap, { backgroundColor: item.color === "#EF4444" ? "#FEF2F2" : item.iconBg }]}>
+                      <Text style={[st.iconT, { color: item.color ?? activeChain.color }]}>{item.icon}</Text>
                     </View>
-                  )}
-                  {item.type === "toggle" && (
-                    <Switch
-                      value={item.value}
-                      onValueChange={item.onToggle}
-                      trackColor={{ false: "#E2E8F0", true: activeChain.color }}
-                      thumbColor="#fff"
-                    />
-                  )}
-                  {item.type === "nav"    && <Text style={[st.chevron, { color: theme.textMuted }]}>{">"}</Text>}
-                  {item.type === "info"   && <Text style={[st.infoVal, { color: theme.textMuted }]}>{item.sublabel}</Text>}
-                  {item.type === "action" && item.color && (
-                    <Text style={[st.chevron, { color: item.color }]}>{">"}</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+                    <View style={st.rowMid}>
+                      <Text style={[st.rowLabel, { color: item.color ?? theme.textPrimary }]}>{item.label}</Text>
+                      {item.sublabel && item.type !== "info" && (
+                        <Text style={[st.rowSub, { color: theme.textMuted }]}>{item.sublabel}</Text>
+                      )}
+                    </View>
+                    {item.type === "theme" && (
+                      <View style={{ flexDirection: "row", gap: 6 }}>
+                        {(["light", "dark", "pro"]).map((m) => (
+                          <TouchableOpacity
+                            key={m}
+                            onPress={() => setMode(m as any)}
+                            style={{
+                              paddingVertical: 5,
+                              paddingHorizontal: 12,
+                              borderRadius: 20,
+                              backgroundColor: mode === m ? activeChain.color : theme.bgCardAlt,
+                              borderWidth: 1.5,
+                              borderColor: mode === m ? activeChain.color : theme.border,
+                            }}
+                          >
+                            <Text style={{
+                              fontSize: 11, fontWeight: "700", textTransform: "capitalize",
+                              color: mode === m ? "#fff" : theme.textSecondary,
+                            }}>{m}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                    {item.type === "toggle" && (
+                      <Switch
+                        value={item.value}
+                        onValueChange={item.onToggle}
+                        trackColor={{ false: "#E2E8F0", true: activeChain.color }}
+                        thumbColor="#fff"
+                      />
+                    )}
+                    {item.type === "nav"    && <Text style={[st.chevron, { color: theme.textMuted }]}>{">"}</Text>}
+                    {item.type === "info"   && <Text style={[st.infoVal, { color: theme.textMuted }]}>{item.sublabel}</Text>}
+                    {item.type === "action" && item.color && (
+                      <Text style={[st.chevron, { color: item.color }]}>{">"}</Text>
+                    )}
+                  </RowWrapper>
+                )
+              })}
             </View>
           </View>
         ))}
