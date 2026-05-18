@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSignIn, useSignUp } from "@clerk/expo/legacy";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../../utils/storage";
 import { Ionicons } from "@expo/vector-icons";
 
 // Only needed on native — on web Clerk handles its own popup/redirect completion.
@@ -152,21 +152,14 @@ export default function SignIn() {
 
   const onSuccess = async () => {
     try {
-      let address: string | null = null
-      let profile: any = null
-      if (Platform.OS === "web") {
-        const walletRaw = localStorage.getItem("kryptonow_wallet")
-        if (walletRaw) {
-          try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
-        }
-        if (!address) address = localStorage.getItem("kryptonow_address")
-        const profileRaw = localStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
-      } else {
-        address = await AsyncStorage.getItem("kryptonow_address")
-        const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
-        profile = profileRaw ? JSON.parse(profileRaw) : null
+      const walletRaw = await storage.get("kryptonow_wallet")
+      let address = await storage.get("kryptonow_address")
+      if (walletRaw && !address) {
+        try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
       }
+      const profileRaw = await storage.get("kryptonow_profile")
+      const profile = profileRaw ? JSON.parse(profileRaw) : null
+      
       if (!address) router.replace("/create")
       else if (!profile?.onboarded) router.replace("/onboarding")
       else router.replace("/dashboard")

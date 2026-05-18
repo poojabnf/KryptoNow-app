@@ -8,6 +8,7 @@ import { router } from "expo-router"
 import { goBack } from "../utils/navigation"
 import * as Clipboard from "expo-clipboard"
 import { ethers } from "ethers"
+import { storage } from "../utils/storage"
 
 const ENS_PROVIDER = "https://eth.llamarpc.com"
 const STORAGE_KEY  = "kryptonow_address_book"
@@ -24,16 +25,9 @@ export type Contact = {
   chainId?: number
 }
 
-// --- Storage ---
-function loadContacts(): Contact[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function saveContacts(contacts: Contact[]): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts)) } catch {}
+// --- Storage Helpers ---
+async function saveContacts(contacts: Contact[]): Promise<void> {
+  try { await storage.set(STORAGE_KEY, JSON.stringify(contacts)) } catch {}
 }
 
 // --- Helpers ---
@@ -280,7 +274,14 @@ export default function AddressBook() {
   const [editing,   setEditing]   = useState<Contact | null>(null)
   const [copied,    setCopied]    = useState("")
 
-  useEffect(() => { setContacts(loadContacts()) }, [])
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const raw = await storage.get(STORAGE_KEY)
+        if (raw) setContacts(JSON.parse(raw))
+      } catch {}
+    })()
+  }, [])
 
   const filtered = contacts.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -288,12 +289,12 @@ export default function AddressBook() {
     (c.ens ?? "").toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleSave(contact: Contact) {
+  async function handleSave(contact: Contact) {
     const updated = contacts.find(c => c.id === contact.id)
       ? contacts.map(c => c.id === contact.id ? contact : c)
       : [contact, ...contacts]
     setContacts(updated)
-    saveContacts(updated)
+    await saveContacts(updated)
   }
 
   function handleDelete(id: string) {
@@ -304,10 +305,10 @@ export default function AddressBook() {
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete", style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             const updated = contacts.filter(c => c.id !== id)
             setContacts(updated)
-            saveContacts(updated)
+            await saveContacts(updated)
           },
         },
       ]

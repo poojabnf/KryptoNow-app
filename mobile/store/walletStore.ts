@@ -76,8 +76,15 @@ async function saveWallet(w: WalletData | null) {
     else await AsyncStorage.removeItem(STORAGE_KEY)
   } else {
     try {
-      if (w) await saveEncryptedWallet({ address: w.address, phrase: w.phrase ?? '', name: w.name })
-      else deleteEncryptedWallet()
+      if (w) {
+        await saveEncryptedWallet({ address: w.address, phrase: w.phrase ?? '', name: w.name })
+        localStorage.setItem('kryptonow_address', w.address)
+        localStorage.setItem('kryptonow_profile', JSON.stringify({ onboarded: true }))
+      } else {
+        deleteEncryptedWallet()
+        localStorage.removeItem('kryptonow_address')
+        localStorage.removeItem('kryptonow_profile')
+      }
     } catch {}
   }
 }

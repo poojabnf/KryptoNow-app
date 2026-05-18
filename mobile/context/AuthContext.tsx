@@ -15,7 +15,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { storage } from '../utils/storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     ;(async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY)
+        const raw = await storage.get(STORAGE_KEY)
         setUser(raw ? { ...DEFAULT_PROFILE, ...JSON.parse(raw) } : DEFAULT_PROFILE)
       } catch {
         setUser(DEFAULT_PROFILE)
@@ -78,12 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     const next = { ...(user ?? DEFAULT_PROFILE), ...updates }
     setUser(next)
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    await storage.set(STORAGE_KEY, JSON.stringify(next))
   }
 
   const clearProfile = async () => {
     setUser(DEFAULT_PROFILE)
-    await AsyncStorage.removeItem(STORAGE_KEY)
+    await storage.remove(STORAGE_KEY)
   }
 
   return (

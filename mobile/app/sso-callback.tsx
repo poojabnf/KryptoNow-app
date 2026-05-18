@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native"
 import { useAuth } from "@clerk/expo"
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import { storage } from "../utils/storage"
 
 export default function SSOCallback() {
   const { isSignedIn, isLoaded } = useAuth()
@@ -11,8 +11,12 @@ export default function SSOCallback() {
     const redirect = async () => {
       try {
         if (isSignedIn) {
-          const address = await AsyncStorage.getItem("kryptonow_address")
-          const profileRaw = await AsyncStorage.getItem("kryptonow_profile")
+          const walletRaw = await storage.get("kryptonow_wallet")
+          let address = await storage.get("kryptonow_address")
+          if (walletRaw && !address) {
+            try { address = JSON.parse(walletRaw)?.address ?? null } catch {}
+          }
+          const profileRaw = await storage.get("kryptonow_profile")
           const profile = profileRaw ? JSON.parse(profileRaw) : null
           
           let dest = "/create"
