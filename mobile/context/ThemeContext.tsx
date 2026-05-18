@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { storage } from '../utils/storage'
 
 export type ThemeMode = 'light' | 'dark' | 'pro'
 
@@ -130,15 +131,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('light')
 
   useEffect(() => {
-    try {
-      const saved = (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null) as ThemeMode
-      if (saved && THEMES[saved]) setModeState(saved)
-    } catch {}
+    ;(async () => {
+      try {
+        const saved = await storage.get(STORAGE_KEY) as ThemeMode
+        if (saved && THEMES[saved]) setModeState(saved)
+      } catch {}
+    })()
   }, [])
 
-  function setMode(m: ThemeMode) {
+  async function setMode(m: ThemeMode) {
     setModeState(m)
-    try { if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, m) } catch {}
+    try { await storage.set(STORAGE_KEY, m) } catch {}
   }
 
   return (

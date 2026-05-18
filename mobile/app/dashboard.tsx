@@ -136,8 +136,9 @@ function Sidebar({
   onSwitchClick: () => void
 }) {
   const short = addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : ""
+  const { theme } = useTheme()
   return (
-    <View style={sb.sidebar}>
+    <View style={[sb.sidebar, { backgroundColor: theme.bgCardAlt, borderRightColor: theme.borderLight }]}>
       {/* Dynamic Brand Logo */}
       <View style={sb.logoWrap}>
         <View style={sb.logoIcon}>
@@ -151,14 +152,14 @@ function Sidebar({
           <View style={sb.logoRing} />
         </View>
         <View>
-          <Text style={sb.logoTitle}>KryptoNow</Text>
-          <Text style={sb.logoSub}>Cryptographic Vault</Text>
+          <Text style={[sb.logoTitle, { color: theme.textPrimary }]}>KryptoNow</Text>
+          <Text style={[sb.logoSub, { color: theme.textMuted }]}>Cryptographic Vault</Text>
         </View>
       </View>
 
       {/* Wallet info card */}
       <TouchableOpacity
-        style={[sb.walletCard, { backgroundColor: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }]}
+        style={[sb.walletCard, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}
         onPress={onSwitchClick}
         activeOpacity={0.7}
       >
@@ -167,10 +168,10 @@ function Sidebar({
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Text style={sb.walletName}>Account #{activeAccountIndex + 1}</Text>
+            <Text style={[sb.walletName, { color: theme.textPrimary }]}>Account #{activeAccountIndex + 1}</Text>
             <Ionicons name="chevron-down" size={12} color={activeChain.color} />
           </View>
-          <Text style={sb.walletAddr}>{short}</Text>
+          <Text style={[sb.walletAddr, { color: theme.textSecondary }]}>{short}</Text>
         </View>
       </TouchableOpacity>
 
@@ -181,14 +182,14 @@ function Sidebar({
           return (
             <TouchableOpacity
               key={item.route}
-              style={[sb.navItem, item.active && { backgroundColor: "rgba(255,255,255,0.04)" }]}
+              style={[sb.navItem, item.active && { backgroundColor: theme.bgApp }]}
               onPress={() => router.push(item.route as any)}
               activeOpacity={0.7}
             >
               <View style={[sb.navIcon, item.active && { backgroundColor: activeChain.color }]}>
-                <Ionicons name={item.icon as any} size={16} color={item.active ? "#fff" : "rgba(255,255,255,0.5)"} />
+                <Ionicons name={item.icon as any} size={16} color={item.active ? "#fff" : theme.textSecondary} />
               </View>
-              <Text style={[sb.navLabel, item.active && { color: "#fff", fontWeight: "700" }]}>
+              <Text style={[sb.navLabel, { color: theme.textSecondary }, item.active && { color: theme.textPrimary, fontWeight: "700" }]}>
                 {item.label}
               </Text>
               {isNotif && unreadCount > 0 && (
@@ -203,7 +204,7 @@ function Sidebar({
       </ScrollView>
 
       {/* Bottom actions */}
-      <View style={sb.bottomWrap}>
+      <View style={[sb.bottomWrap, { borderTopColor: theme.borderLight }]}>
         <TouchableOpacity style={sb.signOutBtn} onPress={onSignOut} activeOpacity={0.8}>
           <Ionicons name="log-out-outline" size={18} color="#FF6B6B" style={{ marginRight: 6 }} />
           <Text style={sb.signOutT}>Log Out</Text>
@@ -219,6 +220,7 @@ function ChainModal({ visible, current, onSelect, onClose }: {
   onSelect: (c: Chain) => void; onClose: () => void
 }) {
   const slide = useRef(new Animated.Value(500)).current
+  const { theme } = useTheme()
   useEffect(() => {
     Animated.spring(slide, {
       toValue: visible ? 0 : 500,
@@ -228,28 +230,31 @@ function ChainModal({ visible, current, onSelect, onClose }: {
   return (
     <Modal transparent visible={visible} onRequestClose={onClose}>
       <TouchableOpacity style={m.overlay} activeOpacity={1} onPress={onClose} />
-      <Animated.View style={[m.sheet, { transform: [{ translateY: slide }] }]}>
+      <Animated.View style={[m.sheet, { backgroundColor: theme.bgCard, borderColor: theme.border }, { transform: [{ translateY: slide }] }]}>
         <View style={m.handle} />
-        <Text style={m.title}>Switch Network</Text>
-        {CHAINS.map(chain => (
-          <TouchableOpacity
-            key={chain.id}
-            style={[m.row, chain.id === current.id && m.rowActive]}
-            onPress={() => { onSelect(chain); onClose() }}
-            activeOpacity={0.7}
-          >
-            <View style={[m.iconWrap, { backgroundColor: chain.color + "22" }]}>
-              <Text style={[m.icon, { color: chain.color }]}>{chain.icon}</Text>
-            </View>
-            <View style={m.mid}>
-              <Text style={m.chainName}>{chain.name}</Text>
-              <Text style={m.chainSymbol}>{chain.symbol}</Text>
-            </View>
-            {chain.id === current.id && (
-              <View style={[m.activeDot, { backgroundColor: chain.color }]} />
-            )}
-          </TouchableOpacity>
-        ))}
+        <Text style={[m.title, { color: theme.textPrimary }]}>Switch Network</Text>
+        {CHAINS.map(chain => {
+          const isActive = chain.id === current.id
+          return (
+            <TouchableOpacity
+              key={chain.id}
+              style={[m.row, { backgroundColor: theme.bgCardAlt }, isActive && m.rowActive]}
+              onPress={() => { onSelect(chain); onClose() }}
+              activeOpacity={0.7}
+            >
+              <View style={[m.iconWrap, { backgroundColor: chain.color + "22" }]}>
+                <Text style={[m.icon, { color: chain.color }]}>{chain.icon}</Text>
+              </View>
+              <View style={m.mid}>
+                <Text style={[m.chainName, { color: theme.textPrimary }]}>{chain.name}</Text>
+                <Text style={[m.chainSymbol, { color: theme.textSecondary }]}>{chain.symbol}</Text>
+              </View>
+              {isActive && (
+                <View style={[m.activeDot, { backgroundColor: chain.color }]} />
+              )}
+            </TouchableOpacity>
+          )
+        })}
       </Animated.View>
     </Modal>
   )
@@ -553,11 +558,11 @@ export default function Dashboard() {
       contentContainerStyle={{ paddingBottom: 48 }}
     >
       {/* Decorative Orbs inside main view */}
-      <View style={s.bgCircle1} />
-      <View style={s.bgCircle2} />
+      <View style={[s.bgCircle1, { backgroundColor: theme.accent, opacity: mode === 'light' ? 0.02 : 0.04 }]} />
+      <View style={[s.bgCircle2, { backgroundColor: mode === 'light' ? theme.accentLight : ACCENT2, opacity: mode === 'light' ? 0.015 : 0.03 }]} />
 
       {/* Balance Card */}
-      <View style={s.balanceCard}>
+      <View style={[s.balanceCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
         {/* Coloured header band */}
         <View style={[s.balCardBand, { backgroundColor: activeChain.color }]}>
           <View style={[s.avatarWrap, { backgroundColor: "rgba(255,255,255,0.22)" }]}>
@@ -573,17 +578,17 @@ export default function Dashboard() {
         {/* Body */}
         <View style={s.balCardBody}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", gap: 6, backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 3, borderWidth: 1, borderColor: "rgba(255,255,255,0.05)" }}>
+            <View style={{ flexDirection: "row", gap: 6, backgroundColor: theme.bgCardAlt, borderRadius: 10, padding: 3, borderWidth: 1, borderColor: theme.border }}>
               <TouchableOpacity
                 onPress={() => setPortfolioView("chain")}
                 style={{
                   paddingVertical: 6,
                   paddingHorizontal: 12,
                   borderRadius: 8,
-                  backgroundColor: portfolioView === "chain" ? "rgba(255,255,255,0.08)" : "transparent"
+                  backgroundColor: portfolioView === "chain" ? theme.bgApp : "transparent"
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "chain" ? ACCENT : "rgba(255,255,255,0.5)" }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "chain" ? activeChain.color : theme.textSecondary }}>
                   Active Chain
                 </Text>
               </TouchableOpacity>
@@ -593,10 +598,10 @@ export default function Dashboard() {
                   paddingVertical: 6,
                   paddingHorizontal: 12,
                   borderRadius: 8,
-                  backgroundColor: portfolioView === "portfolio" ? "rgba(255,255,255,0.08)" : "transparent"
+                  backgroundColor: portfolioView === "portfolio" ? theme.bgApp : "transparent"
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "portfolio" ? ACCENT : "rgba(255,255,255,0.5)" }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: portfolioView === "portfolio" ? activeChain.color : theme.textSecondary }}>
                   All Chains
                 </Text>
               </TouchableOpacity>
@@ -604,13 +609,13 @@ export default function Dashboard() {
             {portfolioLoading && <ActivityIndicator size="small" color={activeChain.color} />}
           </View>
 
-          <Text style={s.balLabel}>
+          <Text style={[s.balLabel, { color: theme.textSecondary }]}>
             {portfolioView === "chain" ? "Chain Assets" : "Aggregate Portfolio"}
           </Text>
 
           {loading
             ? <ActivityIndicator color={activeChain.color} size="large" style={{ marginVertical: 12 }} />
-            : <Text style={s.balAmount}>
+            : <Text style={[s.balAmount, { color: theme.textPrimary }]}>
                 {portfolioView === "chain"
                   ? fmt(totalUSD)
                   : fmt(Object.values(allChainsBalances).reduce((sum, c) => sum + c.balanceUSD, 0))
@@ -620,7 +625,7 @@ export default function Dashboard() {
 
           {portfolioView === "chain" && !loading && (
             <View style={s.balMeta}>
-              <Text style={s.balNative}>
+              <Text style={[s.balNative, { color: theme.textSecondary }]}>
                 {parseFloat(tokens[0]?.balance ?? '0').toFixed(4)} {activeChain.symbol}
               </Text>
               <View style={[s.changePill, { backgroundColor: (tokens[0]?.change24h ?? 0) >= 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)" }]}>
@@ -632,7 +637,7 @@ export default function Dashboard() {
           )}
 
           {portfolioView === "portfolio" && !loading && (
-            <View style={{ marginTop: 12, flexDirection: "row", gap: 3, height: 6, borderRadius: 3, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.06)", width: "100%" }}>
+            <View style={{ marginTop: 12, flexDirection: "row", gap: 3, height: 6, borderRadius: 3, overflow: "hidden", backgroundColor: theme.bgInput, width: "100%" }}>
               {CHAINS.map(c => {
                 const chainVal = allChainsBalances[c.id]?.balanceUSD || 0
                 const totalVal = Object.values(allChainsBalances).reduce((sum, ch) => sum + ch.balanceUSD, 0) || 1
@@ -676,11 +681,11 @@ export default function Dashboard() {
                 s.actionBtn,
                 isPrimary
                   ? { backgroundColor: activeChain.color, borderColor: "transparent", shadowColor: activeChain.color, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8 }
-                  : { borderColor: "rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }
+                  : { borderColor: theme.border, backgroundColor: theme.bgCard }
               ]}>
                 <Ionicons name={a.icon as any} size={22} color={isPrimary ? "#fff" : activeChain.color} />
               </View>
-              <Text style={[s.actionLabel, isPrimary && { color: activeChain.color, fontWeight: "800" }]}>{a.l}</Text>
+              <Text style={[s.actionLabel, { color: theme.textSecondary }, isPrimary && { color: activeChain.color, fontWeight: "800" }]}>{a.l}</Text>
             </TouchableOpacity>
           )
         })}
@@ -688,7 +693,7 @@ export default function Dashboard() {
 
       {/* Assets */}
       <View style={s.section}>
-        <Text style={s.sectionTitle}>
+        <Text style={[s.sectionTitle, { color: theme.textPrimary }]}>
           {portfolioView === "chain" ? `Assets on ${activeChain.name}` : "Multi-Chain Allocation"}
         </Text>
         {portfolioView === "portfolio" ? (
@@ -702,7 +707,11 @@ export default function Dashboard() {
             return (
               <TouchableOpacity
                 key={c.id}
-                style={[s.assetRow, isActive && { backgroundColor: "rgba(255,255,255,0.04)", borderColor: c.color, borderWidth: 1.5 }]}
+                style={[
+                  s.assetRow,
+                  { backgroundColor: theme.bgCard, borderColor: theme.borderLight },
+                  isActive && { backgroundColor: theme.bgCardAlt, borderColor: c.color, borderWidth: 1.5 }
+                ]}
                 onPress={() => {
                   setActiveChain(c)
                   setPortfolioView("chain")
@@ -713,8 +722,8 @@ export default function Dashboard() {
                   <Text style={[s.assetIconText, { color: c.color, fontSize: 13, fontWeight: "800" }]}>{c.icon}</Text>
                 </View>
                 <View style={s.assetMid}>
-                  <Text style={s.assetName}>{c.name}</Text>
-                  <Text style={s.assetBal}>{parseFloat(bal).toFixed(4)} {c.symbol}</Text>
+                  <Text style={[s.assetName, { color: theme.textPrimary }]}>{c.name}</Text>
+                  <Text style={[s.assetBal, { color: theme.textSecondary }]}>{parseFloat(bal).toFixed(4)} {c.symbol}</Text>
                 </View>
                 
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
@@ -728,8 +737,8 @@ export default function Dashboard() {
                 </View>
                 
                 <View style={s.assetRight}>
-                  <Text style={s.assetValue}>{fmt(val)}</Text>
-                  <Text style={[s.assetChange, { color: isActive ? c.color : "rgba(255,255,255,0.4)", fontWeight: "800", fontSize: 10 }]}>
+                  <Text style={[s.assetValue, { color: theme.textPrimary }]}>{fmt(val)}</Text>
+                  <Text style={[s.assetChange, { color: isActive ? c.color : theme.textSecondary, fontWeight: "800", fontSize: 10 }]}>
                     {isActive ? "ACTIVE" : "SWITCH"}
                   </Text>
                 </View>
@@ -738,27 +747,27 @@ export default function Dashboard() {
           })
         ) : (
           loading ? (
-            <View style={s.loadBox}>
+            <View style={[s.loadBox, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
               <ActivityIndicator color={activeChain.color} />
-              <Text style={s.loadText}>Fetching balances...</Text>
+              <Text style={[s.loadText, { color: theme.textSecondary }]}>Fetching balances...</Text>
             </View>
           ) : tokens.length === 0 ? (
-            <View style={s.emptyBox}>
+            <View style={[s.emptyBox, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
               <Text style={s.emptyIcon}>{activeChain.icon}</Text>
-              <Text style={s.emptyTitle}>No assets yet</Text>
-              <Text style={s.emptySub}>Bridge or receive {activeChain.symbol} to get started</Text>
+              <Text style={[s.emptyTitle, { color: theme.textPrimary }]}>No assets yet</Text>
+              <Text style={[s.emptySub, { color: theme.textSecondary }]}>Bridge or receive {activeChain.symbol} to get started</Text>
             </View>
           ) : (
             tokens.map((t, i) => (
-              <View key={i} style={s.assetRow}>
+              <View key={i} style={[s.assetRow, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
                 <View style={[s.assetIcon, { backgroundColor: (t.color ?? activeChain.color) + "22" }]}>
                   <Text style={[s.assetIconText, { color: t.color ?? activeChain.color }]}>
                     {t.isNative ? activeChain.icon : (t.icon ?? t.symbol.slice(0, 2))}
                   </Text>
                 </View>
                 <View style={s.assetMid}>
-                  <Text style={s.assetName}>{t.name}</Text>
-                  <Text style={s.assetBal}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
+                  <Text style={[s.assetName, { color: theme.textPrimary }]}>{t.name}</Text>
+                  <Text style={[s.assetBal, { color: theme.textSecondary }]}>{parseFloat(t.balance).toFixed(4)} {t.symbol}</Text>
                 </View>
                 
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>
@@ -766,7 +775,7 @@ export default function Dashboard() {
                 </View>
 
                 <View style={s.assetRight}>
-                  <Text style={s.assetValue}>{fmt(t.valueUSD)}</Text>
+                  <Text style={[s.assetValue, { color: theme.textPrimary }]}>{fmt(t.valueUSD)}</Text>
                   <Text style={[s.assetChange, { color: t.change24h >= 0 ? "#10B981" : "#EF4444" }]}>
                     {t.change24h === 0 ? "--" : (t.change24h >= 0 ? "+" : "") + t.change24h.toFixed(2) + "%"}
                   </Text>
@@ -780,7 +789,7 @@ export default function Dashboard() {
       {/* Recent Activity */}
       <View style={s.section}>
         <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Recent Activity</Text>
+          <Text style={[s.sectionTitle, { color: theme.textPrimary }]}>Recent Activity</Text>
           <TouchableOpacity onPress={() => router.push("/history" as any)}>
             <Text style={[s.viewAll, { color: activeChain.color }]}>View all</Text>
           </TouchableOpacity>
@@ -788,9 +797,9 @@ export default function Dashboard() {
         {txLoading ? (
           <ActivityIndicator color={activeChain.color} style={{ marginTop: 16 }} />
         ) : recentTxns.length === 0 ? (
-          <View style={s.emptyBox}>
-            <Text style={s.emptyTitle}>No transactions yet</Text>
-            <Text style={s.emptySub}>Send or receive to see activity</Text>
+          <View style={[s.emptyBox, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}>
+            <Text style={[s.emptyTitle, { color: theme.textPrimary }]}>No transactions yet</Text>
+            <Text style={[s.emptySub, { color: theme.textSecondary }]}>Send or receive to see activity</Text>
           </View>
         ) : (
           recentTxns.slice(0, 5).map((tx, i) => {
@@ -799,7 +808,7 @@ export default function Dashboard() {
             return (
               <TouchableOpacity
                 key={i}
-                style={s.txRow}
+                style={[s.txRow, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}
                 onPress={() => router.push("/history" as any)}
                 activeOpacity={0.7}
               >
@@ -809,13 +818,13 @@ export default function Dashboard() {
                   </Text>
                 </View>
                 <View style={s.txMid}>
-                  <Text style={s.txLabel}>{meta.label}</Text>
-                  <Text style={s.txAddr}>
+                  <Text style={[s.txLabel, { color: theme.textPrimary }]}>{meta.label}</Text>
+                  <Text style={[s.txAddr, { color: theme.textSecondary }]}>
                     {isSend
                       ? `To: ${tx.to.slice(0,6)}...${tx.to.slice(-4)}`
                       : `From: ${tx.from.slice(0,6)}...${tx.from.slice(-4)}`}
                   </Text>
-                  <Text style={s.txTime}>{relTime(tx.timestamp)}</Text>
+                  <Text style={[s.txTime, { color: theme.textMuted }]}>{relTime(tx.timestamp)}</Text>
                 </View>
                 <Text style={[s.txAmt, { color: meta.color }]}>
                   {isSend ? "-" : "+"}{tx.value} {tx.symbol}
@@ -829,10 +838,10 @@ export default function Dashboard() {
   )
 
   return (
-    <View style={s.c}>
+    <View style={[s.c, { backgroundColor: theme.bgApp }]}>
       {/* WEB LAYOUT: sidebar + content */}
       {isLargeScreen ? (
-        <View style={s.webLayout}>
+        <View style={[s.webLayout, { backgroundColor: theme.bgApp }]}>
           <Sidebar
             activeChain={activeChain}
             addr={addr}
@@ -842,40 +851,40 @@ export default function Dashboard() {
             activeAccountIndex={activeAccountIndex}
             onSwitchClick={() => setWalletSwitcherOpen(true)}
           />
-          <View style={s.webMain}>
+          <View style={[s.webMain, { backgroundColor: theme.bgApp }]}>
             {/* Web top bar */}
-            <View style={s.webTopBar}>
+            <View style={[s.webTopBar, { backgroundColor: theme.bgCardAlt, borderBottomColor: theme.borderLight }]}>
               <TouchableOpacity
-                style={s.chainPill}
+                style={[s.chainPill, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                 onPress={() => setChainModal(true)}
                 activeOpacity={0.7}
               >
                 <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-                <Text style={s.chainName}>{activeChain.name}</Text>
-                <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
+                <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
+                <Ionicons name="chevron-down" size={12} color={theme.textSecondary} />
               </TouchableOpacity>
               <View style={s.headerRight}>
                 <TouchableOpacity
-                  style={s.iconBtn}
+                  style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}
                   onPress={() => setFundSheet(true)}
                 >
                   <Ionicons name="card-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={s.bellBtn}
+                  style={[s.bellBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}
                   onPress={() => router.push("/notifications" as any)}
                 >
                   <Ionicons name="notifications-outline" size={22} color={activeChain.color} />
                   {unreadCount > 0 && (
-                    <View style={s.bellBadge}>
+                    <View style={[s.bellBadge, { borderColor: theme.bgCardAlt }]}>
                       <Text style={s.bellBadgeT}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/settings" as any)}>
+                <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => router.push("/settings" as any)}>
                   <Ionicons name="settings-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
-                <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/support" as any)}>
+                <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => router.push("/support" as any)}>
                   <Ionicons name="help-circle-outline" size={20} color={activeChain.color} />
                 </TouchableOpacity>
               </View>
@@ -890,11 +899,11 @@ export default function Dashboard() {
           {drawerOpen && (
             <>
               <TouchableOpacity
-                style={s.drawerOverlay}
+                style={[s.drawerOverlay, { backgroundColor: theme.overlay }]}
                 activeOpacity={1}
                 onPress={closeDrawer}
               />
-              <Animated.View style={[s.drawer, { transform: [{ translateX: drawerAnim }] }]}>
+              <Animated.View style={[s.drawer, { backgroundColor: theme.bgCardAlt, borderRightColor: theme.borderLight }, { transform: [{ translateX: drawerAnim }] }]}>
                 <Sidebar
                   activeChain={activeChain}
                   addr={addr}
@@ -907,39 +916,39 @@ export default function Dashboard() {
               </Animated.View>
             </>
           )}
-          <View style={s.header}>
+          <View style={[s.header, { backgroundColor: theme.bgApp }]}>
             <TouchableOpacity
               style={s.hamburger}
               onPress={openDrawer}
               activeOpacity={0.7}
             >
-              <Ionicons name="menu-outline" size={24} color="#fff" />
+              <Ionicons name="menu-outline" size={24} color={theme.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={s.chainPill}
+              style={[s.chainPill, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
               onPress={() => setChainModal(true)}
               activeOpacity={0.7}
             >
               <View style={[s.chainDot, { backgroundColor: activeChain.color }]} />
-              <Text style={s.chainName}>{activeChain.name}</Text>
-              <Ionicons name="chevron-down" size={12} color="rgba(255,255,255,0.4)" />
+              <Text style={[s.chainName, { color: theme.textPrimary }]}>{activeChain.name}</Text>
+              <Ionicons name="chevron-down" size={12} color={theme.textSecondary} />
             </TouchableOpacity>
             <View style={s.headerRight}>
-              <TouchableOpacity style={s.iconBtn} onPress={() => setFundSheet(true)}>
+              <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => setFundSheet(true)}>
                 <Ionicons name="card-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
-              <TouchableOpacity style={s.bellBtn} onPress={() => router.push("/notifications" as any)}>
+              <TouchableOpacity style={[s.bellBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => router.push("/notifications" as any)}>
                 <Ionicons name="notifications-outline" size={22} color={activeChain.color} />
                 {unreadCount > 0 && (
-                  <View style={s.bellBadge}>
+                  <View style={[s.bellBadge, { borderColor: theme.bgApp }]}>
                     <Text style={s.bellBadgeT}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/settings" as any)}>
+              <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => router.push("/settings" as any)}>
                 <Ionicons name="settings-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
-              <TouchableOpacity style={s.iconBtn} onPress={() => router.push("/support" as any)}>
+              <TouchableOpacity style={[s.iconBtn, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]} onPress={() => router.push("/support" as any)}>
                 <Ionicons name="help-circle-outline" size={20} color={activeChain.color} />
               </TouchableOpacity>
             </View>
@@ -950,16 +959,16 @@ export default function Dashboard() {
 
       {/* Fund Sheet */}
       <Modal transparent visible={fundSheet} onRequestClose={() => setFundSheet(false)}>
-        <TouchableOpacity style={m.overlay} activeOpacity={1} onPress={() => setFundSheet(false)} />
-        <View style={m.fundSheet}>
+        <TouchableOpacity style={[m.overlay, { backgroundColor: theme.overlay }]} activeOpacity={1} onPress={() => setFundSheet(false)} />
+        <View style={[m.fundSheet, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
           <View style={m.handle} />
-          <Text style={m.title}>Add Funds</Text>
-          <Text style={m.fundSub}>Choose how to fund your wallet</Text>
-          <View style={[m.balCard, { backgroundColor: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.05)" }]}>
+          <Text style={[m.title, { color: theme.textPrimary }]}>Add Funds</Text>
+          <Text style={[m.fundSub, { color: theme.textSecondary }]}>Choose how to fund your wallet</Text>
+          <View style={[m.balCard, { backgroundColor: theme.bgCardAlt, borderColor: theme.border }]}>
             <View>
-              <Text style={m.balCardLabel}>Wallet Balance</Text>
+              <Text style={[m.balCardLabel, { color: theme.textSecondary }]}>Wallet Balance</Text>
               <Text style={[m.balCardAmount, { color: activeChain.color }]}>{loading ? "..." : fmt(totalUSD)}</Text>
-              <Text style={m.balCardSub}>{tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + " " + activeChain.symbol : "--"}</Text>
+              <Text style={[m.balCardSub, { color: theme.textSecondary }]}>{tokens[0] ? parseFloat(tokens[0].balance).toFixed(4) + " " + activeChain.symbol : "--"}</Text>
             </View>
             <View style={[m.balChainBadge, { backgroundColor: activeChain.color }]}>
               <Text style={m.balChainIcon}>{activeChain.icon}</Text>
@@ -971,7 +980,7 @@ export default function Dashboard() {
           ].map(item => (
             <TouchableOpacity
               key={item.title}
-              style={m.fundCard}
+              style={[m.fundCard, { backgroundColor: theme.bgCardAlt, borderColor: theme.borderLight }]}
               activeOpacity={0.85}
               onPress={() => { setFundSheet(false); router.push(item.route as any) }}
             >
@@ -979,10 +988,10 @@ export default function Dashboard() {
                 <Text style={[m.fundIconText, { color: activeChain.color }]}>{item.icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={m.fundCardTitle}>{item.title}</Text>
-                <Text style={m.fundCardDesc}>{item.desc}</Text>
+                <Text style={[m.fundCardTitle, { color: theme.textPrimary }]}>{item.title}</Text>
+                <Text style={[m.fundCardDesc, { color: theme.textSecondary }]}>{item.desc}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -997,12 +1006,12 @@ export default function Dashboard() {
 
       {/* Sleek 1-Tap Wallet Switcher Modal */}
       <Modal visible={walletSwitcherOpen} animationType="slide" transparent>
-        <View style={s.modalOverlay}>
-          <View style={s.modalContent}>
+        <View style={[s.modalOverlay, { backgroundColor: theme.overlay }]}>
+          <View style={[s.modalContent, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
             <View style={s.modalHeader}>
-              <Text style={s.modalTitle}>Switch Wallet</Text>
+              <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Switch Wallet</Text>
               <TouchableOpacity onPress={() => setWalletSwitcherOpen(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={theme.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -1012,7 +1021,8 @@ export default function Dashboard() {
                   key={index}
                   style={[
                     s.walletSelectorItem,
-                    { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : "rgba(255, 255, 255, 0.05)" }
+                    { backgroundColor: theme.bgCardAlt },
+                    { borderColor: activeAccountIndex === acc.accountIndex ? activeChain.color : theme.borderLight }
                   ]}
                   onPress={async () => {
                     await setActiveAccountIndex(acc.accountIndex)
@@ -1027,8 +1037,8 @@ export default function Dashboard() {
                         <Text style={s.walletAvatarSmallT}>{acc.address ? acc.address.slice(2,4).toUpperCase() : "KN"}</Text>
                       </View>
                       <View>
-                        <Text style={s.walletItemNum}>Account #{acc.accountIndex + 1}</Text>
-                        <Text style={s.walletItemAddr}>
+                        <Text style={[s.walletItemNum, { color: theme.textPrimary }]}>Account #{acc.accountIndex + 1}</Text>
+                        <Text style={[s.walletItemAddr, { color: theme.textSecondary }]}>
                           {acc.address ? `${acc.address.slice(0, 10)}...${acc.address.slice(-8)}` : ""}
                         </Text>
                       </View>
