@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/expo';
+import { useAuth } from '../../context/AuthContext';
 import { Redirect, Stack } from 'expo-router';
 
 export default function AppLayout() {

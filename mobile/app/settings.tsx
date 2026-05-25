@@ -12,7 +12,7 @@ import { useWalletStore } from "../store/walletStore"
 import { getSmartAccountAddress, chainSupportsAA, SmartAccountInfo } from "../utils/aa"
 import { retrievePrivateKey, retrieveMnemonic, storePrivateKey, deletePrivateKey as deleteEnclaveKey, listAllAccounts } from "../store/SecureKeyStore"
 import { CHAINS } from "../utils/chains"
-import { useAuth } from "@clerk/expo"
+import { useAuth } from "../context/AuthContext"
 import * as Clipboard from "expo-clipboard"
 import { ethers } from "ethers"
 
@@ -140,8 +140,17 @@ export default function Settings() {
     }
   }
 
-  // Logout: signs out of Clerk but keeps wallet data on device
+  // Logout: signs out of Firebase but keeps wallet data on device
   const confirmLogout = () => {
+    if (Platform.OS === "web") {
+      if (window.confirm("You will be signed out of your account. Your wallet data will remain on this device.")) {
+        signOut()
+          .then(() => router.replace("/(auth)/sign-in"))
+          .catch(() => router.replace("/(auth)/sign-in"))
+      }
+      return
+    }
+
     Alert.alert(
       "Log Out",
       "You will be signed out of your account. Your wallet data will remain on this device.",
@@ -152,26 +161,9 @@ export default function Settings() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Clear Clerk session tokens only  keep wallet data
-              if (Platform.OS === "web") {
-                // Remove only Clerk session keys, not wallet keys
-                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith("__clerk") || key.startsWith("clerk")) {
-                    localStorage.removeItem(key)
-                  }
-                })
-              }
               await signOut()
               router.replace("/(auth)/sign-in")
             } catch (e: any) {
-              // Force redirect even if signOut fails
-              if (Platform.OS === "web") {
-                if (Platform.OS === 'web') Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith("__clerk") || key.startsWith("clerk")) {
-                    localStorage.removeItem(key)
-                  }
-                })
-              }
               router.replace("/(auth)/sign-in")
             }
           },
@@ -479,6 +471,20 @@ export default function Settings() {
 
   // Wipe: clears everything including wallet data
   const confirmWipe = () => {
+    if (Platform.OS === "web") {
+      if (window.confirm("Wipe Wallet\n\nThis will permanently delete your wallet from this device. Make sure you have backed up your seed phrase.")) {
+        clearWallet?.()
+        localStorage.clear()
+        signOut()
+          .then(() => router.replace("/(auth)/sign-in"))
+          .catch(() => {
+            localStorage.clear()
+            router.replace("/(auth)/sign-in")
+          })
+      }
+      return
+    }
+
     Alert.alert(
       "Wipe Wallet",
       "This will permanently delete your wallet from this device. Make sure you have backed up your seed phrase.",
@@ -490,13 +496,9 @@ export default function Settings() {
           onPress: async () => {
             try {
               clearWallet?.()
-              if (Platform.OS === "web") {
-                localStorage.clear()
-              }
               await signOut()
               router.replace("/(auth)/sign-in")
             } catch {
-              if (Platform.OS === "web") localStorage.clear()
               router.replace("/(auth)/sign-in")
             }
           },

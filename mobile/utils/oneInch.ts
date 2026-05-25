@@ -6,7 +6,7 @@
  * Get your free API key at: https://portal.1inch.dev/
  */
 
-export const ONEINCH_API_KEY = 'YourOneInchApiKey' // ← replace with real key
+export const ONEINCH_API_KEY = process.env.EXPO_PUBLIC_1INCH_API_KEY ?? ''
 
 const BASE = 'https://api.1inch.dev/swap/v6.0'
 

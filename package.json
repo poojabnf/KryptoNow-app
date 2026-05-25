@@ -11,5 +11,8 @@
     "build:mobile:ios": "npm run build:ios --workspace=mobile",
     "build:mobile:android": "npm run build:android --workspace=mobile",
     "build:web": "npm run build --workspace=web"
+  },
+  "dependencies": {
+    "expo-updates": "~55.0.24"
   }
 }

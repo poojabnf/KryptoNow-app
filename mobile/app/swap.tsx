@@ -198,13 +198,8 @@ export default function Swap() {
       setQuoteError("Cannot swap a token for itself"); return
     }
     if (!ONEINCH_API_KEY || ONEINCH_API_KEY === "YourOneInchApiKey") {
-      setQuote({
-        fromToken, toToken,
-        fromAmount: toWei(fromAmount, fromToken.decimals),
-        toAmount:   toWei((amt * 0.998 * (toToken.symbol === "USDC" || toToken.symbol === "USDT" ? 2398 : 0.000416)).toFixed(6), toToken.decimals),
-        toAmountHuman: (amt * 0.998 * (toToken.symbol === "USDC" || toToken.symbol === "USDT" ? 2398 : 0.000416)).toFixed(4),
-        priceImpact: 0.08, gas: 150000,
-      })
+      setQuote(null)
+      setQuoteError("Swap service is temporarily unavailable. Please try again later.")
       return
     }
     setQuoting(true); setQuoteError("")
@@ -292,33 +287,24 @@ export default function Swap() {
       const privateKey = await loadPrivateKey()
       if (!privateKey) throw new Error("Authentication failed")
 
-      let txData: { to: string; data: string; value: string; gas: number; gasPrice: string } | null = null
-
-      if (ONEINCH_API_KEY && ONEINCH_API_KEY !== "YourOneInchApiKey") {
-        txData = await getSwapData(
-          activeChain.id, fromToken, toToken,
-          quote.fromAmount, addr, slippage
-        )
-      }
+      const txData = await getSwapData(
+        activeChain.id, fromToken, toToken,
+        quote.fromAmount, addr, slippage
+      )
 
       const provider = getProvider(activeChain)
       const wallet   = new ethers.Wallet(privateKey, provider)
       let tx: ethers.TransactionResponse
 
-      if (txData) {
-        tx = await wallet.sendTransaction({
-          to:       txData.to,
-          data:     txData.data,
-          value:    BigInt(txData.value ?? "0"),
-          gasLimit: BigInt(txData.gas),
-          gasPrice: BigInt(txData.gasPrice),
-        })
-        const receipt = await tx.wait(1)
-        setTxHash(receipt?.hash ?? tx.hash)
-      } else {
-        await new Promise(r => setTimeout(r, 2000))
-        setTxHash("0x" + Array.from({ length: 64 }, () => "0123456789abcdef"[Math.floor(Math.random() * 16)]).join(""))
-      }
+      tx = await wallet.sendTransaction({
+        to:       txData.to,
+        data:     txData.data,
+        value:    BigInt(txData.value ?? "0"),
+        gasLimit: BigInt(txData.gas),
+        gasPrice: BigInt(txData.gasPrice),
+      })
+      const receipt = await tx.wait(1)
+      setTxHash(receipt?.hash ?? tx.hash)
       setStep("success")
     } catch (e: any) {
       Alert.alert("Swap Failed", e?.reason ?? e?.shortMessage ?? e?.message ?? "Unknown error")

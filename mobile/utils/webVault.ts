@@ -12,9 +12,15 @@
  *   kryptonow_wallet       { ct: base64, iv: base64 } (ciphertext)
  */
 
-// App-level secret from env  injected at build time
-// NEVER store this in localStorage or log it
-const APP_SECRET = process.env.EXPO_PUBLIC_VAULT_SECRET ?? 'kryptonow-default-dev-secret-change-in-prod'
+// App-level secret from env — injected at build time via EXPO_PUBLIC_VAULT_SECRET.
+// NEVER store this in localStorage or log it.
+// Guard: if the secret is missing in a production build, throw immediately rather
+// than silently falling back to a known default that would weaken encryption.
+const _rawSecret = process.env.EXPO_PUBLIC_VAULT_SECRET
+if (!_rawSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('[webVault] EXPO_PUBLIC_VAULT_SECRET is not set. Refusing to run with weak encryption in production.')
+}
+const APP_SECRET = _rawSecret ?? 'kryptonow-default-dev-secret-change-in-prod'
 
 const SALT_KEY   = 'kryptonow_vault_salt'
 const WALLET_KEY = 'kryptonow_wallet'

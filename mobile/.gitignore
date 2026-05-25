@@ -84,3 +84,7 @@ clerk-nextjs/node_modules
 kryptonow-backend/serviceAccountKey.json
 
 .claude/
+
+# Local env files with secrets
+.env.production
+.env.local

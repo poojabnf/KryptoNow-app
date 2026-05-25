@@ -14,7 +14,7 @@ import { fetchChainTokenBalances } from "../utils/tokens"
 import { getUnreadCount } from "../utils/notifications"
 import { startTxWatcher, requestPushPermission } from "../utils/pushService"
 import { useTheme } from "../context/ThemeContext"
-import { useAuth } from "@clerk/expo"
+import { useAuth } from "../context/AuthContext"
 import Svg, { Path } from "react-native-svg"
 
 type TokenRow = {
@@ -164,7 +164,11 @@ function Sidebar({
         activeOpacity={0.7}
       >
         <View style={[sb.walletAvatar, { backgroundColor: activeChain.color }]}>
-          <Text style={sb.walletAvatarT}>{addr ? addr.slice(2,4).toUpperCase() : "KN"}</Text>
+          {addr ? (
+            <Text style={sb.walletAvatarT}>{addr.slice(2,4).toUpperCase()}</Text>
+          ) : (
+            <Ionicons name="wallet-outline" size={16} color="#fff" />
+          )}
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -1034,7 +1038,11 @@ export default function Dashboard() {
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View style={[s.walletAvatarSmall, { backgroundColor: activeChain.color }]}>
-                        <Text style={s.walletAvatarSmallT}>{acc.address ? acc.address.slice(2,4).toUpperCase() : "KN"}</Text>
+                        {acc.address ? (
+                          <Text style={s.walletAvatarSmallT}>{acc.address.slice(2,4).toUpperCase()}</Text>
+                        ) : (
+                          <Ionicons name="wallet-outline" size={16} color="#fff" />
+                        )}
                       </View>
                       <View>
                         <Text style={[s.walletItemNum, { color: theme.textPrimary }]}>Account #{acc.accountIndex + 1}</Text>

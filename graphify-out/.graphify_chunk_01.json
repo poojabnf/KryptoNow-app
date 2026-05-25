@@ -1,0 +1,1218 @@
+{
+  "nodes": [
+    {
+      "id": "addressbook_AddressBook",
+      "label": "AddressBook Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/addressbook.tsx",
+      "properties": {
+        "route": "/addressbook",
+        "storage_key": "kryptonow_address_book",
+        "features": ["contact_management", "ens_resolution", "send_routing"],
+        "ens_rpc": "https://eth.llamarpc.com"
+      }
+    },
+    {
+      "id": "analytics_Analytics",
+      "label": "Analytics Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/analytics.tsx",
+      "properties": {
+        "route": "/analytics",
+        "features": ["tx_categorization", "swap_detection", "defi_detection", "nft_detection"],
+        "incomplete": "contract_signature_matching_always_returns_contract"
+      }
+    },
+    {
+      "id": "batch_Batch",
+      "label": "Batch Send Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/batch.tsx",
+      "properties": {
+        "route": "/batch",
+        "features": ["erc4337_batch", "sequential_bsc_send", "multi_tx"],
+        "max_transactions": 10
+      }
+    },
+    {
+      "id": "buy_Buy",
+      "label": "Buy Screen (Fiat Onramp)",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/buy.tsx",
+      "properties": {
+        "route": "/buy",
+        "providers": ["MoonPay", "Transak", "Ramp", "Simplex"],
+        "mechanism": "Linking.openURL_with_addr_param"
+      }
+    },
+    {
+      "id": "create_CreateScreen",
+      "label": "Create / Import Wallet Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/create.tsx",
+      "properties": {
+        "route": "/create",
+        "features": ["wallet_generate", "wallet_import", "clerk_signout"],
+        "web_storage": "localStorage_raw_private_key"
+      }
+    },
+    {
+      "id": "dapps_DApps",
+      "label": "Connected DApps Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/dapps.tsx",
+      "properties": {
+        "route": "/dapps",
+        "features": ["list_connected_dapps", "disconnect_dapp"]
+      }
+    },
+    {
+      "id": "dashboard_Dashboard",
+      "label": "Dashboard Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/dashboard.tsx",
+      "properties": {
+        "route": "/dashboard",
+        "features": [
+          "balance_aggregation",
+          "chain_switching",
+          "wallet_switcher",
+          "eip1193_init",
+          "push_notifications",
+          "tx_watcher",
+          "web_sidebar",
+          "mobile_drawer"
+        ],
+        "price_feed_fallback_chain": ["CoinGecko", "Binance", "CryptoCompare"],
+        "web_nav_items": 17
+      }
+    },
+    {
+      "id": "earn_Earn",
+      "label": "Earn (DeFi Yield) Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/earn.tsx",
+      "properties": {
+        "route": "/earn",
+        "features": ["yield_display"],
+        "deposit_action": "Alert_Coming_Soon",
+        "real_defi_integration": false
+      }
+    },
+    {
+      "id": "hardware_Hardware",
+      "label": "Hardware Wallet Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/hardware.tsx",
+      "properties": {
+        "route": "/hardware",
+        "features": ["ledger_webhid", "trezor_connect"],
+        "platform_restriction": "web_only",
+        "trezor_script_origin": "connect.trezor.io"
+      }
+    },
+    {
+      "id": "history_History",
+      "label": "Transaction History Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/history.tsx",
+      "properties": {
+        "route": "/history",
+        "features": ["chain_filter", "type_filter", "tx_detail_modal", "explorer_link"]
+      }
+    },
+    {
+      "id": "import_Import",
+      "label": "Import Wallet Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/import.tsx",
+      "properties": {
+        "route": "/import",
+        "features": ["bip39_mnemonic_import", "validate_mnemonic", "derive_wallet"],
+        "note": "stores_phrase_as_empty_string_in_store_after_import"
+      }
+    },
+    {
+      "id": "index_EntryRouter",
+      "label": "Entry Router (index.tsx)",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/index.tsx",
+      "properties": {
+        "route": "/",
+        "auth_gates": ["sign-in", "create", "onboarding", "dashboard"],
+        "oauth_popup_detection": true,
+        "postmessage_origin": "wildcard_asterisk"
+      }
+    },
+    {
+      "id": "lock_Lock",
+      "label": "Lock / PIN Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/lock.tsx",
+      "properties": {
+        "route": "/lock",
+        "features": ["6digit_pin_setup", "6digit_pin_unlock"],
+        "biometric_fallback": false
+      }
+    },
+    {
+      "id": "mfa_MFA",
+      "label": "MFA Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/mfa.tsx",
+      "properties": {
+        "route": "/mfa",
+        "features": ["totp_qr", "sms_otp", "voice_otp", "backup_codes"],
+        "qr_service": "api.qrserver.com_external"
+      }
+    },
+    {
+      "id": "nfts_NFTs",
+      "label": "NFT Gallery Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/nfts.tsx",
+      "properties": {
+        "route": "/nfts",
+        "features": ["alchemy_nft_fetch", "erc721_transfer", "erc1155_transfer"],
+        "api": "Alchemy_v3",
+        "hardcoded_key_fallback": "HJfOuVkHmg_PM66WyXNjT"
+      }
+    },
+    {
+      "id": "notifications_Notifications",
+      "label": "Notifications Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/notifications.tsx",
+      "properties": {
+        "route": "/notifications",
+        "features": ["notification_inbox", "push_settings", "price_alerts"],
+        "demo_seed_on_load": true
+      }
+    },
+    {
+      "id": "onboarding_Onboarding",
+      "label": "Onboarding Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/onboarding.tsx",
+      "properties": {
+        "route": "/onboarding",
+        "steps": ["name", "avatar", "chain", "currency"],
+        "auth_context": "local_AuthContext_not_Clerk"
+      }
+    },
+    {
+      "id": "options_Options",
+      "label": "DeFi Options Trading Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/options.tsx",
+      "properties": {
+        "route": "/options",
+        "features": ["options_list", "simulated_buy"],
+        "execution": "setTimeout_simulation_no_onchain",
+        "loads_private_key": true,
+        "uses_private_key": false
+      }
+    },
+    {
+      "id": "portfolio_Portfolio",
+      "label": "Portfolio Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/portfolio.tsx",
+      "properties": {
+        "route": "/portfolio",
+        "features": ["portfolio_value", "history_chart", "chain_donut_chart"],
+        "uses": ["usePortfolio", "usePortfolioHistory", "DonutChart", "react-native-svg"]
+      }
+    },
+    {
+      "id": "premium_Premium",
+      "label": "Premium Subscription Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/premium.tsx",
+      "properties": {
+        "route": "/premium",
+        "iap_implementation": "simulated_setTimeout_1800ms",
+        "real_app_store_iap": false
+      }
+    },
+    {
+      "id": "pricealerts_PriceAlerts",
+      "label": "Price Alerts Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.96,
+      "source_file": "mobile/app/pricealerts.tsx",
+      "properties": {
+        "route": "/pricealerts",
+        "features": ["create_alert", "list_alerts", "delete_alert"],
+        "code_smell": "dynamic_require_inside_event_handler"
+      }
+    },
+    {
+      "id": "receive_Receive",
+      "label": "Receive Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/receive.tsx",
+      "properties": {
+        "route": "/receive",
+        "features": ["qr_display", "clipboard_copy"],
+        "qr_service": "api.qrserver.com_external",
+        "supported_networks": ["ETH", "Polygon", "BNB", "Arbitrum"]
+      }
+    },
+    {
+      "id": "recovery_Recovery",
+      "label": "Social Recovery Screen",
+      "type": "screen",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/recovery.tsx",
+      "properties": {
+        "route": "/recovery",
+        "features": ["guardian_management", "recovery_signing", "recovery_deep_link"],
+        "loads_private_key": true
+      }
+    },
+    {
+      "id": "store_WalletStore",
+      "label": "Zustand Wallet Store (useWalletStore)",
+      "type": "store",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/store/walletStore (inferred from imports)",
+      "properties": {
+        "state_keys": ["wallet", "accounts", "activeChain", "balances"],
+        "phrase_storage": "empty_string_after_import"
+      }
+    },
+    {
+      "id": "store_KeyStore",
+      "label": "Key Store (loadPrivateKey / savePrivateKey / saveWalletKeys)",
+      "type": "store",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/store/keyStore (inferred from imports)",
+      "properties": {
+        "functions": ["loadPrivateKey", "savePrivateKey", "saveWalletKeys"],
+        "storage_backend": "AsyncStorage_native"
+      }
+    },
+    {
+      "id": "context_ThemeContext",
+      "label": "ThemeContext",
+      "type": "context",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/context/ThemeContext (inferred from imports)",
+      "properties": {
+        "hook": "useTheme",
+        "modes": ["dark", "light"]
+      }
+    },
+    {
+      "id": "context_LockContext",
+      "label": "LockContext",
+      "type": "context",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/context/LockContext (inferred from imports)",
+      "properties": {
+        "hook": "useLockContext",
+        "functions": ["savePin", "unlock"]
+      }
+    },
+    {
+      "id": "context_AuthContext",
+      "label": "Local AuthContext (Onboarding, not Clerk)",
+      "type": "context",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/context/AuthContext (inferred from onboarding.tsx)",
+      "properties": {
+        "scope": "onboarding_only",
+        "distinct_from": "Clerk_useAuth"
+      }
+    },
+    {
+      "id": "util_eip1193",
+      "label": "EIP-1193 Provider Utility",
+      "type": "utility",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/utils/eip1193.ts (inferred from imports)",
+      "properties": {
+        "exports": ["kryptoNowProvider", "getConnectedDApps", "disconnectDApp"],
+        "standard": "EIP-1193"
+      }
+    },
+    {
+      "id": "util_crypto",
+      "label": "Crypto Utility (BIP-39 / ethers)",
+      "type": "utility",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/utils/crypto.ts (inferred from imports)",
+      "properties": {
+        "exports": ["validateMnemonic", "deriveWallet", "fetchChainTokenBalances"],
+        "libraries": ["ethers", "bip39"]
+      }
+    },
+    {
+      "id": "util_erc4337",
+      "label": "ERC-4337 Account Abstraction Utility (sendBatchUserOp)",
+      "type": "utility",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/utils/erc4337 (inferred from imports)",
+      "properties": {
+        "exports": ["sendBatchUserOp"],
+        "standard": "ERC-4337"
+      }
+    },
+    {
+      "id": "util_socialRecovery",
+      "label": "Social Recovery Utility",
+      "type": "utility",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "mobile/utils/socialRecovery (inferred from recovery.tsx)",
+      "properties": {
+        "exports": ["socialRecovery"],
+        "pattern": "guardian_signature_aggregation"
+      }
+    },
+    {
+      "id": "util_priceAlerts",
+      "label": "Price Alerts Utility",
+      "type": "utility",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "mobile/utils/priceAlerts (inferred from pricealerts.tsx)",
+      "properties": {
+        "exports": ["checkPriceAlerts", "sendPushNotification", "requestPushPermission"]
+      }
+    },
+    {
+      "id": "util_txWatcher",
+      "label": "Transaction Watcher Utility (startTxWatcher)",
+      "type": "utility",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "mobile/utils/txWatcher (inferred from dashboard.tsx)",
+      "properties": {
+        "exports": ["startTxWatcher"]
+      }
+    },
+    {
+      "id": "hook_useTransactions",
+      "label": "useTransactions Hook",
+      "type": "hook",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/hooks/useTransactions (inferred from imports)",
+      "properties": {
+        "consumers": ["analytics", "history", "dashboard"]
+      }
+    },
+    {
+      "id": "hook_usePortfolio",
+      "label": "usePortfolio / usePortfolioHistory Hooks",
+      "type": "hook",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.96,
+      "source_file": "mobile/hooks/usePortfolio (inferred from portfolio.tsx)",
+      "properties": {
+        "exports": ["usePortfolio", "usePortfolioHistory"]
+      }
+    },
+    {
+      "id": "extern_Clerk",
+      "label": "Clerk Auth (@clerk/expo)",
+      "type": "external_dependency",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "package.json",
+      "properties": {
+        "package": "@clerk/expo",
+        "hooks": ["useAuth", "useUser", "useSignIn", "useSignUp", "useOAuth"],
+        "features": ["oauth", "mfa_totp", "mfa_sms", "session_management"]
+      }
+    },
+    {
+      "id": "extern_ethers",
+      "label": "ethers.js Library",
+      "type": "external_dependency",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "package.json",
+      "properties": {
+        "package": "ethers",
+        "usage": ["wallet_generation", "signing", "ens_resolution", "provider"]
+      }
+    },
+    {
+      "id": "extern_Alchemy",
+      "label": "Alchemy NFT API (v3)",
+      "type": "external_dependency",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/nfts.tsx",
+      "properties": {
+        "api_version": "v3",
+        "endpoints": ["getNFTsForOwner", "transferNFT"],
+        "key_env_var": "EXPO_PUBLIC_ALCHEMY_KEY"
+      }
+    },
+    {
+      "id": "risk_privkey_localstorage",
+      "label": "RISK: Private Key Stored in localStorage (Web)",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/create.tsx",
+      "properties": {
+        "severity": "CRITICAL",
+        "category": "security",
+        "description": "On Platform.OS === 'web', raw private key written to localStorage via localStorage.setItem('kryptonow_vault', privKey). localStorage is accessible to any JS on the page (XSS attack surface).",
+        "line_evidence": "localStorage.setItem('kryptonow_vault', privKey)",
+        "app_store_impact": "Indirect — but critical security vulnerability",
+        "cwe": "CWE-312"
+      }
+    },
+    {
+      "id": "risk_hardcoded_alchemy_key",
+      "label": "RISK: Hardcoded Alchemy API Key Fallback",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/nfts.tsx",
+      "properties": {
+        "severity": "HIGH",
+        "category": "secret_exposure",
+        "description": "EXPO_PUBLIC_ALCHEMY_KEY has a hardcoded fallback 'HJfOuVkHmg_PM66WyXNjT' that will be compiled into the app bundle if the env var is missing.",
+        "line_evidence": "const ALCHEMY_KEY = process.env.EXPO_PUBLIC_ALCHEMY_KEY ?? 'HJfOuVkHmg_PM66WyXNjT'",
+        "app_store_impact": "API key exposed in binary — key abuse risk",
+        "cwe": "CWE-798"
+      }
+    },
+    {
+      "id": "risk_simulated_iap",
+      "label": "RISK: Simulated IAP — App Store Rejection",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/premium.tsx",
+      "properties": {
+        "severity": "CRITICAL",
+        "category": "app_store_compliance",
+        "description": "Premium subscription purchase is simulated with setTimeout(r, 1800) — no real StoreKit/IAP integration. Apple will reject the app for bypassing in-app purchase APIs (App Store Review Guideline 3.1.1).",
+        "line_evidence": "await new Promise(r => setTimeout(r, 1800))",
+        "app_store_impact": "REJECTION — Guideline 3.1.1 violation",
+        "guideline": "App Store Review Guideline 3.1.1"
+      }
+    },
+    {
+      "id": "risk_simulated_options",
+      "label": "RISK: Simulated Options Trading — Misleading UI",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.95,
+      "source_file": "mobile/app/options.tsx",
+      "properties": {
+        "severity": "HIGH",
+        "category": "app_store_compliance",
+        "description": "Options buy action uses setTimeout simulation — no real on-chain execution. Private key is loaded but not used. Presents as a real financial trading feature. App Store Review may flag as misleading/non-functional.",
+        "app_store_impact": "RISK of rejection for non-functional financial feature",
+        "guideline": "App Store Review Guideline 2.1"
+      }
+    },
+    {
+      "id": "risk_earn_coming_soon",
+      "label": "RISK: Earn Deposit is Coming Soon — Incomplete Feature",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.92,
+      "source_file": "mobile/app/earn.tsx",
+      "properties": {
+        "severity": "MEDIUM",
+        "category": "app_store_compliance",
+        "description": "Deposit button shows Alert.alert('Coming Soon') — no DeFi integration. Non-functional UI in production build.",
+        "app_store_impact": "RISK of rejection for non-functional feature (Guideline 2.1)",
+        "guideline": "App Store Review Guideline 2.1"
+      }
+    },
+    {
+      "id": "risk_wildcard_postmessage",
+      "label": "RISK: Wildcard postMessage Origin",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/index.tsx",
+      "properties": {
+        "severity": "HIGH",
+        "category": "security",
+        "description": "window.opener.postMessage({ type: 'KRYPTONOW_AUTH_SUCCESS', dest }, '*') uses wildcard origin '*'. Any malicious page that opened the popup can receive the auth success message.",
+        "line_evidence": "window.opener.postMessage({ type: 'KRYPTONOW_AUTH_SUCCESS', dest }, '*')",
+        "app_store_impact": "Security — could be exploited in web build",
+        "cwe": "CWE-346"
+      }
+    },
+    {
+      "id": "risk_demo_seed_production",
+      "label": "RISK: Demo Seed Data in Production Build",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.96,
+      "source_file": "mobile/app/notifications.tsx",
+      "properties": {
+        "severity": "MEDIUM",
+        "category": "code_quality",
+        "description": "seedDemoNotifications() is called on every load of the notifications screen — will populate fake notification data in production builds during App Store review.",
+        "app_store_impact": "May confuse reviewers or be flagged as misleading content"
+      }
+    },
+    {
+      "id": "risk_eip1193_empty_phrase",
+      "label": "RISK: EIP-1193 Provider Init Blocked by Empty Phrase",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.93,
+      "source_file": "mobile/app/dashboard.tsx",
+      "properties": {
+        "severity": "HIGH",
+        "category": "functionality",
+        "description": "kryptoNowProvider is initialized only when wallet.phrase is truthy. After mnemonic import (import.tsx), phrase is stored as empty string '', so dApp connections will silently fail for imported wallets.",
+        "related_file": "mobile/app/import.tsx",
+        "app_store_impact": "Broken dApp connectivity for imported wallets"
+      }
+    },
+    {
+      "id": "risk_hw_wallet_localstorage",
+      "label": "RISK: Hardware Wallet Data in localStorage",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.96,
+      "source_file": "mobile/app/hardware.tsx",
+      "properties": {
+        "severity": "MEDIUM",
+        "category": "security",
+        "description": "Hardware wallet address, type, and derivation path stored in localStorage (kn_hw_address, kn_hw_type, kn_hw_path). localStorage is unencrypted and XSS-accessible.",
+        "line_evidence": "localStorage.setItem('kn_hw_address', connected.address)",
+        "cwe": "CWE-312"
+      }
+    },
+    {
+      "id": "risk_missing_error_boundaries",
+      "label": "RISK: No Error Boundaries on Any Screen",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/ (all screens)",
+      "properties": {
+        "severity": "MEDIUM",
+        "category": "code_quality",
+        "description": "None of the 23 analyzed screens implement React error boundaries. An uncaught render error in any screen will crash the entire app rather than showing a recovery UI.",
+        "affected_screens": "all_23_screens",
+        "app_store_impact": "Stability risk — crashes increase App Store rejection probability"
+      }
+    },
+    {
+      "id": "risk_hardcoded_ens_rpc",
+      "label": "RISK: Hardcoded ENS RPC Endpoint",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.91,
+      "source_file": "mobile/app/addressbook.tsx",
+      "properties": {
+        "severity": "LOW",
+        "category": "reliability",
+        "description": "ENS resolution uses hardcoded RPC 'https://eth.llamarpc.com' with no fallback. If this endpoint goes down, ENS resolution silently fails.",
+        "app_store_impact": "Reliability risk for ENS users"
+      }
+    },
+    {
+      "id": "risk_analytics_incomplete",
+      "label": "RISK: Analytics Contract Classification Always Returns 'contract'",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.88,
+      "source_file": "mobile/app/analytics.tsx",
+      "properties": {
+        "severity": "LOW",
+        "category": "code_quality",
+        "description": "Contract signature matching is incomplete — the function always returns the string 'contract' regardless of actual interaction type. Analytics categorization is inaccurate.",
+        "app_store_impact": "Minor — inaccurate analytics display only"
+      }
+    },
+    {
+      "id": "risk_trezor_dynamic_script",
+      "label": "RISK: Trezor Script Dynamically Injected from External Origin",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.92,
+      "source_file": "mobile/app/hardware.tsx",
+      "properties": {
+        "severity": "MEDIUM",
+        "category": "security",
+        "description": "Trezor Connect script is dynamically injected from connect.trezor.io at runtime. If the CDN is compromised or the URL is intercepted, malicious JS could be executed with wallet access.",
+        "cwe": "CWE-829"
+      }
+    },
+    {
+      "id": "risk_no_biometric",
+      "label": "RISK: No Biometric Authentication Fallback on Lock Screen",
+      "type": "risk",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.89,
+      "source_file": "mobile/app/lock.tsx",
+      "properties": {
+        "severity": "LOW",
+        "category": "ux_security",
+        "description": "Lock screen only supports 6-digit PIN with no biometric (Face ID / Touch ID) fallback, reducing usability and security for iOS users.",
+        "app_store_impact": "UX concern — not a rejection risk"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "index_EntryRouter",
+      "to": "dashboard_Dashboard",
+      "relation": "ROUTES_TO",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/index.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "index_EntryRouter",
+      "to": "create_CreateScreen",
+      "relation": "ROUTES_TO",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/index.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "index_EntryRouter",
+      "to": "onboarding_Onboarding",
+      "relation": "ROUTES_TO",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/index.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "index_EntryRouter",
+      "to": "extern_Clerk",
+      "relation": "USES_AUTH",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/index.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "index_EntryRouter",
+      "to": "risk_wildcard_postmessage",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/index.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "store_WalletStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "extern_Clerk",
+      "relation": "USES_AUTH",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "util_eip1193",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "hook_useTransactions",
+      "relation": "USES_HOOK",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 0.95
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "util_txWatcher",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 0.95
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "risk_eip1193_empty_phrase",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.93,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 0.85
+    },
+    {
+      "from": "dashboard_Dashboard",
+      "to": "risk_missing_error_boundaries",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/dashboard.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "create_CreateScreen",
+      "to": "store_WalletStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "create_CreateScreen",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "create_CreateScreen",
+      "to": "extern_Clerk",
+      "relation": "USES_AUTH",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 0.95
+    },
+    {
+      "from": "create_CreateScreen",
+      "to": "risk_privkey_localstorage",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "create_CreateScreen",
+      "to": "risk_missing_error_boundaries",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "import_Import",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/import.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "import_Import",
+      "to": "store_WalletStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/import.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "import_Import",
+      "to": "util_crypto",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/import.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "import_Import",
+      "to": "risk_eip1193_empty_phrase",
+      "relation": "CAUSES_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.93,
+      "source_file": "mobile/app/import.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "nfts_NFTs",
+      "to": "extern_Alchemy",
+      "relation": "USES_API",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/nfts.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "nfts_NFTs",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/nfts.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "nfts_NFTs",
+      "to": "risk_hardcoded_alchemy_key",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/nfts.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "nfts_NFTs",
+      "to": "risk_missing_error_boundaries",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/nfts.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "batch_Batch",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/batch.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "batch_Batch",
+      "to": "util_erc4337",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/batch.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "batch_Batch",
+      "to": "extern_ethers",
+      "relation": "USES_LIBRARY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/batch.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "premium_Premium",
+      "to": "risk_simulated_iap",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/premium.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "options_Options",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/options.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "options_Options",
+      "to": "risk_simulated_options",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.95,
+      "source_file": "mobile/app/options.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "earn_Earn",
+      "to": "risk_earn_coming_soon",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.92,
+      "source_file": "mobile/app/earn.tsx",
+      "weight": 0.85
+    },
+    {
+      "from": "notifications_Notifications",
+      "to": "risk_demo_seed_production",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.96,
+      "source_file": "mobile/app/notifications.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "hardware_Hardware",
+      "to": "risk_hw_wallet_localstorage",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.96,
+      "source_file": "mobile/app/hardware.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "hardware_Hardware",
+      "to": "risk_trezor_dynamic_script",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.92,
+      "source_file": "mobile/app/hardware.tsx",
+      "weight": 0.85
+    },
+    {
+      "from": "lock_Lock",
+      "to": "context_LockContext",
+      "relation": "USES_CONTEXT",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/lock.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "lock_Lock",
+      "to": "risk_no_biometric",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.89,
+      "source_file": "mobile/app/lock.tsx",
+      "weight": 0.8
+    },
+    {
+      "from": "onboarding_Onboarding",
+      "to": "context_AuthContext",
+      "relation": "USES_CONTEXT",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/onboarding.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "mfa_MFA",
+      "to": "extern_Clerk",
+      "relation": "USES_AUTH",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/mfa.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "addressbook_AddressBook",
+      "to": "extern_ethers",
+      "relation": "USES_LIBRARY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/addressbook.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "addressbook_AddressBook",
+      "to": "risk_hardcoded_ens_rpc",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.91,
+      "source_file": "mobile/app/addressbook.tsx",
+      "weight": 0.8
+    },
+    {
+      "from": "addressbook_AddressBook",
+      "to": "risk_missing_error_boundaries",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/addressbook.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "analytics_Analytics",
+      "to": "hook_useTransactions",
+      "relation": "USES_HOOK",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/analytics.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "analytics_Analytics",
+      "to": "store_WalletStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.98,
+      "source_file": "mobile/app/analytics.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "analytics_Analytics",
+      "to": "risk_analytics_incomplete",
+      "relation": "HAS_RISK",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.88,
+      "source_file": "mobile/app/analytics.tsx",
+      "weight": 0.75
+    },
+    {
+      "from": "history_History",
+      "to": "hook_useTransactions",
+      "relation": "USES_HOOK",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/history.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "history_History",
+      "to": "context_ThemeContext",
+      "relation": "USES_CONTEXT",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/history.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "portfolio_Portfolio",
+      "to": "hook_usePortfolio",
+      "relation": "USES_HOOK",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/portfolio.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "recovery_Recovery",
+      "to": "store_KeyStore",
+      "relation": "USES_STORE",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/recovery.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "recovery_Recovery",
+      "to": "util_socialRecovery",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/recovery.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "dapps_DApps",
+      "to": "util_eip1193",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/dapps.tsx",
+      "weight": 1.0
+    },
+    {
+      "from": "pricealerts_PriceAlerts",
+      "to": "util_priceAlerts",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/pricealerts.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "notifications_Notifications",
+      "to": "util_priceAlerts",
+      "relation": "USES_UTILITY",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/notifications.tsx",
+      "weight": 0.9
+    },
+    {
+      "from": "store_KeyStore",
+      "to": "risk_privkey_localstorage",
+      "relation": "BYPASSED_BY",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.97,
+      "source_file": "mobile/app/create.tsx",
+      "weight": 0.95
+    },
+    {
+      "from": "extern_Alchemy",
+      "to": "risk_hardcoded_alchemy_key",
+      "relation": "EXPOSED_BY",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.99,
+      "source_file": "mobile/app/nfts.tsx",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

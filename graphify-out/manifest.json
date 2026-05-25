@@ -1,0 +1,462 @@
+{
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\addressbook.tsx": {
+    "mtime": 1779076368.6893976,
+    "ast_hash": "377927ebbb8f519c59a679950c14adf8",
+    "semantic_hash": "377927ebbb8f519c59a679950c14adf8"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\analytics.tsx": {
+    "mtime": 1778961670.526831,
+    "ast_hash": "b4fe115720a2df68dd0e035e8cbdd7ad",
+    "semantic_hash": "b4fe115720a2df68dd0e035e8cbdd7ad"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\batch.tsx": {
+    "mtime": 1778959731.630025,
+    "ast_hash": "e452670d217feebfc24422eeb6157ac6",
+    "semantic_hash": "e452670d217feebfc24422eeb6157ac6"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\buy.tsx": {
+    "mtime": 1778959731.5325105,
+    "ast_hash": "12cf2d066820521d68e542af8ca17316",
+    "semantic_hash": "12cf2d066820521d68e542af8ca17316"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\create.tsx": {
+    "mtime": 1779074724.164161,
+    "ast_hash": "1ccc21bd3482e68120165710cfc57c7f",
+    "semantic_hash": "1ccc21bd3482e68120165710cfc57c7f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\dapps.tsx": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "78749d38ffdbef6f864246e81ff9e8cc",
+    "semantic_hash": "78749d38ffdbef6f864246e81ff9e8cc"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\dashboard.tsx": {
+    "mtime": 1779093795.5969026,
+    "ast_hash": "f99bef3b1a1330c559e90d1b88d5a273",
+    "semantic_hash": "f99bef3b1a1330c559e90d1b88d5a273"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\earn.tsx": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "2f1d1c2f6b6c385d6849447694fe0af6",
+    "semantic_hash": "2f1d1c2f6b6c385d6849447694fe0af6"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\hardware.tsx": {
+    "mtime": 1778959731.6031778,
+    "ast_hash": "0802f96074158bc05c9f26cf784afeb0",
+    "semantic_hash": "0802f96074158bc05c9f26cf784afeb0"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\history.tsx": {
+    "mtime": 1778959731.472399,
+    "ast_hash": "c221ccaa3bf01f6221afb9eec16a5296",
+    "semantic_hash": "c221ccaa3bf01f6221afb9eec16a5296"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\import.tsx": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "b03f6b1f4b59f83e6bdca7c77cd3322c",
+    "semantic_hash": "b03f6b1f4b59f83e6bdca7c77cd3322c"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\index.tsx": {
+    "mtime": 1778961670.526831,
+    "ast_hash": "58b30e82c03f252644c3b4f8488a613f",
+    "semantic_hash": "58b30e82c03f252644c3b4f8488a613f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\lock.tsx": {
+    "mtime": 1777978372.2871296,
+    "ast_hash": "d472727a587e177c0f379cb5c5fca78b",
+    "semantic_hash": "d472727a587e177c0f379cb5c5fca78b"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\mfa.tsx": {
+    "mtime": 1778961670.526831,
+    "ast_hash": "c95bc335202350e1600293810e8bc419",
+    "semantic_hash": "c95bc335202350e1600293810e8bc419"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\nfts.tsx": {
+    "mtime": 1779021188.7024057,
+    "ast_hash": "72e789c9463b33a5998b2d7063875895",
+    "semantic_hash": "72e789c9463b33a5998b2d7063875895"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\notifications.tsx": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "b8790cda30b88aa10ec7076d20d91618",
+    "semantic_hash": "b8790cda30b88aa10ec7076d20d91618"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\onboarding.tsx": {
+    "mtime": 1777694265.4317577,
+    "ast_hash": "06196b524bd576c41e01ce1474e8618e",
+    "semantic_hash": "06196b524bd576c41e01ce1474e8618e"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\options.tsx": {
+    "mtime": 1778959731.4947255,
+    "ast_hash": "ada16e72e2f0f534241e0ae7cfa15786",
+    "semantic_hash": "ada16e72e2f0f534241e0ae7cfa15786"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\portfolio.tsx": {
+    "mtime": 1778959731.584603,
+    "ast_hash": "9cbe8d5eaeb6ef2ebfb2fe1ed2d5eadf",
+    "semantic_hash": "9cbe8d5eaeb6ef2ebfb2fe1ed2d5eadf"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\premium.tsx": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "19bde2ab2ce896bfd847a3b470f30484",
+    "semantic_hash": "19bde2ab2ce896bfd847a3b470f30484"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\pricealerts.tsx": {
+    "mtime": 1778959731.4840999,
+    "ast_hash": "10b9159e6a24921176b375dbfd2fdd66",
+    "semantic_hash": "10b9159e6a24921176b375dbfd2fdd66"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\receive.tsx": {
+    "mtime": 1778959731.5167606,
+    "ast_hash": "c4f39bc03d79159c194d0e93ff8df280",
+    "semantic_hash": "c4f39bc03d79159c194d0e93ff8df280"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\recovery.tsx": {
+    "mtime": 1778961671.7761838,
+    "ast_hash": "e25faebba91d63be64ad9323f9e4ad81",
+    "semantic_hash": "e25faebba91d63be64ad9323f9e4ad81"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\send.tsx": {
+    "mtime": 1779023447.224157,
+    "ast_hash": "574f4218d27c31d97e08c852707cbdac",
+    "semantic_hash": "574f4218d27c31d97e08c852707cbdac"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\settings.tsx": {
+    "mtime": 1779076070.194138,
+    "ast_hash": "faf395890badfc8c15429f4878d97f93",
+    "semantic_hash": "faf395890badfc8c15429f4878d97f93"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\sso-callback.tsx": {
+    "mtime": 1779076292.1982098,
+    "ast_hash": "d65f3b42140a9c4daa274f1deb3176e7",
+    "semantic_hash": "d65f3b42140a9c4daa274f1deb3176e7"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\support.tsx": {
+    "mtime": 1778961671.7761838,
+    "ast_hash": "f3fa86de9df0dc8624d161d4a066b653",
+    "semantic_hash": "f3fa86de9df0dc8624d161d4a066b653"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\swap.tsx": {
+    "mtime": 1779023462.2536945,
+    "ast_hash": "1910a118f23cf757d3dd66d105a58060",
+    "semantic_hash": "1910a118f23cf757d3dd66d105a58060"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\walletconnect.tsx": {
+    "mtime": 1778961670.526831,
+    "ast_hash": "35d6e0a48828866745fccefa1718a1f5",
+    "semantic_hash": "35d6e0a48828866745fccefa1718a1f5"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\_layout.tsx": {
+    "mtime": 1779021768.0195725,
+    "ast_hash": "a1ec420eca214d99536161c6e3a83924",
+    "semantic_hash": "a1ec420eca214d99536161c6e3a83924"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\(app)\\_layout.tsx": {
+    "mtime": 1777472754.478778,
+    "ast_hash": "9e4954f53f3448a160816c8fa2f370dc",
+    "semantic_hash": "9e4954f53f3448a160816c8fa2f370dc"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\(auth)\\sign-in.tsx": {
+    "mtime": 1779076324.341936,
+    "ast_hash": "db5118068410f888666f4842437e9991",
+    "semantic_hash": "db5118068410f888666f4842437e9991"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\app\\(auth)\\_layout.tsx": {
+    "mtime": 1778012727.2057047,
+    "ast_hash": "2af471079437e2ba747acedc05fa3e36",
+    "semantic_hash": "2af471079437e2ba747acedc05fa3e36"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\AIAssistant.tsx": {
+    "mtime": 1777553789.117423,
+    "ast_hash": "2a4e1c41eba3ee360cef5c51895ae4e3",
+    "semantic_hash": "2a4e1c41eba3ee360cef5c51895ae4e3"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\ApprovalModal.tsx": {
+    "mtime": 1778065247.9957788,
+    "ast_hash": "d25a9898d5bf8d8073953b0da98afc02",
+    "semantic_hash": "d25a9898d5bf8d8073953b0da98afc02"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\DonutChart.tsx": {
+    "mtime": 1777751934.0147622,
+    "ast_hash": "32a648a7ee46fd65c4dd58888b9c027f",
+    "semantic_hash": "32a648a7ee46fd65c4dd58888b9c027f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\ErrorBoundary.tsx": {
+    "mtime": 1779021763.1264303,
+    "ast_hash": "c4eb21ceb9e1c1f2cdea5ae539497754",
+    "semantic_hash": "c4eb21ceb9e1c1f2cdea5ae539497754"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\LockScreen.tsx": {
+    "mtime": 1777319331.1552572,
+    "ast_hash": "1c6d9f5ad1ddbebe161d14406463ec46",
+    "semantic_hash": "1c6d9f5ad1ddbebe161d14406463ec46"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\LogoSVG.tsx": {
+    "mtime": 1777129163.04345,
+    "ast_hash": "64d174a32511b2ec2486de06568b447b",
+    "semantic_hash": "64d174a32511b2ec2486de06568b447b"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\PortfolioAnalytics.tsx": {
+    "mtime": 1778352368.5776634,
+    "ast_hash": "51860e3c4d96008b64395e1493a127e0",
+    "semantic_hash": "51860e3c4d96008b64395e1493a127e0"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\PriceChart.tsx": {
+    "mtime": 1778324662.5017233,
+    "ast_hash": "71fb8c55bec0aa18ffffc428975dda42",
+    "semantic_hash": "71fb8c55bec0aa18ffffc428975dda42"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\ThemeToggle.tsx": {
+    "mtime": 1778173472.3142843,
+    "ast_hash": "0b7e00bb6ff875e792a10ab28abbcded",
+    "semantic_hash": "0b7e00bb6ff875e792a10ab28abbcded"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\TokenChartModal.tsx": {
+    "mtime": 1777751934.0120478,
+    "ast_hash": "1c4eb0695c5d8705030a127f331c5f93",
+    "semantic_hash": "1c4eb0695c5d8705030a127f331c5f93"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\components\\TokenSearchModal.tsx": {
+    "mtime": 1777756147.1344812,
+    "ast_hash": "daf98c83eb23e5c5644ee5083817f814",
+    "semantic_hash": "daf98c83eb23e5c5644ee5083817f814"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\context\\AuthContext.tsx": {
+    "mtime": 1779076304.7192805,
+    "ast_hash": "b6b7726dd671c5089dfca1a9c1d98444",
+    "semantic_hash": "b6b7726dd671c5089dfca1a9c1d98444"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\context\\LockContext.tsx": {
+    "mtime": 1777978372.2871296,
+    "ast_hash": "265804715ef1184bdfbab9a38dc4d2d3",
+    "semantic_hash": "265804715ef1184bdfbab9a38dc4d2d3"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\context\\ThemeContext.tsx": {
+    "mtime": 1779093600.768605,
+    "ast_hash": "bb3e165fc2e4c38b23672dd374f27bf4",
+    "semantic_hash": "bb3e165fc2e4c38b23672dd374f27bf4"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useAA.ts": {
+    "mtime": 1778038227.8494706,
+    "ast_hash": "e631d478dc7ca488bc8c29360b4a61a2",
+    "semantic_hash": "e631d478dc7ca488bc8c29360b4a61a2"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useDeferredRender.ts": {
+    "mtime": 1779021775.2363079,
+    "ast_hash": "077721ea14cc26d6c598512c19baea80",
+    "semantic_hash": "077721ea14cc26d6c598512c19baea80"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useGoogleAuth.ts": {
+    "mtime": 1779021192.9570029,
+    "ast_hash": "b71aa07f96172dc430da417c21b4ff95",
+    "semantic_hash": "b71aa07f96172dc430da417c21b4ff95"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useGraphTransactions.ts": {
+    "mtime": 1777928182.6523993,
+    "ast_hash": "e9812c78fe5a3b45b111ee8dc8c0493a",
+    "semantic_hash": "e9812c78fe5a3b45b111ee8dc8c0493a"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useGuardianRegistry.ts": {
+    "mtime": 1777951346.7893462,
+    "ast_hash": "185ae8596a389df2b7874dfe6b0c58be",
+    "semantic_hash": "185ae8596a389df2b7874dfe6b0c58be"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useLock.ts": {
+    "mtime": 1778961670.5258296,
+    "ast_hash": "2b2c4930042c44e1e633c4a3eeee703c",
+    "semantic_hash": "2b2c4930042c44e1e633c4a3eeee703c"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\usePortfolio.ts": {
+    "mtime": 1777752001.296815,
+    "ast_hash": "9cfcc6b93f1572da22590d15aca6de1e",
+    "semantic_hash": "9cfcc6b93f1572da22590d15aca6de1e"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\usePortfolioHistory.ts": {
+    "mtime": 1777292757.1180742,
+    "ast_hash": "66b64b594cdb3db0cb43a759f4528001",
+    "semantic_hash": "66b64b594cdb3db0cb43a759f4528001"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\usePriceChart.ts": {
+    "mtime": 1779021197.954223,
+    "ast_hash": "ecbb5fd0ee290e39cf86bcf8a6fb164f",
+    "semantic_hash": "ecbb5fd0ee290e39cf86bcf8a6fb164f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\usePushNotifications.ts": {
+    "mtime": 1778188368.0024328,
+    "ast_hash": "d30b2d3295104fe9d0657d55f28d1eeb",
+    "semantic_hash": "d30b2d3295104fe9d0657d55f28d1eeb"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useSecureWallet.ts": {
+    "mtime": 1779021206.0624485,
+    "ast_hash": "075ccdcdf0a4d246f65cefa7c189e930",
+    "semantic_hash": "075ccdcdf0a4d246f65cefa7c189e930"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useSmartTransactions.ts": {
+    "mtime": 1777928182.6543994,
+    "ast_hash": "0aa0e5f9744c57df5c7d196839019a22",
+    "semantic_hash": "0aa0e5f9744c57df5c7d196839019a22"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\hooks\\useTransactions.ts": {
+    "mtime": 1777947580.1964197,
+    "ast_hash": "f184079dede532165dba8533795cf74f",
+    "semantic_hash": "f184079dede532165dba8533795cf74f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\aa.ts": {
+    "mtime": 1779021213.418298,
+    "ast_hash": "78fef0eac4ec1e6c758cf012b7a54751",
+    "semantic_hash": "78fef0eac4ec1e6c758cf012b7a54751"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\chains.ts": {
+    "mtime": 1778038158.6741679,
+    "ast_hash": "27a62a92a58a33872389793263250203",
+    "semantic_hash": "27a62a92a58a33872389793263250203"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\countryCodes.ts": {
+    "mtime": 1777892442.4679787,
+    "ast_hash": "5e1a972ee8a78e51f967756db2c7dfec",
+    "semantic_hash": "5e1a972ee8a78e51f967756db2c7dfec"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\crypto.ts": {
+    "mtime": 1776919856.0,
+    "ast_hash": "86bb01f34f179a74715b19184679ec4d",
+    "semantic_hash": "86bb01f34f179a74715b19184679ec4d"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\eip1193.ts": {
+    "mtime": 1778035439.585816,
+    "ast_hash": "638e779eed04edc9c5ed898340fe604b",
+    "semantic_hash": "638e779eed04edc9c5ed898340fe604b"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\eip712Decoder.ts": {
+    "mtime": 1778065188.1473818,
+    "ast_hash": "ce98894d2fe7d6b920759e1a08f9a0b6",
+    "semantic_hash": "ce98894d2fe7d6b920759e1a08f9a0b6"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\graph.ts": {
+    "mtime": 1778156463.1240156,
+    "ast_hash": "f5166ada3863c8f1851fedfe1f13298f",
+    "semantic_hash": "f5166ada3863c8f1851fedfe1f13298f"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\graphClient.ts": {
+    "mtime": 1777928182.6505132,
+    "ast_hash": "5c8b3aadea55f4ff250f22d427d14310",
+    "semantic_hash": "5c8b3aadea55f4ff250f22d427d14310"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\guardianRegistryAddresses.json": {
+    "mtime": 1777951346.7883494,
+    "ast_hash": "7e91c1950aad75b5038bc8d506b1f643",
+    "semantic_hash": "7e91c1950aad75b5038bc8d506b1f643"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\ledgerTransport.ts": {
+    "mtime": 1779021218.6991177,
+    "ast_hash": "cf422e6f900733c9c46778a3b77931df",
+    "semantic_hash": "cf422e6f900733c9c46778a3b77931df"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\migrateToEnclave.ts": {
+    "mtime": 1779021629.3460789,
+    "ast_hash": "2799571b64d316cfa11caee5389270be",
+    "semantic_hash": "2799571b64d316cfa11caee5389270be"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\navigation.ts": {
+    "mtime": 1778961670.526831,
+    "ast_hash": "993ff390ded042e5fd96628ac5fc9833",
+    "semantic_hash": "993ff390ded042e5fd96628ac5fc9833"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\notifications.ts": {
+    "mtime": 1777719845.9348235,
+    "ast_hash": "38c1109bbd46a4b394aff970feec850b",
+    "semantic_hash": "38c1109bbd46a4b394aff970feec850b"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\notifications_utils.ts": {
+    "mtime": 1779021226.5679092,
+    "ast_hash": "a169ebbd096f3c992f74a558bb97b1e3",
+    "semantic_hash": "a169ebbd096f3c992f74a558bb97b1e3"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\oneInch.ts": {
+    "mtime": 1776939326.0,
+    "ast_hash": "ebbebcbe06bc8de2eb032064daffb939",
+    "semantic_hash": "ebbebcbe06bc8de2eb032064daffb939"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\priceAlerts.ts": {
+    "mtime": 1777976893.0808005,
+    "ast_hash": "12904255077ad307dd10e6ebfbf36608",
+    "semantic_hash": "12904255077ad307dd10e6ebfbf36608"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\pushService.ts": {
+    "mtime": 1778958086.8129368,
+    "ast_hash": "29fc0564f3645e4fabc9fb3410522cc8",
+    "semantic_hash": "29fc0564f3645e4fabc9fb3410522cc8"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\recoveryDeepLink.ts": {
+    "mtime": 1777951346.7913485,
+    "ast_hash": "656a9844d33dce0dd4a77b241ec3c0dc",
+    "semantic_hash": "656a9844d33dce0dd4a77b241ec3c0dc"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\recoveryNotification.ts": {
+    "mtime": 1777951346.7903495,
+    "ast_hash": "babe2e91d74257e16c4d29331e8f190d",
+    "semantic_hash": "babe2e91d74257e16c4d29331e8f190d"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\socialRecovery.ts": {
+    "mtime": 1779021231.3755226,
+    "ast_hash": "b0712c248d345d71dec7a540b6545c59",
+    "semantic_hash": "b0712c248d345d71dec7a540b6545c59"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\storage.ts": {
+    "mtime": 1777832239.043983,
+    "ast_hash": "08e8f5a52b0ce60c70ccb6909d1682f7",
+    "semantic_hash": "08e8f5a52b0ce60c70ccb6909d1682f7"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\tenderly.ts": {
+    "mtime": 1777839254.5040762,
+    "ast_hash": "59f562f763d8ab3836141c47d83c1d25",
+    "semantic_hash": "59f562f763d8ab3836141c47d83c1d25"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\tenderlySimulation.ts": {
+    "mtime": 1778168750.300441,
+    "ast_hash": "41b45a16b96cd3487ce89cb5f58b2037",
+    "semantic_hash": "41b45a16b96cd3487ce89cb5f58b2037"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\tokenCache.ts": {
+    "mtime": 1777237500.3817632,
+    "ast_hash": "ab9f1ce0f9eb35ab4694dd63825f9bb1",
+    "semantic_hash": "ab9f1ce0f9eb35ab4694dd63825f9bb1"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\tokenSearch.ts": {
+    "mtime": 1777832506.6940217,
+    "ast_hash": "1197b15a30daa82ea4be53e44fc2085c",
+    "semantic_hash": "1197b15a30daa82ea4be53e44fc2085c"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\webLayout.ts": {
+    "mtime": 1777665862.7604396,
+    "ast_hash": "f15cc793128268a4150ee6aabda69340",
+    "semantic_hash": "f15cc793128268a4150ee6aabda69340"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\webShadowPatch.ts": {
+    "mtime": 1779021236.1695216,
+    "ast_hash": "2a08eda47742533aec8dd1d756f2f9fb",
+    "semantic_hash": "2a08eda47742533aec8dd1d756f2f9fb"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\utils\\webVault.ts": {
+    "mtime": 1779022743.0635808,
+    "ast_hash": "f608f621a98f2f11dada61396e8571c9",
+    "semantic_hash": "f608f621a98f2f11dada61396e8571c9"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\store\\aaWallet.ts": {
+    "mtime": 1778038219.0044374,
+    "ast_hash": "751e639ce533adff61f2e1b5717d9108",
+    "semantic_hash": "751e639ce533adff61f2e1b5717d9108"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\store\\keyStore.ts": {
+    "mtime": 1779022726.1077483,
+    "ast_hash": "4733c387e6a287e47c958f6d62f1b765",
+    "semantic_hash": "4733c387e6a287e47c958f6d62f1b765"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\store\\SecureKeyStore.ts": {
+    "mtime": 1778958081.6770647,
+    "ast_hash": "6a591e65eba0fbb21fbc13a82b6186ac",
+    "semantic_hash": "6a591e65eba0fbb21fbc13a82b6186ac"
+  },
+  "C:\\KryptoNow\\KryptoNow-app\\mobile\\store\\walletStore.ts": {
+    "mtime": 1779076400.4486349,
+    "ast_hash": "d210e02ee9c52e6febb17e17b1815cd4",
+    "semantic_hash": "d210e02ee9c52e6febb17e17b1815cd4"
+  }
+}

@@ -1,20 +1,14 @@
 /**
  * context/AuthContext.tsx
  * -----------------------
- * Lightweight profile context used by the Onboarding screen.
- * Stores non-sensitive user preferences (name, avatar, currency, etc.)
- * in AsyncStorage and exposes them app-wide.
- *
- * Note: Authentication itself is handled by Clerk (@clerk/expo).
- * This context is specifically for the in-app profile/preferences.
+ * Unified Authentication and Profile Context.
+ * Uses Firebase Auth for identity and Firestore NoSQL for syncing user preferences
+ * (name, avatar, currency, etc.) across devices securely.
  */
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { auth, db } from '../config/firebase'
+import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import { storage } from '../utils/storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,10 +22,13 @@ export type UserProfile = {
 }
 
 type AuthContextType = {
+  authUser:      User | null
   user:          UserProfile | null
   loading:       boolean
+  isLoaded:      boolean
+  isSignedIn:    boolean
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
-  clearProfile:  () => Promise<void>
+  signOut:       () => Promise<void>
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -44,50 +41,95 @@ const DEFAULT_PROFILE: UserProfile = {
   onboarded:    false,
 }
 
-const STORAGE_KEY = 'kryptonow_profile'
+const LOCAL_STORAGE_KEY = 'kryptonow_profile_fallback'
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextType>({
+  authUser:      null,
   user:          null,
   loading:       true,
+  isLoaded:      false,
+  isSignedIn:    false,
   updateProfile: async () => {},
-  clearProfile:  async () => {},
+  signOut:       async () => {},
 })
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user,    setUser]    = useState<UserProfile | null>(null)
+  const [authUser, setAuthUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Load profile on mount
+  // Listen to Firebase Auth state
   useEffect(() => {
-    ;(async () => {
-      try {
-        const raw = await storage.get(STORAGE_KEY)
-        setUser(raw ? { ...DEFAULT_PROFILE, ...JSON.parse(raw) } : DEFAULT_PROFILE)
-      } catch {
-        setUser(DEFAULT_PROFILE)
-      } finally {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setAuthUser(firebaseUser)
+      if (!firebaseUser) {
+        // Fallback to local storage if signed out, so onboarding state doesn't crash
+        try {
+          const raw = await storage.get(LOCAL_STORAGE_KEY)
+          setUser(raw ? { ...DEFAULT_PROFILE, ...JSON.parse(raw) } : DEFAULT_PROFILE)
+        } catch {
+          setUser(DEFAULT_PROFILE)
+        }
         setLoading(false)
+        return
       }
-    })()
+
+      // If signed in, bind to Firestore NoSQL Document
+      const docRef = doc(db, 'users', firebaseUser.uid)
+      
+      const snapUnsub = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setUser({ ...DEFAULT_PROFILE, ...(docSnap.data() as UserProfile) })
+        } else {
+          // Initialize new document for new user
+          setDoc(docRef, DEFAULT_PROFILE, { merge: true })
+          setUser(DEFAULT_PROFILE)
+        }
+        setLoading(false)
+      }, (err) => {
+        console.error("Firestore read error:", err)
+        setLoading(false)
+      })
+
+      return () => snapUnsub()
+    })
+    return () => unsubscribe()
   }, [])
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     const next = { ...(user ?? DEFAULT_PROFILE), ...updates }
     setUser(next)
-    await storage.set(STORAGE_KEY, JSON.stringify(next))
+    
+    if (authUser) {
+      const docRef = doc(db, 'users', authUser.uid)
+      await setDoc(docRef, updates, { merge: true })
+    } else {
+      await storage.set(LOCAL_STORAGE_KEY, JSON.stringify(next))
+    }
   }
 
-  const clearProfile = async () => {
-    setUser(DEFAULT_PROFILE)
-    await storage.remove(STORAGE_KEY)
+  const signOut = async () => {
+    try {
+      await firebaseSignOut(auth)
+    } catch (e) {
+      console.error("Sign out error", e)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, updateProfile, clearProfile }}>
+    <AuthContext.Provider value={{ 
+      authUser, 
+      user, 
+      loading, 
+      isLoaded: !loading,
+      isSignedIn: !!authUser,
+      updateProfile, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   )

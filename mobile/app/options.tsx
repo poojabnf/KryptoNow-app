@@ -194,7 +194,7 @@ function OptionCard({
       </View>
 
       <TouchableOpacity style={[oc.buyBtn, { backgroundColor: activeChain.color }]} onPress={() => onBuy(option)}>
-        <Text style={oc.buyBtnText}>Buy Option</Text>
+        <Text style={oc.buyBtnText}>Simulate Buy (Demo)</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   )
@@ -318,7 +318,7 @@ function BuyModal({
               onPress={() => onConfirm(sizeNum)}
             >
               <Ionicons name="checkmark-circle-outline" size={20} color="#0D2E2E" />
-              <Text style={bm.confirmBtnText}>Confirm Purchase  ${totalCost}</Text>
+              <Text style={bm.confirmBtnText}>Simulate Trade · ${totalCost} (Demo)</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -327,7 +327,25 @@ function BuyModal({
   )
 }
 
-//  Main Screen 
+// Demo Mode Banner — always visible so reviewers / users know this is simulated
+function DemoBanner() {
+  return (
+    <View style={db.bar}>
+      <View style={db.dot} />
+      <Text style={db.text}>
+        DEMO MODE — All trades are simulated. No real funds are used.
+      </Text>
+    </View>
+  )
+}
+
+const db = StyleSheet.create({
+  bar:  { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FFFBEB", borderBottomWidth: 1, borderBottomColor: "#FDE68A", paddingHorizontal: 16, paddingVertical: 10 },
+  dot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: "#F59E0B" },
+  text: { flex: 1, color: "#92400E", fontSize: 12, fontWeight: "600" },
+})
+
+//  Main Screen
 export default function Options() {
   const activeChain = useWalletStore(s => s.activeChain)
   const addr        = useWalletStore(s => s.address)
@@ -391,8 +409,8 @@ export default function Options() {
       }
       setPositions(prev => [...prev, newPosition])
       Alert.alert(
-        " Option Purchased!",
-        `${size}x ${option.underlying} $${option.strike} ${option.type.toUpperCase()} on ${option.protocol}\n\nTotal cost: $${(option.premiumUSD * size).toFixed(2)}`,
+        "Demo Trade Simulated",
+        `${size}x ${option.underlying} $${option.strike} ${option.type.toUpperCase()} on ${option.protocol}\n\nSimulated cost: $${(option.premiumUSD * size).toFixed(2)}\n\n⚠️ This is a simulated trade. No real funds were used.`,
         [{ text: "View Positions", onPress: () => setTab("positions") }, { text: "OK" }]
       )
     } catch (e: any) {
@@ -411,9 +429,12 @@ export default function Options() {
         </TouchableOpacity>
         <View>
           <Text style={s.title}>Options Trading</Text>
-          <Text style={s.subtitle}>DeFi options via Lyra  Premia  Dopex</Text>
+          <Text style={s.subtitle}>DeFi options via Lyra · Premia · Dopex</Text>
         </View>
       </View>
+
+      {/* Demo mode — always visible */}
+      <DemoBanner />
 
       {/* Spot prices */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tickerScroll} contentContainerStyle={s.tickerContent}>

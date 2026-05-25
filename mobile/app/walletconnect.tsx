@@ -8,7 +8,7 @@ import { goBack } from '../utils/navigation'
 import { useWalletStore } from '../store/walletStore'
 import { loadPrivateKey } from '../store/keyStore'
 
-const WC_PROJECT_ID = '840ef497a12aaf23a2e31c1c4013d68d'
+const WC_PROJECT_ID = process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '840ef497a12aaf23a2e31c1c4013d68d'
 const SUPPORTED_CHAINS  = ['eip155:1','eip155:137','eip155:42161','eip155:10','eip155:56']
 const SUPPORTED_METHODS = ['eth_sendTransaction','eth_sign','personal_sign','eth_signTypedData_v4']
 const SUPPORTED_EVENTS  = ['chainChanged','accountsChanged']

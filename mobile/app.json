@@ -13,7 +13,7 @@
       "backgroundColor": "#1E1B4B"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.kryptonow.app",
       "buildNumber": "1",
       "minimumOsVersion": "16.0",
@@ -23,16 +23,10 @@
         "NSPhotoLibraryUsageDescription": "KryptoNow needs photo library access to import QR code images.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "kryptonow"
-            ]
-          }
+          { "CFBundleURLSchemes": ["kryptonow"] }
         ]
       },
-      "associatedDomains": [
-        "applinks:kryptonow.xyz"
-      ]
+      "associatedDomains": ["applinks:kryptonow.xyz"]
     },
     "android": {
       "adaptiveIcon": {
@@ -58,18 +52,10 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            {
-              "scheme": "kryptonow"
-            },
-            {
-              "scheme": "https",
-              "host": "kryptonow.xyz"
-            }
+            { "scheme": "kryptonow" },
+            { "scheme": "https", "host": "kryptonow.xyz" }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -79,50 +65,25 @@
       "htmlTemplate": "./web/index.html"
     },
     "extra": {
-      "eas": {
-        "projectId": "3e0e9648-5e02-41b6-b5ba-fa1aff3ce88b"
-      },
+      "eas": { "projectId": "9698df38-e5fe-4d59-826f-19d44cc45c14" },
       "website": "https://kryptonow.xyz"
     },
-    "owner": "kryptonow-inc",
+    "owner": "poojabnf",
     "plugins": [
       "expo-web-browser",
       "expo-router",
       "expo-secure-store",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow KryptoNow to access your camera to scan QR codes."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#6366F1",
-          "defaultChannel": "default"
-        }
-      ],
-      [
-        "expo-local-authentication",
-        {
-          "faceIDPermission": "KryptoNow uses Face ID to protect your wallet."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "deploymentTarget": "16.0"
-          },
-          "android": {
-            "minSdkVersion": 26,
-            "targetSdkVersion": 35,
-            "compileSdkVersion": 35
-          }
-        }
-      ],
+      "expo-updates",
+      ["expo-camera", { "cameraPermission": "Allow KryptoNow to access your camera to scan QR codes." }],
+      ["expo-notifications", { "icon": "./assets/notification-icon.png", "color": "#6366F1", "defaultChannel": "default" }],
+      ["expo-local-authentication", { "faceIDPermission": "KryptoNow uses Face ID to protect your wallet." }],
+      ["expo-build-properties", {
+        "ios": { "deploymentTarget": "16.0" },
+        "android": { "minSdkVersion": 26, "targetSdkVersion": 35, "compileSdkVersion": 35 }
+      }],
       "expo-font"
-    ]
+    ],
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": { "url": "https://u.expo.dev/9698df38-e5fe-4d59-826f-19d44cc45c14" }
   }
 }

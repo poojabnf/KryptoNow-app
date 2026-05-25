@@ -1,7 +1,7 @@
 import "react-native-get-random-values"
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput, Platform, Dimensions } from "react-native"
 import { router } from "expo-router"
-import { useAuth } from "@clerk/expo"
+import { useAuth } from "../context/AuthContext"
 import { useState } from "react"
 import * as Clipboard from "expo-clipboard"
 import { ethers } from "ethers"
